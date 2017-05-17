@@ -1,0 +1,4 @@
+package: github.com/akamai-open/akamai-cli
+import:
+- package: github.com/fatih/color
+  version: ^1.4.1
