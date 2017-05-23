@@ -154,7 +154,9 @@ func getCommands() []string {
 			_, err := exec.LookPath(match)
 			if err == nil {
 				command := strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(path.Base(match), "akamai-"), "akamai"))
-				commands = append(commands, command)
+				if len(command) != 0 {
+					commands = append(commands, command)
+				}
 			}
 		}
 	}
