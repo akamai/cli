@@ -44,11 +44,13 @@ func main() {
 	args := os.Args[2:]
 
 	subCmd := exec.Command(executable, args...)
-	output, err := subCmd.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	subCmd.Stdin = os.Stdin
+
+	output, err := subCmd.CombinedOutput()
 	fmt.Print(string(output))
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func self() string {
