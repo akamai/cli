@@ -9,10 +9,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-)
-
-var (
-	builtInCommands = []string{"help", "list"}
+	"github.com/mitchellh/go-homedir"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 func main() {
@@ -32,6 +30,21 @@ func main() {
 		return
 	case cmd == "list":
 		list()
+		return
+	case cmd == "get":
+		if len(os.Args) < 3 {
+			color.Red("You must specify a repository URL")
+			help([]string{"get"})
+			return
+		}
+		get(os.Args[2])
+		return
+	case cmd == "update":
+		if len(os.Args) < 3 {
+			update("")
+			return
+		}
+		update(os.Args[2])
 		return
 	}
 
@@ -84,7 +97,7 @@ func help(args []string) {
 		executable, err := findExec(cmd)
 
 		if err != nil {
-			fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self)
+			fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self())
 			return
 		}
 		args := []string{"help"}
@@ -129,11 +142,22 @@ func getHelp() Help {
 			shortDesc:   "The %s command displays available commands",
 			exampleCall: "%s list",
 		},
+		"get": {
+			prototype:   "%s %s <repository URL>",
+			shortDesc:   "The %s command will fetch and install a sub-command from a Git repository",
+			exampleCall: "%s get https://github.com/akamai-open/akamai-cli-property.git",
+		},
+		"update": {
+			prototype:   "%s %s [command]",
+			shortDesc:   "The %s command will update a sub-command. If no command is specified, all commands are updated",
+			exampleCall: "%s update property",
+		},
 	}
 }
 
 func getCommands() []string {
-	sysPath := os.Getenv("PATH")
+	sysPath := getSysPath()
+
 	var commands []string
 
 	for cmd := range getHelp() {
@@ -164,7 +188,24 @@ func getCommands() []string {
 	return commands
 }
 
+func getSysPath() string {
+	sysPath := os.Getenv("PATH")
+	homedir, err := homedir.Dir()
+	if err == nil {
+		akamaiCliPath := string(os.PathSeparator) + homedir + string(os.PathSeparator) + ".akamai-cli"
+		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
+		for _, path := range paths {
+			sysPath += string(os.PathListSeparator) + path
+			sysPath += string(os.PathListSeparator) + path + string(os.PathSeparator) + "bin"
+		}
+		os.Setenv("PATH", sysPath)
+	}
+	return sysPath
+}
+
 func findExec(cmd string) (string, error) {
+	getSysPath()
+
 	cmd = strings.ToLower(cmd)
 	var path string
 	path, err := exec.LookPath("akamai-" + cmd)
@@ -176,4 +217,114 @@ func findExec(cmd string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func get(repo string) {
+	path, err := homedir.Dir()
+	if err != nil {
+		fmt.Println("Unable to determine home directory")
+	}
+	path += string(os.PathSeparator) + ".akamai-cli"
+	_ = os.MkdirAll(path, 0775)
+
+	fmt.Print(color.YellowString("Attempting to fetch command: "))
+
+	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
+
+	_, err = git.PlainClone(path+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
+		URL:      repo,
+		Progress: nil,
+	})
+
+	if err != nil {
+		color.Red("Unable to clone repository: " + err.Error())
+	}
+
+	color.Green(" successfully installed command")
+	list()
+}
+
+func update(cmd string) {
+	if cmd == "" {
+		help := getHelp()
+		for _, cmd := range getCommands() {
+			cmd := strings.ToLower(cmd)
+
+			if _, ok := help[cmd]; !ok {
+				update(cmd)
+			}
+		}
+
+		return
+	}
+
+	exec, err := findExec(cmd)
+	if err != nil {
+		color.Red(err.Error())
+		fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self())
+		return
+	}
+
+	fmt.Print(color.YellowString("Attempting to update \"%s\" command : ", cmd))
+
+	repoDir := findGitRepo(filepath.Dir(exec))
+
+	if repoDir == "" {
+		color.Red("Unable to update, was it installed using " + color.CyanString("\"akamai get\"") + "?")
+		return
+	}
+
+	repo, err := git.PlainOpen(repoDir)
+	if err != nil {
+		color.Red(err.Error())
+		return
+	}
+
+	err = repo.Fetch(&git.FetchOptions{
+		RemoteName: git.DefaultRemoteName,
+	})
+
+	if err != nil && err.Error() != "already up-to-date" {
+		color.Red("Unable to update \"%s\"", cmd)
+		return
+	}
+
+	workdir, _ := repo.Worktree()
+	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
+	if err != nil {
+		color.Red("Unable to update command \"%s\"", cmd)
+		return
+	}
+
+	head, _ := repo.Head()
+	if head.Hash() == ref.Hash() {
+		color.Cyan("command \"%s\" already up-to-date", cmd)
+		return
+	}
+
+	err = workdir.Checkout(&git.CheckoutOptions{
+		Branch: ref.Name(),
+		Force:  true,
+	})
+
+	if err != nil {
+		color.Red("Unable to update command \"%s\"", cmd)
+		return
+	}
+
+	color.Green("successfully updated \"%s\" command", cmd)
+}
+
+func findGitRepo(dir string) string {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
+		if os.IsNotExist(err) {
+			if dir == "/" {
+				return ""
+			}
+
+			return findGitRepo(filepath.Dir(dir))
+		}
+	}
+
+	return dir
 }

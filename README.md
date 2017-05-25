@@ -39,6 +39,18 @@ Calling `akamai help` will show basic usage info, and available commands. To lea
 
 Calling `akamai list` will show you a list of available sub-commands. If a command is not shown, ensure that the binary is executable, and in your `PATH`.
 
+#### Get
+
+The `get` command allows you to easily install new sub-commands from a git repository.
+
+Calling `akamai get <repo>` will download and install the command repository to the `$HOME/.akamai-cli` directory.
+
+#### Update
+
+To update a sub-command installed with `akamai get`, you call `akamai update <command>`.
+
+Calling `akamai update` with no arguments will update _all_ commands installed using `akamai get`
+
 #### Sub-commands
 
 To call a sub-command, use `akamai <sub-command> [args]`, e.g.

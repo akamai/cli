@@ -2,3 +2,9 @@ package: github.com/akamai-open/akamai-cli
 import:
 - package: github.com/fatih/color
   version: ^1.4.1
+- package: github.com/mitchellh/go-homedir
+- package: github.com/src-d/go-git
+  version: ~4.0.0-rc9
+- package: github.com/sergi/go-diff
+  subpackages:
+  - diffmatchpatch
