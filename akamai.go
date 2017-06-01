@@ -56,16 +56,20 @@ func main() {
 	}
 	args := os.Args[2:]
 
-	subCmd := exec.Command(executable, args...)
-	subCmd.Stdin = os.Stdin
-	subCmd.Stderr = os.Stderr
-	subCmd.Stdout = os.Stdout
-
-	err = subCmd.Run()
+	err = passthruCommand(executable, args)
 	//fmt.Print(string(output))
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+func passthruCommand(executable string, args []string) error {
+	subCmd := exec.Command(executable, args...)
+	subCmd.Stdin = os.Stdin
+	subCmd.Stderr = os.Stderr
+	subCmd.Stdout = os.Stdout
+	err := subCmd.Run()
+	return err
 }
 
 func self() string {
@@ -107,12 +111,10 @@ func help(args []string) {
 			args = append(args, os.Args[3:]...)
 		}
 
-		subCmd := exec.Command(executable, args...)
-		output, err := subCmd.Output()
+		err = passthruCommand(executable, args)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		fmt.Print(string(output))
 	}
 
 }
