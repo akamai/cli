@@ -270,6 +270,8 @@ func get(repo string) {
 
 	cmds := getCommands()
 
+	repo = githubize(repo)
+
 	fmt.Print("Attempting to fetch command...")
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
@@ -293,6 +295,14 @@ func get(repo string) {
 	}
 
 	listDiff(cmds)
+}
+
+func githubize(repo string) string {
+	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
+		return repo
+	}
+
+	return "https://github.com/" + repo + ".git"
 }
 
 func update(cmd string) {
