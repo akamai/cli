@@ -427,6 +427,17 @@ func installDependencies(dir string) bool {
 		return true
 	}
 
+	success, err = installRubyDeps(dir)
+	if err != nil {
+		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		return false
+	}
+
+	if success {
+		fmt.Println("... [" + color.GreenString("OK") + "]")
+		return true
+	}
+
 	if !success {
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
 		return false
@@ -494,6 +505,23 @@ func installJavaScriptDeps(dir string) (bool, error) {
 
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/package.json"); err == nil {
 		bin, err := exec.LookPath("npm")
+		if err == nil {
+			cmd := exec.Command(bin, "install")
+			cmd.Dir = dir
+			err = cmd.Run()
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func installRubyDeps(dir string) (bool, error) {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/Gemfile"); err == nil {
+		bin, err := exec.LookPath("bundle")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
