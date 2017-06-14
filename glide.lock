@@ -1,5 +1,5 @@
-hash: 2431741d7e6aeddd959f00318be2025bdfacc978512837f78083278d0f5588c9
-updated: 2017-05-24T18:35:41.71673711-04:00
+hash: 81f9a56a42f1bd8940be121a65ee2ffe595eb4260db0645a691861eb3fa217e1
+updated: 2017-06-14T10:21:56.871208988-07:00
 imports:
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
@@ -23,8 +23,10 @@ imports:
   - types
 - name: github.com/src-d/go-git
   version: 7e249dfcf28765939bde8f38784b3274b522f880
+- name: github.com/urfave/cli
+  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 - name: golang.org/x/crypto
-  version: 7e9105388ebff089b3f99f0ef676ea55a6da3a7e
+  version: 850760c427c516be930bc91280636328f1a62286
   subpackages:
   - curve25519
   - ed25519

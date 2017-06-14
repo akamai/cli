@@ -10,57 +10,181 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
+	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
 )
 
 func main() {
-	self := self()
-	cmd := "help"
-	if len(os.Args) > 1 {
-		cmd = os.Args[1]
+	os.Setenv("AKAMAI_CLI", "1")
+
+	app := cli.NewApp()
+	app.Name = "akamai"
+	app.Usage = "Akamai CLI"
+	app.Version = "0.1.0"
+	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "section",
+			Usage:  "Section of the credentials file",
+			Value:  "default",
+			EnvVar: "AKAMAI_EDGERC_SECTION",
+		},
 	}
 
-	switch {
-	case cmd == "help":
-		if len(os.Args) > 2 {
-			help(os.Args[2:])
-		} else {
-			help([]string{})
-		}
-		return
-	case cmd == "list":
-		list()
-		return
-	case cmd == "get":
-		if len(os.Args) < 3 {
-			color.Red("You must specify a repository URL")
-			help([]string{"get"})
-			return
-		}
-		get(os.Args[2])
-		return
-	case cmd == "update":
-		if len(os.Args) < 3 {
-			update("")
-			return
-		}
-		update(os.Args[2])
-		return
+	helpInfo := getHelp()
+
+	app.Commands = []cli.Command{
+		{
+			Name:      "help",
+			Usage:     helpInfo["help"].shortDesc,
+			ArgsUsage: helpInfo["Help"].prototype,
+			Action:    cmdHelp,
+		},
+		{
+			Name:      "list",
+			Usage:     helpInfo["list"].shortDesc,
+			ArgsUsage: helpInfo["list"].prototype,
+			Action:    cmdList,
+		},
+		{
+			Name:      "get",
+			Usage:     helpInfo["get"].shortDesc,
+			ArgsUsage: helpInfo["get"].prototype,
+			Action:    cmdGet,
+		},
+		{
+			Name:      "update",
+			Usage:     helpInfo["update"].shortDesc,
+			ArgsUsage: helpInfo["update"].prototype,
+			Action:    cmdUpdate,
+		},
 	}
 
+	for _, cmd := range getCommands() {
+		if _, ok := helpInfo[cmd]; ok {
+			continue
+		}
+
+		app.Commands = append(
+			app.Commands,
+			cli.Command{
+				Name:            cmd,
+				Usage:           "",
+				ArgsUsage:       "",
+				Action:          cmdSubcommand,
+				Category:        "INSTALLED",
+				SkipFlagParsing: true,
+			},
+		)
+	}
+
+	app.Run(os.Args)
+}
+
+func cmdList(c *cli.Context) {
+	color.Yellow("\nAvailable Commands:")
+	for _, cmd := range getCommands() {
+		fmt.Println("  " + cmd)
+	}
+	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+}
+
+func cmdGet(c *cli.Context) error {
+	if !c.Args().Present() {
+		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
+	}
+
+	repo := c.Args().First()
+
+	path, err := homedir.Dir()
+	if err != nil {
+		return cli.NewExitError(color.RedString("Unable to determine home directory"), 1)
+	}
+	path += string(os.PathSeparator) + ".akamai-cli"
+	_ = os.MkdirAll(path, 0775)
+
+	cmds := getCommands()
+
+	repo = githubize(repo)
+
+	fmt.Print("Attempting to fetch command...")
+
+	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
+
+	_, err = git.PlainClone(path+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
+		URL:      repo,
+		Progress: nil,
+	})
+
+	if err != nil {
+		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+	}
+
+	fmt.Println("... [" + color.GreenString("OK") + "]")
+
+	if !installDependencies(path + string(os.PathSeparator) + dirName) {
+		//os.RemoveAll(path + string(os.PathSeparator) + dirName)
+		return cli.NewExitError(color.RedString("command removed."), 1)
+	}
+
+	listDiff(cmds)
+
+	return nil
+}
+
+func cmdUpdate(c *cli.Context) error {
+	cmd := c.Args().First()
+
+	if cmd == "" {
+		help := getHelp()
+		for _, cmd := range getCommands() {
+			cmd := strings.ToLower(cmd)
+
+			if _, ok := help[cmd]; !ok {
+				if err := update(cmd); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+
+	return update(cmd)
+}
+
+func cmdSubcommand(c *cli.Context) error {
+	cmd := c.Command.Name
 	executable, err := findExec(cmd)
-
 	if err != nil {
-		fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self)
-		return
+		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
 	}
+
 	args := os.Args[2:]
+	return passthruCommand(executable, args)
+}
 
-	err = passthruCommand(executable, args)
-	//fmt.Print(string(output))
-	if err != nil {
-		os.Exit(1)
+func cmdHelp(c *cli.Context) error {
+	if c.Args().Present() {
+		cmd := c.Args().First()
+
+		help := getHelp()
+		if _, ok := help[cmd]; !ok {
+			args := append([]string{"help"}, c.Args().Tail()...)
+
+			executable, err := findExec(cmd)
+			if err != nil {
+				return err
+			}
+
+			return passthruCommand(executable, args)
+		}
+
+		return cli.ShowCommandHelp(c, cmd)
 	}
+
+	return cli.ShowAppHelp(c)
 }
 
 func passthruCommand(executable string, args []string) error {
@@ -69,126 +193,41 @@ func passthruCommand(executable string, args []string) error {
 	subCmd.Stderr = os.Stderr
 	subCmd.Stdout = os.Stdout
 	err := subCmd.Run()
-	return err
+	if err != nil {
+		return cli.NewExitError("", 1)
+	}
+	return nil
 }
 
 func self() string {
 	return path.Base(os.Args[0])
 }
 
-func help(args []string) {
-	if len(args) == 0 {
-		color.Yellow("Usage:")
-		color.Blue("  %s [command] [arguments]\n", self())
-		color.Yellow("\nAvailable Commands:")
-		for _, cmd := range getCommands() {
-			fmt.Println("  " + cmd)
-		}
-		fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
-
-		args = []string{"help"}
-	}
-
-	help := getHelp()
-	cmd := strings.ToLower(args[0])
-
-	if _, ok := help[cmd]; ok {
-		color.Yellow("\n%s\n", strings.Title(cmd))
-		color.Yellow(strings.Repeat("-", len(cmd)) + "\n\n")
-		fmt.Print("Usage: ")
-		color.Blue(help[cmd].prototype+"\n\n", self(), cmd)
-		fmt.Printf(help[cmd].shortDesc+":\n\n", color.BlueString(cmd))
-		color.Blue("    "+help[cmd].exampleCall+"\n", self())
-	} else {
-		executable, err := findExec(cmd)
-
-		if err != nil {
-			fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self())
-			return
-		}
-		args := []string{"help"}
-		if len(os.Args) > 2 {
-			args = append(args, os.Args[3:]...)
-		}
-
-		err = passthruCommand(executable, args)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-	}
-
+type help map[string]struct {
+	prototype string
+	shortDesc string
+	longDesc  string
 }
 
-func list() {
-	color.Yellow("\nAvailable Commands:")
-	for _, cmd := range getCommands() {
-		fmt.Println("  " + cmd)
-	}
-	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
-}
-
-func listDiff(oldcmds []string) {
-	color.Yellow("\nAvailable Commands:")
-	cmds := getCommands()
-
-	for _, cmd := range cmds {
-		var found bool
-		for _, oldcmd := range oldcmds {
-			if oldcmd == cmd {
-				found = true
-				fmt.Println("  " + cmd)
-				break
-			}
-		}
-		if !found {
-			color.Green("  " + cmd)
-		}
-	}
-
-	for _, oldcmd := range oldcmds {
-		var found bool
-		for _, cmd := range cmds {
-			if oldcmd == cmd {
-				found = true
-			}
-		}
-
-		if !found {
-			color.Red("  " + oldcmd)
-		}
-	}
-
-	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
-}
-
-type Help map[string]struct {
-	prototype   string
-	shortDesc   string
-	longDesc    string
-	exampleCall string
-}
-
-func getHelp() Help {
-	return Help{
+func getHelp() help {
+	return help{
 		"help": {
-			prototype:   "%s %s [command]",
-			shortDesc:   "The %s command displays help for a given command",
-			exampleCall: "%s help list",
+			prototype: "[command] [sub-command]",
+			shortDesc: "Displays help information",
 		},
 		"list": {
-			prototype:   "%s %s",
-			shortDesc:   "The %s command displays available commands",
-			exampleCall: "%s list",
+			prototype: "",
+			shortDesc: "Displays available commands",
 		},
 		"get": {
-			prototype:   "%s %s <repository URL>",
-			shortDesc:   "The %s command will fetch and install a sub-command from a Git repository",
-			exampleCall: "%s get https://github.com/akamai-open/akamai-cli-property.git",
+			prototype: "<repository URL>",
+			shortDesc: "Fetch and install a sub-command from a Git repository",
+			//exampleCall: "%s get https://github.com/akamai-open/akamai-cli-property.git",
 		},
 		"update": {
-			prototype:   "%s %s [command]",
-			shortDesc:   "The %s command will update a sub-command. If no command is specified, all commands are updated",
-			exampleCall: "%s update property",
+			prototype: "[command]",
+			shortDesc: "Update a sub-command. If no command is specified, all commands are updated",
+			//exampleCall: "%s update property",
 		},
 	}
 }
@@ -233,6 +272,9 @@ func getCommands() []string {
 
 func getSysPath() string {
 	sysPath := os.Getenv("PATH")
+
+	sysPath += string(os.PathListSeparator) + "."
+
 	homedir, err := homedir.Dir()
 	if err == nil {
 		akamaiCliPath := string(os.PathSeparator) + homedir + string(os.PathSeparator) + ".akamai-cli"
@@ -262,70 +304,10 @@ func findExec(cmd string) (string, error) {
 	return path, nil
 }
 
-func get(repo string) {
-	path, err := homedir.Dir()
-	if err != nil {
-		fmt.Println("Unable to determine home directory")
-	}
-	path += string(os.PathSeparator) + ".akamai-cli"
-	_ = os.MkdirAll(path, 0775)
-
-	cmds := getCommands()
-
-	repo = githubize(repo)
-
-	fmt.Print("Attempting to fetch command...")
-
-	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
-
-	_, err = git.PlainClone(path+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
-		URL:      repo,
-		Progress: nil,
-	})
-
-	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		color.Red("Unable to clone repository: " + err.Error())
-	}
-
-	fmt.Println("... [" + color.GreenString("OK") + "]")
-
-	if !installDependencies(path + string(os.PathSeparator) + dirName) {
-		os.RemoveAll(path + string(os.PathSeparator) + dirName)
-		color.Red("command removed.")
-		return
-	}
-
-	listDiff(cmds)
-}
-
-func githubize(repo string) string {
-	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
-		return repo
-	}
-
-	return "https://github.com/" + repo + ".git"
-}
-
-func update(cmd string) {
-	if cmd == "" {
-		help := getHelp()
-		for _, cmd := range getCommands() {
-			cmd := strings.ToLower(cmd)
-
-			if _, ok := help[cmd]; !ok {
-				update(cmd)
-			}
-		}
-
-		return
-	}
-
+func update(cmd string) error {
 	exec, err := findExec(cmd)
 	if err != nil {
-		color.Red(err.Error())
-		fmt.Printf("Command \"%s\" not found. Try \"%s help\".\n", cmd, self())
-		return
+		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
 	}
 
 	fmt.Printf("Attempting to update \"%s\" command...", cmd)
@@ -334,14 +316,12 @@ func update(cmd string) {
 
 	if repoDir == "" {
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		color.Red("unable to update, was it installed using " + color.CyanString("\"akamai get\"") + "?")
-		return
+		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai get\"")+"?"), 1)
 	}
 
 	repo, err := git.PlainOpen(repoDir)
 	if err != nil {
-		color.Red(err.Error())
-		return
+		return err
 	}
 
 	err = repo.Fetch(&git.FetchOptions{
@@ -349,22 +329,20 @@ func update(cmd string) {
 	})
 
 	if err != nil && err.Error() != "already up-to-date" {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return
+		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
 	}
 
 	workdir, _ := repo.Worktree()
 	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
 	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return
+		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
 	}
 
 	head, _ := repo.Head()
 	if head.Hash() == ref.Hash() {
 		fmt.Println("... [" + color.CyanString("OK") + "]")
 		color.Cyan("command \"%s\" already up-to-date", cmd)
-		return
+		return nil
 	}
 
 	err = workdir.Checkout(&git.CheckoutOptions{
@@ -373,8 +351,7 @@ func update(cmd string) {
 	})
 
 	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return
+		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
 	}
 
 	fmt.Println("... [" + color.GreenString("OK") + "]")
@@ -382,12 +359,21 @@ func update(cmd string) {
 	if !installDependencies(repoDir) {
 		fmt.Print("Removing command...")
 		if err := os.RemoveAll(repoDir); err != nil {
-			fmt.Println("... [" + color.RedString("FAIL") + "]")
-			return
+			return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
 		}
 		fmt.Println("... [" + color.GreenString("OK") + "]")
-		return
+		return nil
 	}
+
+	return nil
+}
+
+func githubize(repo string) string {
+	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
+		return repo
+	}
+
+	return "https://github.com/" + repo + ".git"
 }
 
 func findGitRepo(dir string) string {
@@ -404,52 +390,111 @@ func findGitRepo(dir string) string {
 	return dir
 }
 
+func listDiff(oldcmds []string) {
+	color.Yellow("\nAvailable Commands:")
+	cmds := getCommands()
+
+	for _, cmd := range cmds {
+		var found bool
+		for _, oldcmd := range oldcmds {
+			if oldcmd == cmd {
+				found = true
+				fmt.Println("  " + cmd)
+				break
+			}
+		}
+		if !found {
+			color.Green("  " + cmd)
+		}
+	}
+
+	for _, oldcmd := range oldcmds {
+		var found bool
+		for _, cmd := range cmds {
+			if oldcmd == cmd {
+				found = true
+			}
+		}
+
+		if !found {
+			color.Red("  " + oldcmd)
+		}
+	}
+
+	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+}
+
 func installDependencies(dir string) bool {
-	fmt.Print("Installing Dependencies...")
+	fmt.Print("Installing...")
 
-	success, err := installPHPDeps(dir)
+	lang := determineCommandLanguage(dir)
+	if lang == "" {
+		fmt.Println("... [" + color.BlueString("OK") + "]")
+		return true
+	}
+
+	var success bool
+	var err error
+	switch lang {
+	case "php":
+		success, err = installPHP(dir)
+	case "javascript":
+		success, err = installJavaScript(dir)
+	case "ruby":
+		success, err = installRuby(dir)
+	case "python":
+		success, err = installPython(dir)
+	case "go":
+		success, err = installGolang(dir)
+	default:
+		success = false
+		err = nil
+	}
+
 	if err != nil {
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		color.Red(err.Error())
 		return false
 	}
 
 	if success {
 		fmt.Println("... [" + color.GreenString("OK") + "]")
 		return true
-	}
-
-	success, err = installJavaScriptDeps(dir)
-	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return false
-	}
-
-	if success {
-		fmt.Println("... [" + color.GreenString("OK") + "]")
-		return true
-	}
-
-	success, err = installRubyDeps(dir)
-	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return false
-	}
-
-	if success {
-		fmt.Println("... [" + color.GreenString("OK") + "]")
-		return true
-	}
-
-	if !success {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		return false
 	}
 
 	fmt.Println("... [" + color.CyanString("OK") + "]")
 	return true
 }
 
-func installPHPDeps(dir string) (bool, error) {
+func determineCommandLanguage(dir string) string {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.json"); err == nil {
+		return "php"
+	}
+
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/yarn.lock"); err == nil {
+		return "javascript"
+	}
+
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/package.json"); err == nil {
+		return "javascript"
+	}
+
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/Gemfile"); err == nil {
+		return "ruby"
+	}
+
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/glide.yaml"); err == nil {
+		return "go"
+	}
+
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
+		return "python"
+	}
+
+	return ""
+}
+
+func installPHP(dir string) (bool, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.json"); err == nil {
 		if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.phar"); err == nil {
 			bin, err := exec.LookPath("php")
@@ -484,13 +529,13 @@ func installPHPDeps(dir string) (bool, error) {
 			return true, nil
 		}
 
-		return true, nil
+		return false, cli.NewExitError("Unable to find package manager.", 1)
 	}
 
 	return false, nil
 }
 
-func installJavaScriptDeps(dir string) (bool, error) {
+func installJavaScript(dir string) (bool, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/yarn.lock"); err == nil {
 		bin, err := exec.LookPath("yarn")
 		if err == nil {
@@ -502,7 +547,6 @@ func installJavaScriptDeps(dir string) (bool, error) {
 			}
 			return true, nil
 		}
-		// Specifically _not_ returning here as NPM can install from the same package.json
 	}
 
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/package.json"); err == nil {
@@ -518,10 +562,10 @@ func installJavaScriptDeps(dir string) (bool, error) {
 		}
 	}
 
-	return false, nil
+	return false, cli.NewExitError("Unable to find package manager.", 1)
 }
 
-func installRubyDeps(dir string) (bool, error) {
+func installRuby(dir string) (bool, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/Gemfile"); err == nil {
 		bin, err := exec.LookPath("bundle")
 		if err == nil {
@@ -535,5 +579,52 @@ func installRubyDeps(dir string) (bool, error) {
 		}
 	}
 
-	return false, nil
+	return false, cli.NewExitError("Unable to find package manager.", 1)
+}
+
+func installPython(dir string) (bool, error) {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
+		bin, err := exec.LookPath("pip")
+		if err == nil {
+			cmd := exec.Command(bin, "install", "-r", "requirements.txt")
+			cmd.Dir = dir
+			err = cmd.Run()
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+	}
+
+	return false, cli.NewExitError("Unable to find package manager.", 1)
+}
+
+func installGolang(dir string) (bool, error) {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + "glide.lock"); err == nil {
+		bin, err := exec.LookPath("glide")
+		if err == nil {
+			cmd := exec.Command(bin, "install")
+			cmd.Dir = dir
+			err = cmd.Run()
+			if err != nil {
+				return false, cli.NewExitError(err.Error(), 1)
+			}
+		} else {
+			return false, cli.NewExitError("Unable to find package manager.", 1)
+		}
+	}
+
+	bin, err := exec.LookPath("go")
+	if err == nil {
+		execName := "akamai-" + strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(path.Base(dir), "akamai-"), "cli-"))
+
+		cmd := exec.Command(bin, "build", "-o", execName, ".")
+		cmd.Dir = dir
+		err = cmd.Run()
+		if err != nil {
+			return false, cli.NewExitError(err.Error(), 1)
+		}
+	}
+
+	return true, nil
 }

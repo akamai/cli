@@ -1,4 +1,4 @@
-package: github.com/akamai-open/akamai-cli
+package: github.com/akamai/cli
 import:
 - package: github.com/fatih/color
   version: ^1.4.1
@@ -8,3 +8,5 @@ import:
 - package: github.com/sergi/go-diff
   subpackages:
   - diffmatchpatch
+- package: github.com/urfave/cli
+  version: ^1.19.1
