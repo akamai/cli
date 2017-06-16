@@ -5,8 +5,8 @@ RUN apt-get install -y git curl patch gawk g++ gcc make libc6-dev patch libreadl
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q libssl-dev python-all wget vim python-pip php7.0 ruby-dev nodejs-dev npm ruby perl golang-go
 RUN pip install httpie-edgegrid 
 ADD . /opt
-RUN mkdir bin
 WORKDIR /opt
+RUN mkdir bin
 RUN export PATH=${PATH}:/opt/bin
 RUN export GOPATH=/opt/bin
 RUN curl https://glide.sh/get | sh
