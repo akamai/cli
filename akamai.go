@@ -762,7 +762,10 @@ func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 func installJavaScript(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("node")
 	if err != nil {
-		return false, cli.NewExitError(("Unable to locate Node.js runtime"), 1)
+		bin, err = exec.LookPath("nodejs")
+		if err != nil {
+			return false, cli.NewExitError(("Unable to locate Node.js runtime"), 1)
+		}
 	}
 
 	if cmdPackage.Requirements.Node != "" && cmdPackage.Requirements.Node != "*" {
@@ -1049,7 +1052,7 @@ func setCliTemplates() {
 		"{{if .Copyright}}" +
 		color.YellowString("Copyright:\n") +
 		"   {{.Copyright}}" +
-		"{{end}}"
+		"{{end}}\n"
 
 	cli.CommandHelpTemplate = "" +
 		color.YellowString("Name: \n") +
