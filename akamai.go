@@ -20,6 +20,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
+	"runtime"
 )
 
 func main() {
@@ -318,7 +319,7 @@ func getPackageCommands(dir string) commandPackage {
 	for _, match := range matches {
 		_, err := exec.LookPath(match)
 		if err == nil {
-			name := strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(path.Base(match), "akamai-"), "akamai"))
+			name := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(path.Base(match), "akamai-"), "akamai"), ".exe"))
 			if len(name) != 0 {
 				command.Commands = append(command.Commands, Command{
 					Name: name,
@@ -352,11 +353,17 @@ func findExec(cmd string) (string, error) {
 	getSysPath()
 
 	cmd = strings.ToLower(cmd)
+
 	var path string
 	path, err := exec.LookPath("akamai-" + cmd)
 	if err != nil {
 		path, err = exec.LookPath("akamai" + strings.Title(cmd))
 		if err != nil {
+			if runtime.GOOS == "windows" {
+				cmd += ".exe"
+				return findExec(cmd)
+			}
+
 			return cmd, err
 		}
 	}
@@ -521,6 +528,9 @@ type Command struct {
 	Usage       string `json:"usage"`
 	Arguments   string `json:"arguments"`
 	Bin         string `json:"bin"`
+	BinSuffix   string `json:"-"`
+	OS          string `json:"-"`
+	Arch        string `json:"-"`
 }
 
 func readPackage(dir string, commands []string) commandPackage {
@@ -948,6 +958,17 @@ func versionCompare(compareTo string, isNewer string) bool {
 }
 
 func downloadBin(dir string, cmd Command) bool {
+	cmd.Arch = runtime.GOARCH
+
+	cmd.OS = runtime.GOOS
+	if runtime.GOOS == "darwin" {
+		cmd.OS = "mac"
+	}
+
+	if runtime.GOOS == "windows" {
+		cmd.BinSuffix = ".exe"
+	}
+
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
@@ -956,7 +977,7 @@ func downloadBin(dir string, cmd Command) bool {
 
 	url := buf.String()
 
-	bin, err := os.Create(dir + string(os.PathSeparator) + "akamai-" + strings.ToLower(cmd.Name))
+	bin, err := os.Create(dir + string(os.PathSeparator) + "akamai-" + strings.ToLower(cmd.Name) + cmd.BinSuffix)
 	bin.Chmod(0775)
 	if err != nil {
 		return false
