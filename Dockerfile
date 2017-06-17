@@ -15,9 +15,4 @@ ENV GOPATH=/opt
 ENV PATH=${PATH}:/opt/bin
 RUN curl https://glide.sh/get | sh
 WORKDIR /opt/src/github.com/akamai/cli
-RUN go build -o akamai . && mv akamai /opt/bin/akamai
-RUN echo "export PATH=${PATH}:/opt/bin" >> /root/.bashrc
-RUN echo "export GOPATH=/opt" >> /root/.bashrc
-RUN echo "PS1='Akamai CLI Sandbox >> '" >> /root/.bashrc
-RUN akamai get akamai/cli-property
 ENTRYPOINT ["/bin/bash"]
