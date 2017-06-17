@@ -7,7 +7,6 @@ RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q libssl-dev python-all wget vim python-pip php7.0 ruby-dev nodejs-dev npm ruby perl golang-go 
 RUN pip install httpie-edgegrid 
 ADD . /opt/src/github.com/akamai/cli
-RUN rm /opt/src/github.com/akamai/cli/*386 /opt/src/github.com/akamai/cli/*amd64
 WORKDIR /opt
 RUN mkdir bin
 RUN export PATH=${PATH}:/opt/bin
