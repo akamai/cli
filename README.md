@@ -12,7 +12,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language.
 
-The easiest way to install Akamai CLI is to download a [Release](https://github,com/akamai/cli/releases) for your platform.
+The easiest way to install Akamai CLI is to download a [Release](https://github.com/akamai/cli/releases) for your platform.
 
 If you want to compile it from source, you will need Go 1.8 or later installed:
 
