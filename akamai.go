@@ -31,6 +31,7 @@ import (
 	"strings"
 	"text/template"
 
+	"errors"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
@@ -58,7 +59,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "edgerc",
 			Usage:  "Location of the credentials file",
-			Value:  dir,
+			Value:  dir + string(os.PathSeparator) + ".edgerc",
 			EnvVar: "AKAMAI_EDGERC",
 		},
 		cli.StringFlag{
@@ -130,7 +131,7 @@ func cmdGet(c *cli.Context) error {
 	srcPath += string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src"
 	_ = os.MkdirAll(srcPath, 0775)
 
-	cmds := getCommands()
+	oldCmds := getCommands()
 
 	repo = githubize(repo)
 
@@ -156,7 +157,7 @@ func cmdGet(c *cli.Context) error {
 		return cli.NewExitError("", 1)
 	}
 
-	listDiff(cmds)
+	listDiff(oldCmds)
 
 	return nil
 }
@@ -183,22 +184,14 @@ func cmdUpdate(c *cli.Context) error {
 }
 
 func cmdSubcommand(c *cli.Context) error {
-	if edgerc := c.GlobalString("edgerc"); edgerc != "" {
-		os.Setenv("AKAMAI_EDGERC", edgerc)
-	}
-
-	if section := c.GlobalString("section"); section != "" {
-		os.Setenv("AKAMAI_EDGERC_SECTION", section)
-	}
-
 	cmd := c.Command.Name
 	executable, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
 	}
 
-	args := os.Args[2:]
-	return passthruCommand(executable, args)
+	executable = append(executable, os.Args[2:]...)
+	return passthruCommand(executable)
 }
 
 func cmdHelp(c *cli.Context) error {
@@ -214,7 +207,8 @@ func cmdHelp(c *cli.Context) error {
 				return err
 			}
 
-			return passthruCommand(executable, args)
+			executable = append(executable, args...)
+			return passthruCommand(executable)
 		}
 
 		return cli.ShowCommandHelp(c, cmd)
@@ -223,8 +217,8 @@ func cmdHelp(c *cli.Context) error {
 	return cli.ShowAppHelp(c)
 }
 
-func passthruCommand(executable string, args []string) error {
-	subCmd := exec.Command(executable, args...)
+func passthruCommand(executable []string) error {
+	subCmd := exec.Command(executable[0], executable[1:]...)
 	subCmd.Stdin = os.Stdin
 	subCmd.Stderr = os.Stderr
 	subCmd.Stdout = os.Stdout
@@ -286,8 +280,6 @@ func getHelp() help {
 }
 
 func getCommands() []commandPackage {
-	sysPath := getSysPath()
-
 	var commands []commandPackage
 	var commandMap map[string]bool = make(map[string]bool)
 
@@ -296,26 +288,15 @@ func getCommands() []commandPackage {
 		commands = append(commands, cmd)
 	}
 
-	var paths map[string]bool = make(map[string]bool)
-	for _, dir := range filepath.SplitList(sysPath) {
-		if _, ok := paths[dir]; ok {
-			continue
-		}
-		paths[dir] = true
+	packagePaths := getPackagePaths()
+	if packagePaths == "" {
+		return commands
+	}
 
-		if dir == "" {
-			dir = "."
-		}
-
-		var commandNames []string
-		for _, cmd := range getPackageCommands(dir).Commands {
-			if cmd.Name != "" {
-				commandNames = append(commandNames, cmd.Name)
-			}
-		}
-
-		if len(commandNames) > 0 {
-			commands = append(commands, readPackage(dir, commandNames))
+	for _, dir := range filepath.SplitList(packagePaths) {
+		cmdPackage, err := readPackage(dir)
+		if err == nil {
+			commands = append(commands, cmdPackage)
 		}
 	}
 
@@ -334,7 +315,17 @@ func getPackageCommands(dir string) commandPackage {
 	for _, match := range matches {
 		_, err := exec.LookPath(match)
 		if err == nil {
-			name := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(path.Base(match), "akamai-"), "akamai"), ".exe"))
+			name := strings.ToLower(
+				strings.TrimSuffix(
+					strings.TrimPrefix(
+						strings.TrimPrefix(
+							path.Base(match),
+							"akamai-",
+						),
+						"akamai"),
+					".exe",
+				),
+			)
 			if len(name) != 0 {
 				command.Commands = append(command.Commands, Command{
 					Name: name,
@@ -346,44 +337,129 @@ func getPackageCommands(dir string) commandPackage {
 	return command
 }
 
-func getSysPath() string {
-	sysPath := os.Getenv("PATH")
-
-	sysPath += string(os.PathListSeparator) + "."
-
+func getAkamaiCliPath() string {
 	homedir, err := homedir.Dir()
 	if err == nil {
-		akamaiCliPath := string(os.PathSeparator) + homedir + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src"
-		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
-		for _, path := range paths {
-			sysPath += string(os.PathListSeparator) + path
-			sysPath += string(os.PathListSeparator) + path + string(os.PathSeparator) + "bin"
-		}
-		os.Setenv("PATH", sysPath)
+		return homedir + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src"
 	}
-	return sysPath
+
+	return ""
 }
 
-func findExec(cmd string) (string, error) {
-	getSysPath()
+func getPackagePaths() string {
+	path := ""
+	akamaiCliPath := getAkamaiCliPath()
+	if akamaiCliPath != "" {
+		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
+		if len(paths) > 0 {
+			path += strings.Join(paths, string(os.PathListSeparator))
+		}
+	}
 
+	return path
+}
+
+func getPackageBinPaths() string {
+	path := ""
+	akamaiCliPath := getAkamaiCliPath()
+	if akamaiCliPath != "" {
+		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
+		if len(paths) > 0 {
+			path += strings.Join(paths, string(os.PathListSeparator))
+		}
+		paths, _ = filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*" + string(os.PathSeparator) + "bin")
+		if len(paths) > 0 {
+			path += string(os.PathListSeparator) + strings.Join(paths, string(os.PathListSeparator))
+		}
+	}
+
+	return path
+}
+
+func findExec(cmd string) ([]string, error) {
 	cmd = strings.ToLower(cmd)
 
+	systemPath := os.Getenv("PATH")
+	os.Setenv("PATH", getPackageBinPaths())
+
+	// Quick look for executables on the path
 	var path string
 	path, err := exec.LookPath("akamai-" + cmd)
 	if err != nil {
 		path, err = exec.LookPath("akamai" + strings.Title(cmd))
-		if err != nil {
-			if runtime.GOOS == "windows" {
-				cmd += ".exe"
-				return findExec(cmd)
-			}
-
-			return cmd, err
-		}
 	}
 
-	return path, nil
+	if path != "" {
+		return []string{path}, nil
+	}
+
+	os.Setenv("PATH", systemPath)
+	packagePaths := getPackageBinPaths()
+	if packagePaths == "" {
+		return nil, errors.New("No executables found.")
+	}
+
+	for _, path := range filepath.SplitList(packagePaths) {
+		filePaths := []string{
+			// Search for <path>/akamai-command, <path>/akamaiCommand
+			path + string(os.PathSeparator) + "akamai-" + cmd,
+			path + string(os.PathSeparator) + "akamai" + strings.Title(cmd),
+
+			// Search for <path>/akamai-command.*, <path>/akamaiCommand.*
+			// This should catch .exe, .bat, .com, .cmd, and .jar
+			path + string(os.PathSeparator) + "akamai-" + cmd + ".*",
+			path + string(os.PathSeparator) + "akamai" + strings.Title(cmd) + ".*",
+		}
+
+		var files []string
+		for _, filePath := range filePaths {
+			files, _ = filepath.Glob(filePath)
+			if len(files) > 0 {
+				break
+			}
+		}
+
+		if len(files) == 0 {
+			continue
+		}
+
+		cmdFile := files[0]
+
+		packageDir := findPackageDir(filepath.Dir(cmdFile))
+		cmdPackage, err := readPackage(packageDir)
+		if err != nil {
+			return nil, err
+		}
+
+		language := determineCommandLanguage(cmdPackage)
+		bin := ""
+		cmd := []string{}
+		switch {
+		// Compiled Languages
+		case language == "go" || language == "c#" || language == "csharp":
+			err = nil
+			cmd = []string{cmdFile}
+		// Node is special
+		case language == "javascript":
+			bin, err = exec.LookPath("node")
+			if err != nil {
+				bin, err = exec.LookPath("nodejs")
+			}
+			cmd = []string{bin, cmdFile}
+		// Other languages (php, perl, ruby, python, java, etc.)
+		default:
+			bin, err = exec.LookPath(language)
+			cmd = []string{bin, cmdFile}
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		return cmd, nil
+	}
+
+	return nil, errors.New("No executables found.")
 }
 
 func update(cmd string) error {
@@ -394,7 +470,12 @@ func update(cmd string) error {
 
 	fmt.Printf("Attempting to update \"%s\" command...", cmd)
 
-	repoDir := findGitRepo(filepath.Dir(exec))
+	var repoDir string
+	if len(exec) == 1 {
+		repoDir = findPackageDir(filepath.Dir(exec[0]))
+	} else if len(exec) > 1 {
+		repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
+	}
 
 	if repoDir == "" {
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
@@ -455,17 +536,21 @@ func githubize(repo string) string {
 		return repo
 	}
 
+	if !strings.Contains(repo, "/") {
+		repo = "akamai/cli-" + strings.TrimPrefix(repo, "cli-")
+	}
+
 	return "https://github.com/" + repo + ".git"
 }
 
-func findGitRepo(dir string) string {
+func findPackageDir(dir string) string {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
 		if os.IsNotExist(err) {
 			if dir == "/" {
 				return ""
 			}
 
-			return findGitRepo(filepath.Dir(dir))
+			return findPackageDir(filepath.Dir(dir))
 		}
 	}
 
@@ -548,68 +633,50 @@ type Command struct {
 	Arch        string `json:"-"`
 }
 
-func readPackage(dir string, commands []string) commandPackage {
-	var cmdPackage commandPackage
-
+func readPackage(dir string) (commandPackage, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/cli.json"); err != nil {
 		dir = path.Dir(dir)
 		if _, err = os.Stat(dir + string(os.PathSeparator) + "/cli.json"); err != nil {
-			for _, cmd := range commands {
-				cmdPackage.Commands = append(cmdPackage.Commands, Command{
-					Name: strings.ToLower(cmd),
-				})
-			}
-
-			return cmdPackage
+			return commandPackage{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
 		}
 	}
 
 	var packageData commandPackage
 	cliJson, err := ioutil.ReadFile(dir + string(os.PathSeparator) + "/cli.json")
 	if err != nil {
-		for _, cmd := range commands {
-			cmdPackage.Commands = append(cmdPackage.Commands, Command{
-				Name: strings.ToLower(cmd),
-			})
-		}
-		return cmdPackage
+		return commandPackage{}, err
 	}
 
 	err = json.Unmarshal(cliJson, &packageData)
 	if err != nil {
-		for _, cmd := range commands {
-			cmdPackage.Commands = append(cmdPackage.Commands, Command{
-				Name: strings.ToLower(cmd),
-			})
-		}
+		return commandPackage{}, err
 	}
 
 	for key := range packageData.Commands {
 		packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
 	}
 
-	return packageData
+	return packageData, nil
 }
 
 func installPackage(dir string) bool {
 	fmt.Print("Installing...")
 
-	var commandNames []string
-	commands := getPackageCommands(dir)
-	for _, cmd := range commands.Commands {
-		commandNames = append(commandNames, cmd.Name)
+	commandPackage, err := readPackage(dir)
+
+	if err != nil {
+		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		fmt.Println(err.Error())
+		return false
 	}
 
-	commandPackage := readPackage(dir, commandNames)
-
-	lang := determineCommandLanguage(dir, commandPackage)
+	lang := determineCommandLanguage(commandPackage)
 	if lang == "" {
 		fmt.Println("... [" + color.BlueString("OK") + "]")
 		return true
 	}
 
 	var success bool
-	var err error
 	switch lang {
 	case "php":
 		success, err = installPHP(dir, commandPackage)
@@ -671,12 +738,8 @@ func installPackage(dir string) bool {
 	return true
 }
 
-func determineCommandLanguage(dir string, cmdPackage commandPackage) string {
+func determineCommandLanguage(cmdPackage commandPackage) string {
 	if cmdPackage.Requirements.Php != "" {
-		return "php"
-	}
-
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.json"); err == nil {
 		return "php"
 	}
 
@@ -684,19 +747,7 @@ func determineCommandLanguage(dir string, cmdPackage commandPackage) string {
 		return "javascript"
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/yarn.lock"); err == nil {
-		return "javascript"
-	}
-
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/package.json"); err == nil {
-		return "javascript"
-	}
-
 	if cmdPackage.Requirements.Ruby != "" {
-		return "ruby"
-	}
-
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/Gemfile"); err == nil {
 		return "ruby"
 	}
 
@@ -704,15 +755,7 @@ func determineCommandLanguage(dir string, cmdPackage commandPackage) string {
 		return "go"
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/glide.yaml"); err == nil {
-		return "go"
-	}
-
 	if cmdPackage.Requirements.Python != "" {
-		return "python"
-	}
-
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
 		return "python"
 	}
 
