@@ -74,7 +74,7 @@ You can use _any_ language to build commands, so long as the result is executabl
 
 ### Command Package Metadata
 
-You may _optionally_ include a `cli.json` file to inform Akamai CLI about the command package and it's included commands.
+You *must* include a `cli.json` file to inform Akamai CLI about the command package and it's included commands.
 
 `cli.json` allows you specify the command language runtime version, as well as define all commands included in package.
 
