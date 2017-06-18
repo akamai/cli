@@ -4,10 +4,12 @@ RUN apt-get update
 RUN apt-get install -y git curl patch gawk g++ gcc make libc6-dev patch libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev sqlite3 autoconf libgdbm-dev libncurses5-dev automake libtool bison pkg-config libffi-dev software-properties-common
 RUN add-apt-repository -y ppa:longsleep/golang-backports
 RUN apt-get update 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q libssl-dev python-all wget vim python-pip php7.0 ruby-dev nodejs-dev npm ruby perl golang-go 
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q libssl-dev python-all wget vim python-pip php7.0 ruby-dev ruby perl golang-go 
 RUN pip install httpie-edgegrid 
 ADD . /opt/src/github.com/akamai/cli
 WORKDIR /opt
+RUN curl -sL https://deb.nodesource.com/setup_7.x | sh -
+RUN apt-get install nodejs
 RUN mkdir bin
 RUN export PATH=${PATH}:/opt/bin
 RUN ln -s /usr/bin/nodejs /usr/bin/node
