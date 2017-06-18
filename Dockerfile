@@ -10,6 +10,7 @@ ADD . /opt/src/github.com/akamai/cli
 WORKDIR /opt
 RUN mkdir bin
 RUN export PATH=${PATH}:/opt/bin
+RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN export GOPATH=/opt
 ENV GOPATH=/opt
 ENV PATH=${PATH}:/opt/bin
@@ -22,4 +23,5 @@ RUN echo "export GOPATH=/opt" >> /root/.bashrc
 RUN echo "PS1='Akamai CLI Sandbox >> '" >> /root/.bashrc
 WORKDIR /opt
 RUN akamai get akamai/cli-property
+RUN akamai get akamai/cli-purge
 ENTRYPOINT ["/bin/bash"]
