@@ -54,22 +54,6 @@ func main() {
 		Email: "dshafik@akamai.com",
 	}}
 
-	dir, _ := homedir.Dir()
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "edgerc",
-			Usage:  "Location of the credentials file",
-			Value:  dir + string(os.PathSeparator) + ".edgerc",
-			EnvVar: "AKAMAI_EDGERC",
-		},
-		cli.StringFlag{
-			Name:   "section",
-			Usage:  "Section of the credentials file",
-			Value:  "default",
-			EnvVar: "AKAMAI_EDGERC_SECTION",
-		},
-	}
-
 	helpInfo := getHelp()
 
 	for _, cmd := range helpInfo {
@@ -187,6 +171,7 @@ func cmdSubcommand(c *cli.Context) error {
 	cmd := c.Command.Name
 	executable, err := findExec(cmd)
 	if err != nil {
+		fmt.Printf("%#v\n", err)
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
 	}
 
@@ -380,7 +365,8 @@ func findExec(cmd string) ([]string, error) {
 	cmd = strings.ToLower(cmd)
 
 	systemPath := os.Getenv("PATH")
-	os.Setenv("PATH", getPackageBinPaths())
+	packagePaths := getPackageBinPaths()
+	os.Setenv("PATH", packagePaths)
 
 	// Quick look for executables on the path
 	var path string
@@ -390,11 +376,11 @@ func findExec(cmd string) ([]string, error) {
 	}
 
 	if path != "" {
+		os.Setenv("PATH", systemPath)
 		return []string{path}, nil
 	}
 
 	os.Setenv("PATH", systemPath)
-	packagePaths := getPackageBinPaths()
 	if packagePaths == "" {
 		return nil, errors.New("No executables found.")
 	}
@@ -662,7 +648,7 @@ func readPackage(dir string) (commandPackage, error) {
 func installPackage(dir string) bool {
 	fmt.Print("Installing...")
 
-	commandPackage, err := readPackage(dir)
+	cmdPackage, err := readPackage(dir)
 
 	if err != nil {
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
@@ -670,7 +656,7 @@ func installPackage(dir string) bool {
 		return false
 	}
 
-	lang := determineCommandLanguage(commandPackage)
+	lang := determineCommandLanguage(cmdPackage)
 	if lang == "" {
 		fmt.Println("... [" + color.BlueString("OK") + "]")
 		return true
@@ -679,15 +665,15 @@ func installPackage(dir string) bool {
 	var success bool
 	switch lang {
 	case "php":
-		success, err = installPHP(dir, commandPackage)
+		success, err = installPHP(dir, cmdPackage)
 	case "javascript":
-		success, err = installJavaScript(dir, commandPackage)
+		success, err = installJavaScript(dir, cmdPackage)
 	case "ruby":
-		success, err = installRuby(dir, commandPackage)
+		success, err = installRuby(dir, cmdPackage)
 	case "python":
-		success, err = installPython(dir, commandPackage)
+		success, err = installPython(dir, cmdPackage)
 	case "go":
-		success, err = installGolang(dir, commandPackage)
+		success, err = installGolang(dir, cmdPackage)
 	default:
 		success = false
 		err = nil
@@ -695,7 +681,7 @@ func installPackage(dir string) bool {
 
 	if success == false || err != nil {
 		first := true
-		for _, cmd := range commandPackage.Commands {
+		for _, cmd := range cmdPackage.Commands {
 			if cmd.Bin != "" {
 				if first {
 					first = false
@@ -771,8 +757,12 @@ func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 	if cmdPackage.Requirements.Php != "" && cmdPackage.Requirements.Php != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		r, _ := regexp.Compile("^PHP (.*?) .*$")
+		r, _ := regexp.Compile("PHP (.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
+		if len(matches) == 0 {
+			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command. Unable to determine installed version.", cmdPackage.Requirements.Php), 1)
+		}
+
 		if !versionCompare(matches[1], cmdPackage.Requirements.Php) {
 			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command.", cmdPackage.Requirements.Php), 1)
 		}
