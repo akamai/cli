@@ -362,7 +362,14 @@ func getPackageBinPaths() string {
 }
 
 func findExec(cmd string) ([]string, error) {
-	cmd = strings.ToLower(cmd)
+	// "command" becomes: akamai-command, and akamaiCommand
+	// "command-name" becomes: akamai-command-name, and akamaiCommandName
+	cmdName := "akamai"
+	cmdNameTitle := "akamai"
+	for _, cmdPart := range strings.Split(cmd, "-") {
+		cmdName += "-" + strings.ToLower(cmdPart)
+		cmdNameTitle += strings.Title(strings.ToLower(cmdPart))
+	}
 
 	systemPath := os.Getenv("PATH")
 	packagePaths := getPackageBinPaths()
@@ -370,9 +377,9 @@ func findExec(cmd string) ([]string, error) {
 
 	// Quick look for executables on the path
 	var path string
-	path, err := exec.LookPath("akamai-" + cmd)
+	path, err := exec.LookPath(cmdName)
 	if err != nil {
-		path, err = exec.LookPath("akamai" + strings.Title(cmd))
+		path, err = exec.LookPath(cmdNameTitle)
 	}
 
 	if path != "" {
@@ -388,13 +395,13 @@ func findExec(cmd string) ([]string, error) {
 	for _, path := range filepath.SplitList(packagePaths) {
 		filePaths := []string{
 			// Search for <path>/akamai-command, <path>/akamaiCommand
-			path + string(os.PathSeparator) + "akamai-" + cmd,
-			path + string(os.PathSeparator) + "akamai" + strings.Title(cmd),
+			path + string(os.PathSeparator) + cmdName,
+			path + string(os.PathSeparator) + cmdNameTitle,
 
 			// Search for <path>/akamai-command.*, <path>/akamaiCommand.*
 			// This should catch .exe, .bat, .com, .cmd, and .jar
-			path + string(os.PathSeparator) + "akamai-" + cmd + ".*",
-			path + string(os.PathSeparator) + "akamai" + strings.Title(cmd) + ".*",
+			path + string(os.PathSeparator) + cmdName + ".*",
+			path + string(os.PathSeparator) + cmdNameTitle + ".*",
 		}
 
 		var files []string
