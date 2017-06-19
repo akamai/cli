@@ -169,10 +169,25 @@ func cmdUpdate(c *cli.Context) error {
 
 func cmdSubcommand(c *cli.Context) error {
 	cmd := c.Command.Name
+
 	executable, err := findExec(cmd)
 	if err != nil {
 		fmt.Printf("%#v\n", err)
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
+	}
+
+	packageDir := findPackageDir(executable[0])
+	if len(executable) > 1 {
+		packageDir = findPackageDir(executable[1])
+	}
+
+	cmdPackage, _ := readPackage(packageDir)
+
+	if cmdPackage.Requirements.Python != "" {
+		err = setPythonPath(packageDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	executable = append(executable, os.Args[2:]...)
@@ -871,7 +886,7 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 	if cmdPackage.Requirements.Ruby != "" && cmdPackage.Requirements.Ruby != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)$")
+		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 		if !versionCompare(matches[1], cmdPackage.Requirements.Ruby) {
 			return false, cli.NewExitError(fmt.Sprintf("Ruby %s is required to install this command.", cmdPackage.Requirements.Ruby), 1)
@@ -897,13 +912,13 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("python")
 	if err != nil {
-		return false, cli.NewExitError(("Unable to locate Ruby runtime"), 1)
+		return false, cli.NewExitError(("Unable to locate Python runtime"), 1)
 	}
 
 	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
 		cmd := exec.Command(bin, "--version")
-		output, _ := cmd.Output()
-		r, _ := regexp.Compile("^Python (.*?)\\s*$")
+		output, _ := cmd.CombinedOutput()
+		r, _ := regexp.Compile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))
 		if !versionCompare(matches[1], cmdPackage.Requirements.Python) {
 			return false, cli.NewExitError(fmt.Sprintf("Python %s is required to install this command.", cmdPackage.Requirements.Python), 1)
@@ -913,9 +928,12 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
 		bin, err := exec.LookPath("pip")
 		if err == nil {
-			cmd := exec.Command(bin, "install", "-r", "requirements.txt")
+			systemHome := os.Getenv("HOME")
+			os.Setenv("HOME", dir)
+			cmd := exec.Command(bin, "install", "--user", "-r", "requirements.txt")
 			cmd.Dir = dir
 			err = cmd.Run()
+			os.Setenv("HOME", systemHome)
 			if err != nil {
 				return false, err
 			}
@@ -924,6 +942,38 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	}
 
 	return false, cli.NewExitError("Unable to find package manager.", 1)
+}
+
+func setPythonPath(packageDir string) error {
+	var pythonPath string
+
+	if runtime.GOOS == "linux" {
+		packageDir += string(os.PathSeparator) + ".local" + string(os.PathSeparator) + "lib" + string(os.PathSeparator) + "python*"
+	} else if runtime.GOOS == "darwin" {
+		packageDir += string(os.PathSeparator) + "Library" + string(os.PathSeparator) + "Python" + string(os.PathSeparator) + "*"
+	} else if runtime.GOOS == "windows" {
+		packageDir += string(os.PathSeparator) + "Lib"
+	}
+
+	pythonPaths, err := filepath.Glob(packageDir)
+	if err != nil {
+		return err
+	}
+
+	if len(pythonPaths) == 0 {
+		return cli.NewExitError(color.RedString("Unable to determine Python package path."), 1)
+	}
+
+	pythonPath = pythonPaths[0]
+
+	systemPythonPath := os.Getenv("PYTHONPATH")
+	if systemPythonPath != "" {
+		pythonPath += string(os.PathListSeparator) + systemPythonPath
+	}
+
+	os.Setenv("PYTHONPATH", pythonPath)
+
+	return nil
 }
 
 func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
