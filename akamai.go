@@ -172,7 +172,6 @@ func cmdSubcommand(c *cli.Context) error {
 
 	executable, err := findExec(cmd)
 	if err != nil {
-		fmt.Printf("%#v\n", err)
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
 	}
 
@@ -220,7 +219,6 @@ func cmdHelp(c *cli.Context) error {
 }
 
 func passthruCommand(executable []string) error {
-	fmt.Printf("%#v\n\n", executable)
 	subCmd := exec.Command(executable[0], executable[1:]...)
 	subCmd.Stdin = os.Stdin
 	subCmd.Stderr = os.Stderr
@@ -941,8 +939,6 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 			} else {
 				cmd := exec.Command(bin, "install", "--isolated", "--prefix", dir, "-r", "requirements.txt")
 				cmd.Dir = dir
-				cmd.Stderr = os.Stderr
-				cmd.Stdout = os.Stdout
 				err = cmd.Run()
 			}
 			if err != nil {
@@ -974,7 +970,7 @@ func setPythonPath(packageDir string) error {
 	if len(pythonPaths) > 0 {
 		pythonPath = pythonPaths[0]
 	}
-	
+
 	systemPythonPath := os.Getenv("PYTHONPATH")
 	if systemPythonPath == "" {
 		bin, _ := exec.LookPath("python")
