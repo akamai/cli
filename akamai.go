@@ -176,8 +176,10 @@ func cmdSubcommand(c *cli.Context) error {
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
 	}
 
-	packageDir := findPackageDir(executable[0])
-	if len(executable) > 1 {
+	var packageDir string
+	if len(executable) == 1 {
+		packageDir = findPackageDir(executable[0])
+	} else if len(executable) > 1 {
 		packageDir = findPackageDir(executable[1])
 	}
 
@@ -218,6 +220,7 @@ func cmdHelp(c *cli.Context) error {
 }
 
 func passthruCommand(executable []string) error {
+	fmt.Printf("%#v\n\n", executable)
 	subCmd := exec.Command(executable[0], executable[1:]...)
 	subCmd.Stdin = os.Stdin
 	subCmd.Stderr = os.Stderr
@@ -554,7 +557,7 @@ func githubize(repo string) string {
 func findPackageDir(dir string) string {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
 		if os.IsNotExist(err) {
-			if dir == "/" {
+			if path.Dir(dir) == "" {
 				return ""
 			}
 
@@ -928,12 +931,20 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
 		bin, err := exec.LookPath("pip")
 		if err == nil {
-			systemHome := os.Getenv("HOME")
-			os.Setenv("HOME", dir)
-			cmd := exec.Command(bin, "install", "--user", "-r", "requirements.txt")
-			cmd.Dir = dir
-			err = cmd.Run()
-			os.Setenv("HOME", systemHome)
+			if runtime.GOOS != "windows" {
+				systemHome := os.Getenv("HOME")
+				os.Setenv("HOME", dir)
+				cmd := exec.Command(bin, "install", "--user", "-r", "requirements.txt")
+				cmd.Dir = dir
+				err = cmd.Run()
+				os.Setenv("HOME", systemHome)
+			} else {
+				cmd := exec.Command(bin, "install", "--isolated", "--prefix", dir, "-r", "requirements.txt")
+				cmd.Dir = dir
+				cmd.Stderr = os.Stderr
+				cmd.Stdout = os.Stdout
+				err = cmd.Run()
+			}
 			if err != nil {
 				return false, err
 			}
@@ -960,15 +971,25 @@ func setPythonPath(packageDir string) error {
 		return err
 	}
 
-	if len(pythonPaths) == 0 {
-		return cli.NewExitError(color.RedString("Unable to determine Python package path."), 1)
+	if len(pythonPaths) > 0 {
+		pythonPath = pythonPaths[0]
+	}
+	
+	systemPythonPath := os.Getenv("PYTHONPATH")
+	if systemPythonPath == "" {
+		bin, _ := exec.LookPath("python")
+		cmd := exec.Command(bin, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
+		output, _ := cmd.CombinedOutput()
+		systemPythonPath = strings.Trim(string(output), "\r\n")
 	}
 
-	pythonPath = pythonPaths[0]
-
-	systemPythonPath := os.Getenv("PYTHONPATH")
+	pythonPath = string(os.PathListSeparator) + pythonPath
 	if systemPythonPath != "" {
-		pythonPath += string(os.PathListSeparator) + systemPythonPath
+		pythonPath += string(os.PathListSeparator) + strings.TrimPrefix(systemPythonPath, string(os.PathListSeparator))
+	}
+
+	if len(pythonPath) == 0 {
+		return cli.NewExitError(color.RedString("Unable to determine package path."), 1)
 	}
 
 	os.Setenv("PYTHONPATH", pythonPath)
