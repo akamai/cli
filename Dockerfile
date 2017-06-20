@@ -12,7 +12,6 @@ RUN curl -sL https://deb.nodesource.com/setup_7.x | sh -
 RUN apt-get install nodejs
 RUN mkdir bin
 RUN export PATH=${PATH}:/opt/bin
-RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN export GOPATH=/opt
 ENV GOPATH=/opt
 ENV PATH=${PATH}:/opt/bin
