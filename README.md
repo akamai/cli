@@ -10,7 +10,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 ## Installation
 
-If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance with 'docker run akamaiopen/cli'
+If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance with 'docker run akamaiopen/cli' - the Docker container contains the 'purge' and 'property' subcommands.  When setting up your authentication, the 'purge' subcommand defaults to the 'default' credentials section, while the 'property' subcommand uses the 'papi' section.
 
 Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language.
 
