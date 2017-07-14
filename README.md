@@ -10,19 +10,33 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 ## Installation
 
-If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance with 'docker run akamaiopen/cli' - the Docker container contains the 'purge' and 'property' subcommands.  When setting up your authentication, the 'purge' subcommand defaults to the 'default' credentials section, while the 'property' subcommand uses the 'papi' section.
-
 Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language.
 
-The easiest way to install Akamai CLI is to download a [Release](https://github.com/akamai/cli/releases) for your platform.
+### Download a Release
 
-If you want to compile it from source, you will need Go 1.8 or later installed:
+The easiest way to install Akamai CLI is to download a [release](https://github.com/akamai/cli/releases) for your platform.
+
+### Using Docker
+
+If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance by running:
+
+```sh
+$ docker run -ti akamaiopen/cli
+```
+
+The container contains Akamai CLI, as well as the `purge` and `property` subcommands pre-installed.  
+
+> **Note**: When setting up your `.edgerc`, the `purge` subcommand defaults to the `default` credentials section, while the `property` subcommand uses the `papi` section. These can be changed using the `--section` flag.
+
+### Compiling from Source
+
+If you want to compile it from source, you will need Go 1.8 or later, and the [Glide](https://glide.sh) package manager installed:
 
 1. Clone this repository:  
   `git clone https://github.com/akamai/cli.git`
 2. Change to the clone directory:  
   `cd akamai-cli`
-3. Install dependencies using [Glide](https://glide.sh):  
+3. Install dependencies using Glide:  
   `glide install`
 4. Compile the binary:  
   `go build -o akamai .` or on windows `go build -o akamai.exe`
@@ -68,9 +82,10 @@ akamai property create example.org
 
 Akamai CLI also provides a framework for writing custom CLI commands. There are a few requirements:
 
-1. The binary must be named `akamai-<command>` or `akamai<Command>`
+1. The executable must be named `akamai-<command>` or `akamai<Command>`
 2. Help must be visible when you run: `akamai-command help` and ideally, should allow for `akamai-command help <sub-command>`
-3. If the action fails to complete, it should return a non-zero status code (however, `akamai` will only return `0` on success or `1` on failure)
+3. If using OPEN APIs, it must support the `.edgerc` format, and must support both `--edgerc` and `--section` flags
+4. If the action fails to complete, it should return a non-zero status code (however, `akamai` will only return `0` on success or `1` on failure)
 
 You can use _any_ language to build commands, so long as the result is executable — this includes PHP, Python, Ruby, Perl, Java, Golang, JavaScript, and C#.
 
