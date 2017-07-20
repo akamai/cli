@@ -42,6 +42,14 @@ If you want to compile it from source, you will need Go 1.8 or later, and the [G
   `go build -o akamai .` or on windows `go build -o akamai.exe`
 5. Move it to your `PATH`
 
+### Credentials
+
+Akamai CLI uses the standard Akamai OPEN credentials file, `.edgerc`. By default, it will look for credentials in your `HOME` directory.
+
+You can override both the credentials file location, or the section, by passing the the `--edgerc` or `--section` flags to each sub-command.
+
+To set up your credential file, see the [authorization](https://developer.akamai.com/introduction/Prov_Creds.html) and [credentials](https://developer.akamai.com/introduction/Conf_Client.html) sections of the Get Started guide.
+
 ## Usage
 
 All commands start with the `akamai` binary, followed by a `sub-command` which correlates directly to another binary in your path starting with `akamai-` or `akamaiTitlecase` (in the case of node.js binaries).
