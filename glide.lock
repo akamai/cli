@@ -1,5 +1,5 @@
-hash: 81f9a56a42f1bd8940be121a65ee2ffe595eb4260db0645a691861eb3fa217e1
-updated: 2017-06-14T10:21:56.871208988-07:00
+hash: ed2f11fb5a1533d117f5302fb423ca5a5bc591ede68f695b30edb5b7becdc741
+updated: 2017-07-15T00:40:19.366962454-07:00
 imports:
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
@@ -22,7 +22,7 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: 7e249dfcf28765939bde8f38784b3274b522f880
+  version: ad02bf020460c210660db4fffda7f926b6aae95a
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 - name: golang.org/x/crypto
