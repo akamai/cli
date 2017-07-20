@@ -108,11 +108,11 @@ func cmdGet(c *cli.Context) error {
 
 	repo := c.Args().First()
 
-	srcPath, err := homedir.Dir()
+	srcPath, err := getAkamaiCliPath()
 	if err != nil {
-		return cli.NewExitError(color.RedString("Unable to determine home directory"), 1)
+		return err
 	}
-	srcPath += string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src"
+
 	_ = os.MkdirAll(srcPath, 0775)
 
 	oldCmds := getCommands()
@@ -338,19 +338,23 @@ func getPackageCommands(dir string) commandPackage {
 	return command
 }
 
-func getAkamaiCliPath() string {
-	homedir, err := homedir.Dir()
-	if err == nil {
-		return homedir + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src"
+func getAkamaiCliPath() (string, error) {
+	cliHome := os.Getenv("AKAMAI_CLI_HOME")
+	if cliHome == "" {
+		var err error
+		cliHome, err = homedir.Dir()
+		if err != nil {
+			return "", cli.NewExitError("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
+		}
 	}
 
-	return ""
+	return cliHome + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src", nil
 }
 
 func getPackagePaths() string {
 	path := ""
-	akamaiCliPath := getAkamaiCliPath()
-	if akamaiCliPath != "" {
+	akamaiCliPath, err := getAkamaiCliPath()
+	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
 		if len(paths) > 0 {
 			path += strings.Join(paths, string(os.PathListSeparator))
@@ -362,8 +366,8 @@ func getPackagePaths() string {
 
 func getPackageBinPaths() string {
 	path := ""
-	akamaiCliPath := getAkamaiCliPath()
-	if akamaiCliPath != "" {
+	akamaiCliPath, err := getAkamaiCliPath()
+	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
 		if len(paths) > 0 {
 			path += strings.Join(paths, string(os.PathListSeparator))
