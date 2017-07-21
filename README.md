@@ -10,11 +10,25 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 ## Installation
 
-Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language.
+Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language and may require additional runtimes.
 
-### Download a Release
+### Download a Release Binary
 
-The easiest way to install Akamai CLI is to download a [release](https://github.com/akamai/cli/releases) for your platform.
+The easiest way to install Akamai CLI is to download a [release binary](https://github.com/akamai/cli/releases) for your platform.
+
+#### Linux and macOS
+
+Once you have downloaded the appropriate binary for your system, you must make it executable, and optionally move it somewhere within your path.
+
+```sh
+$ chmod +x ~/Downloads/akamai-<VERSION>-<PLATFORM>
+$ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
+```
+
+#### Windows
+
+Once you have downloaded the appropriate binary for your system, no further actions
+are required on your part, simply execute the binary from the command line.
 
 ### Using Docker
 
@@ -30,7 +44,7 @@ The container contains Akamai CLI, as well as the `purge` and `property` subcomm
 
 ### Compiling from Source
 
-If you want to compile it from source, you will need Go 1.8 or later, and the [Glide](https://glide.sh) package manager installed:
+If you want to compile it from source, you will need Go 1.7 or later, and the [Glide](https://glide.sh) package manager installed:
 
 1. Fetch the package:  
   `go get github.com/akamai/cli`
@@ -39,7 +53,7 @@ If you want to compile it from source, you will need Go 1.8 or later, and the [G
 3. Install dependencies using Glide:  
   `glide install`
 4. Compile the binary:  
-  - Linux/macOS/*nix: `go build -o akamai` 
+  - Linux/macOS/*nix: `go build -o akamai`
   - Windows `go build -o akamai.exe`
 5. Move the binary (`akamai` or `akamai.exe`) it to your `PATH`
 
