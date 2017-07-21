@@ -30,6 +30,16 @@ $ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
 Once you have downloaded the appropriate binary for your system, no further actions
 are required on your part, simply execute the binary from the command line.
 
+### Using Homebrew
+
+If you are using macOS, you can also install using the [Homebrew](https://brew.sh) package manager.
+
+```sh
+$ brew install akamai
+```
+
+This will install all necessary dependencies, compile, and install the binary — which will then be available globally.
+
 ### Using Docker
 
 If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance by running:
