@@ -66,6 +66,7 @@ func main() {
 				ArgsUsage:   cmd.Commands[0].Arguments,
 				Description: cmd.Commands[0].Description,
 				Action:      cmd.action,
+				UsageText:   cmd.Commands[0].Docs,
 			},
 		)
 	}
@@ -244,7 +245,7 @@ func getHelp() help {
 			Commands: []Command{
 				{
 					Name:        "help",
-					Usage:       "[command] [sub-command]",
+					Arguments:   "[command] [sub-command]",
 					Description: "Displays help information",
 				},
 			},
@@ -264,7 +265,8 @@ func getHelp() help {
 				{
 					Name:        "install",
 					Arguments:   "<package name or repository URL>",
-					Description: "Fetch and install a package from a Git repository.\n\n   Examples:\n\n     akamai install property\n     akamai install akamai/cli-property\n     akamai install git@github.com:akamai/cli-property.git\n     akamai install https://github.com/akamai/cli-property.git",
+					Description: "Fetch and install a package from a Git repository.",
+					Docs:        "Examples:\n\n   akamai install property\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
 				},
 			},
 			action: cmdInstall,
@@ -273,7 +275,7 @@ func getHelp() help {
 			Commands: []Command{
 				{
 					Name:        "update",
-					Usage:       "[command]",
+					Arguments:   "[command]",
 					Description: "Update a command. If no command is specified, all commands are updated",
 				},
 			},
@@ -642,6 +644,7 @@ type Command struct {
 	Version     string   `json:"version"`
 	Description string   `json:"description"`
 	Usage       string   `json:"usage"`
+	Docs        string   `json:-`
 	Arguments   string   `json:"arguments"`
 	Bin         string   `json:"bin"`
 	BinSuffix   string   `json:"-"`
@@ -1185,7 +1188,7 @@ func setCliTemplates() {
 
 	cli.CommandHelpTemplate = "" +
 		color.YellowString("Name: \n") +
-		"   {{.HelpName}} - {{.Usage}}\n\n" +
+		"   {{.HelpName}}\n\n" +
 
 		color.YellowString("Usage: \n") +
 		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
@@ -1200,7 +1203,9 @@ func setCliTemplates() {
 
 		"{{if .VisibleFlags}}" +
 		color.YellowString("Flags: \n") +
-		"{{range .VisibleFlags}}   {{.}}\n{{end}}{{end}}"
+		"{{range .VisibleFlags}}   {{.}}\n\n{{end}}{{end}}" +
+
+		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
 
 	cli.SubcommandHelpTemplate = "" +
 		color.YellowString("Name: \n") +
