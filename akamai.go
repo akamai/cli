@@ -60,10 +60,12 @@ func main() {
 		app.Commands = append(
 			app.Commands,
 			cli.Command{
-				Name:      strings.ToLower(cmd.Commands[0].Name),
-				Usage:     cmd.Commands[0].Usage,
-				ArgsUsage: cmd.Commands[0].Arguments,
-				Action:    cmd.action,
+				Name:        strings.ToLower(cmd.Commands[0].Name),
+				Aliases:     cmd.Commands[0].Aliases,
+				Usage:       cmd.Commands[0].Usage,
+				ArgsUsage:   cmd.Commands[0].Arguments,
+				Description: cmd.Commands[0].Description,
+				Action:      cmd.action,
 			},
 		)
 	}
@@ -635,15 +637,16 @@ type commandPackage struct {
 }
 
 type Command struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	Usage       string `json:"usage"`
-	Arguments   string `json:"arguments"`
-	Bin         string `json:"bin"`
-	BinSuffix   string `json:"-"`
-	OS          string `json:"-"`
-	Arch        string `json:"-"`
+	Name        string   `json:"name"`
+	Aliases     []string `json:"aliases"`
+	Version     string   `json:"version"`
+	Description string   `json:"description"`
+	Usage       string   `json:"usage"`
+	Arguments   string   `json:"arguments"`
+	Bin         string   `json:"bin"`
+	BinSuffix   string   `json:"-"`
+	OS          string   `json:"-"`
+	Arch        string   `json:"-"`
 }
 
 func readPackage(dir string) (commandPackage, error) {
