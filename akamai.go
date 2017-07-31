@@ -47,7 +47,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "akamai"
 	app.Usage = "Akamai CLI"
-	app.Version = "0.1.0"
+	app.Version = "0.2.0"
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
 	app.Authors = []cli.Author{{
 		Name:  "Davey Shafik",
