@@ -101,7 +101,7 @@ func cmdList(c *cli.Context) {
 	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
 }
 
-func cmdGet(c *cli.Context) error {
+func cmdInstall(c *cli.Context) error {
 	if !c.Args().Present() {
 		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
 	}
@@ -257,22 +257,22 @@ func getHelp() help {
 			},
 			action: cmdList,
 		},
-		"get": {
+		"install": {
 			Commands: []Command{
 				{
-					Name:        "get",
-					Usage:       "<repository URL>",
-					Description: "Fetch and install a sub-command from a Git repository",
+					Name:        "install",
+					Arguments:   "<package name or repository URL>",
+					Description: "Fetch and install a package from a Git repository.\n\n   Examples:\n\n     akamai install property\n     akamai install akamai/cli-property\n     akamai install git@github.com:akamai/cli-property.git\n     akamai install https://github.com/akamai/cli-property.git",
 				},
 			},
-			action: cmdGet,
+			action: cmdInstall,
 		},
 		"update": {
 			Commands: []Command{
 				{
 					Name:        "update",
 					Usage:       "[command]",
-					Description: "Update a sub-command. If no command is specified, all commands are updated",
+					Description: "Update a command. If no command is specified, all commands are updated",
 				},
 			},
 			action: cmdUpdate,
