@@ -1,3 +1,9 @@
+<h1 align="center">
+  <br>
+      <img src="assets/screen-1.png">
+  <br>
+</h1>
+
 # Akamai CLI
 
 Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the command line.
@@ -8,13 +14,18 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 - Feature-full
 - Consistent UX
 
+## Available Packages
+
+- [Akamai CLI for Property Manager](https://github.com/akamai/cli-property)
+- [Akamai CLI for Purge](https://github.com/akamai/cli-purge)
+
 ## Installation
 
-Akamai CLI is itself a Go application, but may rely on sub-commands that can be written using any language and may require additional runtimes.
+Akamai CLI is itself a Go application, but may rely on packages that can be written using any language and may require additional runtimes.
 
 ### Download a Release Binary
 
-The easiest way to install Akamai CLI is to download a [release binary](https://github.com/akamai/cli/releases) for your platform.
+The easiest way to install Akamai CLI is to download a [release binary](https://github.com/akamai/cli/releases) for your platform and follow the instructions for your platform below. There are _no additional requirements_.
 
 #### Linux and macOS
 
@@ -32,7 +43,7 @@ are required on your part, simply execute the binary from the command line.
 
 ### Using Homebrew
 
-If you are using macOS, you can also install using the [Homebrew](https://brew.sh) package manager.
+If you are using macOS, you can also install using the [Homebrew](https://brew.sh) package manager:
 
 ```sh
 $ brew install akamai
@@ -71,13 +82,17 @@ If you want to compile it from source, you will need Go 1.7 or later, and the [G
 
 Akamai CLI uses the standard Akamai OPEN credentials file, `.edgerc`. By default, it will look for credentials in your `HOME` directory.
 
-You can override both the credentials file location, or the section, by passing the the `--edgerc` or `--section` flags to each sub-command.
+You can override both the credentials file location, or the section, by passing the the `--edgerc` or `--section` flags to each command.
 
 To set up your credential file, see the [authorization](https://developer.akamai.com/introduction/Prov_Creds.html) and [credentials](https://developer.akamai.com/introduction/Conf_Client.html) sections of the Get Started guide.
 
 ## Usage
 
-All commands start with the `akamai` binary, followed by a `sub-command` which correlates directly to another binary in your path starting with `akamai-` or `akamaiTitlecase` (in the case of node.js binaries).
+All commands start with the `akamai` binary, followed by a `command`, and optionally an action or other arguments.
+
+```
+akamai [command] [action] [arguments...]
+```
 
 ### Built-in commands
 
@@ -89,17 +104,17 @@ Calling `akamai help` will show basic usage info, and available commands. To lea
 
 Calling `akamai list` will show you a list of available sub-commands. If a command is not shown, ensure that the binary is executable, and in your `PATH`.
 
-#### Get
+#### Install
 
-The `get` command allows you to easily install new sub-commands from a git repository.
+The `install` command allows you to easily install new sub-commands from a git repository.
 
-Calling `akamai get <repo>` will download and install the command repository to the `$HOME/.akamai-cli` directory.
+Calling `akamai install <package name or repository URL>` will download and install the command repository to the `$HOME/.akamai-cli` directory.
 
-For Github repositories, you can pass in `user/repo` or `organization/repo`.
+For Github repositories, you can pass in `user/repo` or `organization/repo`. For official Akamai packages, you can  omit the `akamai/cli-` prefix, so to install `akamai/cli-property` you can specify `property`.
 
 #### Update
 
-To update a sub-command installed with `akamai get`, you call `akamai update <command>`.
+To update a command installed with `akamai get`, you call `akamai update <command>`.
 
 Calling `akamai update` with no arguments will update _all_ commands installed using `akamai get`
 
