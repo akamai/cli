@@ -59,7 +59,7 @@ If you use (or want to use) [docker](http://docker.com), you can get a fully ins
 $ docker run -ti akamaiopen/cli
 ```
 
-The container contains Akamai CLI, as well as the `purge` and `property` subcommands pre-installed.  
+The container contains Akamai CLI, as well as the `purge` and `property` subcommands pre-installed.
 
 > **Note**: When setting up your `.edgerc`, the `purge` subcommand defaults to the `ccu` credentials section, while the `property` subcommand uses the `papi` section. These can be changed using the `--section` flag.
 
@@ -67,13 +67,13 @@ The container contains Akamai CLI, as well as the `purge` and `property` subcomm
 
 If you want to compile it from source, you will need Go 1.7 or later, and the [Glide](https://glide.sh) package manager installed:
 
-1. Fetch the package:  
-  `go get github.com/akamai/cli`
+1. Fetch the package:
+  `go get -d github.com/akamai/cli`
 2. Change to the package directory:  
   `cd $GOPATH/src/github.com/akamai/cli`
-3. Install dependencies using Glide:  
+3. Install dependencies using Glide:
   `glide install`
-4. Compile the binary:  
+4. Compile the binary:
   - Linux/macOS/*nix: `go build -o akamai`
   - Windows `go build -o akamai.exe`
 5. Move the binary (`akamai` or `akamai.exe`) it to your `PATH`
