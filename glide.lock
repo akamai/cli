@@ -1,8 +1,17 @@
-hash: ed2f11fb5a1533d117f5302fb423ca5a5bc591ede68f695b30edb5b7becdc741
-updated: 2017-07-31T16:42:42.969226856-04:00
+hash: 5379875234d7be61e8f13cb7d7624ed6f5613f0b9768182a180bdc705a87312c
+updated: 2017-08-08T00:06:09.082318064-07:00
 imports:
+- name: github.com/briandowns/spinner
+  version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
+- name: github.com/inconshreveable/go-update
+  version: 8152e7eb6ccf8679a64582a66b78519688d156ad
+  subpackages:
+  - internal/binarydist
+  - internal/osext
+- name: github.com/janeczku/go-spinner
+  version: cf8ef1d64394bf465addbb71bbe1c121f8b0f2e3
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -22,9 +31,11 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: c17627c5ee10ed6e9ef92dafb8d5b46160484e0d
+  version: 441034a159e0c2f2d378b49d00143700f95359d7
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: github.com/yookoala/realpath
+  version: 80fa1befd17fc3b89a788874137207ddad1115c1
 - name: golang.org/x/crypto
   version: 850760c427c516be930bc91280636328f1a62286
   subpackages:
@@ -34,6 +45,7 @@ imports:
   - ssh
   - ssh/agent
   - ssh/knownhosts
+  - ssh/terminal
 - name: golang.org/x/sys
   version: e24f485414aeafb646f6fca458b0bf869c0880a1
   repo: https://go.googlesource.com/sys

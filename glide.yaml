@@ -10,3 +10,7 @@ import:
   - diffmatchpatch
 - package: github.com/urfave/cli
   version: ^1.19.1
+- package: github.com/yookoala/realpath
+- package: github.com/inconshreveable/go-update
+- package: github.com/briandowns/spinner
+  version: ^1.0.0

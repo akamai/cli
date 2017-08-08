@@ -32,11 +32,20 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
+	"github.com/inconshreveable/go-update"
+	"github.com/kardianos/osext"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
+	"github.com/yookoala/realpath"
 	"gopkg.in/src-d/go-git.v4"
+)
+
+const (
+	VERSION = "0.3.0"
 )
 
 func main() {
@@ -47,12 +56,16 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "akamai"
 	app.Usage = "Akamai CLI"
-	app.Version = "0.2.0"
+	app.Version = VERSION
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Authors = []cli.Author{{
-		Name:  "Davey Shafik",
-		Email: "dshafik@akamai.com",
-	}}
+
+	firstRun()
+
+	if latestVersion := checkForUpdate(false); latestVersion != "" {
+		if updateCli(latestVersion) {
+			return
+		}
+	}
 
 	helpInfo := getHelp()
 
@@ -94,6 +107,265 @@ func main() {
 	app.Run(os.Args)
 }
 
+func firstRun() error {
+	selfPath, err := osext.Executable()
+	os.Args[0] = selfPath
+	if err != nil {
+		return err
+	}
+	dirPath := path.Dir(selfPath)
+
+	sysPath := os.Getenv("PATH")
+	paths := filepath.SplitList(sysPath)
+	inPath := false
+
+	if len(paths) == 0 {
+		goto checkUpdate
+	}
+
+	for _, path := range paths {
+		if path == dirPath {
+			inPath = true
+			goto checkUpdate
+		}
+	}
+
+	if !inPath {
+		showBanner()
+		fmt.Print("Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
+		answer := ""
+		fmt.Scanln(&answer)
+		if answer != "" && strings.ToLower(answer) != "y" {
+			goto checkUpdate
+		}
+
+	choosePath:
+
+		color.Yellow("Choose where you would like to install Akamai CLI:")
+
+		for i, path := range paths {
+			fmt.Printf("(%d) %s\n", i, path)
+		}
+
+		fmt.Print("Enter a number: ")
+		answer = ""
+		fmt.Scanln(&answer)
+		index, err := strconv.Atoi(answer)
+		if err != nil {
+			color.Red("Invalid choice, try again")
+			goto choosePath
+		}
+
+		if answer == "" || index < 0 || index > len(paths)-1 {
+			color.Red("Invalid choice, try again")
+			goto choosePath
+		}
+
+		fmt.Print("Installing into " + paths[index] + "...")
+
+		suffix := ""
+		if runtime.GOOS == "windows" {
+			suffix = ".exe"
+		}
+
+		err = os.Rename(selfPath, paths[index]+"/akamai"+suffix)
+		os.Args[0] = paths[index] + "/akamai" + suffix
+
+		status := color.GreenString("OK")
+		if err != nil {
+			status = color.RedString("FAIL")
+		}
+
+		fmt.Printf("... [%s]\n", status)
+		if err != nil {
+			color.Red(err.Error())
+		}
+
+		time.Sleep(time.Second * 3)
+	}
+
+checkUpdate:
+
+	cliPath, _ := getAkamaiCliPath()
+	updateFile := cliPath + string(os.PathSeparator) + ".update-check"
+	_, err = os.Stat(updateFile)
+	if os.IsNotExist(err) {
+		if inPath {
+			showBanner()
+		}
+		fmt.Print("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
+
+		answer := ""
+		fmt.Scanln(&answer)
+		if answer != "" && strings.ToLower(answer) != "y" {
+			err := ioutil.WriteFile(updateFile, []byte("ignore"), 0644)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		err := ioutil.WriteFile(updateFile, []byte("never"), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkForUpdate(force bool) string {
+	cliPath, _ := getAkamaiCliPath()
+	updateFile := cliPath + string(os.PathSeparator) + ".update-check"
+	data, err := ioutil.ReadFile(updateFile)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return ""
+	}
+
+	if string(data) == "ignore" {
+		return ""
+	}
+
+	checkForUpdate := false
+	if strings.TrimSpace(string(data)) == "never" || force {
+		checkForUpdate = true
+	}
+
+	if !checkForUpdate {
+		lastUpdate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", string(data))
+		if err != nil {
+			return ""
+		}
+
+		currentTime := time.Now()
+		if lastUpdate.Add(time.Hour * 24).Before(currentTime) {
+			checkForUpdate = true
+		}
+	}
+
+	if checkForUpdate {
+		err := ioutil.WriteFile(updateFile, []byte(time.Now().String()), 0644)
+		if err != nil {
+			return ""
+		}
+
+		latestVersion := getLatestReleaseVersion()
+		if versionCompare(latestVersion, VERSION) {
+			if !force {
+				fmt.Printf(
+					"New update found: %s (you are running: %s). Update now? [Y/n]: ",
+					color.BlueString(latestVersion),
+					color.BlueString(VERSION),
+				)
+				answer := ""
+				fmt.Scanln(&answer)
+				if answer != "" && strings.ToLower(answer) != "y" {
+					return ""
+				}
+			}
+			return latestVersion
+		}
+	}
+
+	return ""
+}
+
+func getLatestReleaseVersion() string {
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Head("https://github.com/akamai/cli/releases/latest")
+	if err != nil {
+		return "0"
+	}
+
+	if resp.StatusCode != 302 {
+		return "0"
+	}
+
+	location := resp.Header.Get("Location")
+	latestVersion := path.Base(location)
+
+	return latestVersion
+}
+
+func showBanner() {
+	fmt.Println()
+	bg := color.New(color.BgMagenta)
+	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fg := bg.Add(color.FgWhite)
+	title := "Welcome to Akamai CLI v" + VERSION
+	ws := strings.Repeat(" ", 16)
+	fg.Printf(ws + title + ws + "\n")
+	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fmt.Println()
+}
+
+func updateCli(latestVersion string) bool {
+	status := getSpinner("Updating Akamai CLI", "Updating Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
+
+	cmd := Command{
+		Version: latestVersion,
+		Bin:     "https://github.com/akamai/cli/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}",
+		Arch:    runtime.GOARCH,
+		OS:      runtime.GOOS,
+	}
+
+	if runtime.GOOS == "darwin" {
+		cmd.OS = "mac"
+	}
+
+	if runtime.GOOS == "windows" {
+		cmd.BinSuffix = ".exe"
+	}
+
+	t := template.Must(template.New("url").Parse(cmd.Bin))
+	buf := &bytes.Buffer{}
+	if err := t.Execute(buf, cmd); err != nil {
+		return false
+	}
+
+	url := buf.String()
+	status.Start()
+	resp, err := http.Get(url)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	// TODO: Support SHA256 checksums and/or public signatures
+	selfPath, err := realpath.Realpath(os.Args[0])
+
+	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath})
+	if err != nil {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		if rerr := update.RollbackError(err); rerr != nil {
+			color.Red("Unable to install or rollback, please re-install.")
+			os.Exit(1)
+			return false
+		}
+		return false
+	}
+
+	status.Stop()
+
+	if err == nil {
+		os.Args[0] = selfPath
+	}
+	err = passthruCommand(os.Args)
+	if err != nil {
+		os.Exit(1)
+	}
+	os.Exit(0)
+
+	return true
+}
+
 func cmdList(c *cli.Context) {
 	color.Yellow("\nAvailable Commands:")
 	for _, cmd := range getCommands() {
@@ -111,7 +383,7 @@ func cmdInstall(c *cli.Context) error {
 
 	repo := c.Args().First()
 
-	srcPath, err := getAkamaiCliPath()
+	srcPath, err := getAkamaiCliSrcPath()
 	if err != nil {
 		return err
 	}
@@ -157,7 +429,7 @@ func cmdUpdate(c *cli.Context) error {
 		for _, cmd := range getCommands() {
 			for _, command := range cmd.Commands {
 				if _, ok := help[command.Name]; !ok {
-					if err := update(command.Name); err != nil {
+					if err := updatePackage(command.Name); err != nil {
 						return err
 					}
 				}
@@ -167,10 +439,34 @@ func cmdUpdate(c *cli.Context) error {
 		return nil
 	}
 
-	return update(cmd)
+	return updatePackage(cmd)
+}
+
+func cmdUpgrade(c *cli.Context) error {
+	status := getSpinner("Checking for upgrades...", "Checking for upgrades...... ["+color.GreenString("OK")+"]\n")
+
+	status.Start()
+	if latestVersion := checkForUpdate(true); latestVersion != "" {
+		status.Stop()
+		fmt.Printf("Found new version: %s\n", color.BlueString("v"+latestVersion))
+		os.Args = []string{os.Args[0], "--version"}
+		updateCli(latestVersion)
+	} else {
+		status.FinalMSG = "Checking for upgrades...... [" + color.CyanString("OK") + "]\n"
+		status.Stop()
+		fmt.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+VERSION))
+	}
+
+	return nil
 }
 
 func cmdSubcommand(c *cli.Context) error {
+	cachePath, err := getAkamaiCliCachePath()
+	if err != nil {
+		return cli.NewExitError("Unable to determine cache path.", 1)
+	}
+	os.Setenv("AKAMAI_CLI_CACHE_DIR", cachePath)
+
 	cmd := c.Command.Name
 
 	executable, err := findExec(cmd)
@@ -281,6 +577,15 @@ func getHelp() help {
 			},
 			action: cmdUpdate,
 		},
+		"upgrade": {
+			Commands: []Command{
+				{
+					Name:        "upgrade",
+					Description: "Upgrade Akamai CLI to the latest version",
+				},
+			},
+			action: cmdUpgrade,
+		},
 	}
 }
 
@@ -308,40 +613,6 @@ func getCommands() []commandPackage {
 	return commands
 }
 
-func getPackageCommands(dir string) commandPackage {
-	var command commandPackage
-
-	cmdPath := filepath.Join(dir, "akamai*")
-	matches, err := filepath.Glob(cmdPath)
-	if err != nil {
-		return commandPackage{}
-	}
-
-	for _, match := range matches {
-		_, err := exec.LookPath(match)
-		if err == nil {
-			name := strings.ToLower(
-				strings.TrimSuffix(
-					strings.TrimPrefix(
-						strings.TrimPrefix(
-							path.Base(match),
-							"akamai-",
-						),
-						"akamai"),
-					".exe",
-				),
-			)
-			if len(name) != 0 {
-				command.Commands = append(command.Commands, Command{
-					Name: name,
-				})
-			}
-		}
-	}
-
-	return command
-}
-
 func getAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
@@ -352,12 +623,36 @@ func getAkamaiCliPath() (string, error) {
 		}
 	}
 
-	return cliHome + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "src", nil
+	cliPath := cliHome + string(os.PathSeparator) + ".akamai-cli"
+	err := os.MkdirAll(cliPath, 0755)
+	if err != nil {
+		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
+	}
+
+	return cliPath, nil
+}
+
+func getAkamaiCliSrcPath() (string, error) {
+	cliHome, _ := getAkamaiCliPath()
+
+	return cliHome + string(os.PathSeparator) + "src", nil
+}
+
+func getAkamaiCliCachePath() (string, error) {
+	cliHome, _ := getAkamaiCliPath()
+
+	cachePath := cliHome + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "cache"
+	err := os.MkdirAll(cachePath, 0775)
+	if err != nil {
+		return "", err
+	}
+
+	return cachePath, nil
 }
 
 func getPackagePaths() string {
 	path := ""
-	akamaiCliPath, err := getAkamaiCliPath()
+	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
 		if len(paths) > 0 {
@@ -370,7 +665,7 @@ func getPackagePaths() string {
 
 func getPackageBinPaths() string {
 	path := ""
-	akamaiCliPath, err := getAkamaiCliPath()
+	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
 		if len(paths) > 0 {
@@ -492,13 +787,14 @@ func findExec(cmd string) ([]string, error) {
 	return nil, errors.New("No executables found.")
 }
 
-func update(cmd string) error {
+func updatePackage(cmd string) error {
 	exec, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
 	}
 
-	fmt.Printf("Attempting to update \"%s\" command...", cmd)
+	status := getSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
+	status.Start()
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -508,7 +804,8 @@ func update(cmd string) error {
 	}
 
 	if repoDir == "" {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
 		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai get\"")+"?"), 1)
 	}
 
@@ -522,18 +819,23 @@ func update(cmd string) error {
 	})
 
 	if err != nil && err.Error() != "already up-to-date" {
-		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to fetch updates", 1)
 	}
 
 	workdir, _ := repo.Worktree()
 	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
 	if err != nil {
-		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to update command", 1)
 	}
 
 	head, _ := repo.Head()
 	if head.Hash() == ref.Hash() {
-		fmt.Println("... [" + color.CyanString("OK") + "]")
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.CyanString("OK") + "]\n"
+		status.Stop()
 		color.Cyan("command \"%s\" already up-to-date", cmd)
 		return nil
 	}
@@ -544,18 +846,15 @@ func update(cmd string) error {
 	})
 
 	if err != nil {
-		return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to update command", 1)
 	}
 
-	fmt.Println("... [" + color.GreenString("OK") + "]")
+	status.Stop()
 
 	if !installPackage(repoDir) {
-		fmt.Print("Removing command...")
-		if err := os.RemoveAll(repoDir); err != nil {
-			return cli.NewExitError("... ["+color.RedString("FAIL")+"]", 1)
-		}
-		fmt.Println("... [" + color.GreenString("OK") + "]")
-		return nil
+		return cli.NewExitError("Unable to update command", 1)
 	}
 
 	return nil
@@ -692,19 +991,23 @@ func readPackage(dir string) (commandPackage, error) {
 }
 
 func installPackage(dir string) bool {
-	fmt.Print("Installing...")
+	status := getSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
+	status.Start()
 	cmdPackage, err := readPackage(dir)
 
 	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
+		status.FinalMSG = "Installing...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
 		fmt.Println(err.Error())
 		return false
 	}
 
 	lang := determineCommandLanguage(cmdPackage)
 	if lang == "" {
-		fmt.Println("... [" + color.BlueString("OK") + "]")
+		status.FinalMSG = "Installing...... [" + color.BlueString("OK") + "]\n"
+		status.Stop()
+		color.Blue("Package installed successfully, however package type is unknown, and may or may not function correctly.")
 		return true
 	}
 
@@ -731,8 +1034,9 @@ func installPackage(dir string) bool {
 			if cmd.Bin != "" {
 				if first {
 					first = false
-					fmt.Println("... [" + color.CyanString("WARN") + "]")
-					color.Red(err.Error())
+					status.FinalMSG = "Installing...... [" + color.CyanString("WARN") + "]\n"
+					status.Stop()
+					color.Cyan(err.Error())
 					fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
@@ -743,9 +1047,11 @@ func installPackage(dir string) bool {
 					os.MkdirAll(dir+string(os.PathSeparator)+"bin", 0775)
 				}
 
-				fmt.Print("Downloading binary...")
+				status := getSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
+				status.Start()
 				if !downloadBin(dir+string(os.PathSeparator)+"bin", cmd) {
-					fmt.Println("... [" + color.RedString("FAIL") + "]")
+					status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
+					status.Stop()
 					color.Red("Unable to download binary")
 					return false
 				}
@@ -756,17 +1062,20 @@ func installPackage(dir string) bool {
 	}
 
 	if err != nil {
+		status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
 		fmt.Println("... [" + color.RedString("FAIL") + "]")
 		color.Red(err.Error())
 		return false
 	}
 
 	if success {
-		fmt.Println("... [" + color.GreenString("OK") + "]")
+		status.Stop()
 		return true
 	}
 
-	fmt.Println("... [" + color.CyanString("OK") + "]")
+	status.FinalMSG = "Downloading binary...... [" + color.CyanString("OK") + "]\n"
+	status.Stop()
 	return true
 }
 
@@ -1209,6 +1518,14 @@ func downloadBin(dir string, cmd Command) bool {
 	}
 
 	return true
+}
+
+func getSpinner(prefix string, finalMsg string) *spinner.Spinner {
+	status := spinner.New(spinner.CharSets[26], 500*time.Millisecond)
+	status.Prefix = prefix
+	status.FinalMSG = finalMsg
+
+	return status
 }
 
 func setCliTemplates() {
