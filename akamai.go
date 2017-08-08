@@ -97,6 +97,7 @@ func main() {
 					Usage:           command.Usage,
 					ArgsUsage:       command.Arguments,
 					Action:          cmdSubcommand,
+					Description:     command.Description,
 					Category:        color.YellowString("Installed Commands:"),
 					SkipFlagParsing: true,
 				},
@@ -370,7 +371,7 @@ func cmdList(c *cli.Context) {
 	color.Yellow("\nAvailable Commands:")
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
-			fmt.Println("  " + command.Name + "\t" + command.Description)
+			fmt.Printf("  %-15s%s\n", command.Name, command.Description)
 		}
 	}
 	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
@@ -1552,7 +1553,7 @@ func setCliTemplates() {
 		"\n{{.Name}}\n" +
 		"{{end}}" +
 		"{{range .VisibleCommands}}" +
-		`   {{join .Names ", "}}{{"\n"}}` +
+		"   {{printf `%-15s` .Name}}{{if .Description}}{{.Description}}{{end}}\n" +
 		"{{end}}" +
 		"{{end}}" +
 		"\n{{end}}" +
