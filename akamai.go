@@ -1450,7 +1450,7 @@ func passthruCommand(executable []string) error {
 
 func githubize(repo string) string {
 	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
-		return repo
+		return strings.TrimPrefix(repo, "ssh://")
 	}
 
 	if !strings.Contains(repo, "/") {
