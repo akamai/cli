@@ -41,6 +41,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"github.com/yookoala/realpath"
+	"golang.org/x/sys/unix"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -119,19 +120,27 @@ func firstRun() error {
 	sysPath := os.Getenv("PATH")
 	paths := filepath.SplitList(sysPath)
 	inPath := false
+	writablePaths := []string{}
 
 	if len(paths) == 0 {
 		goto checkUpdate
 	}
 
 	for _, path := range paths {
+		if runtime.GOOS != "windows" {
+			if unix.Access(path, unix.W_OK) != nil {
+				continue
+			}
+		}
+		writablePaths = append(writablePaths, path)
+
 		if path == dirPath {
 			inPath = true
 			goto checkUpdate
 		}
 	}
 
-	if !inPath {
+	if !inPath && len(writablePaths) > 0 {
 		showBanner()
 		fmt.Print("Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
@@ -144,8 +153,8 @@ func firstRun() error {
 
 		color.Yellow("Choose where you would like to install Akamai CLI:")
 
-		for i, path := range paths {
-			fmt.Printf("(%d) %s\n", i, path)
+		for i, path := range writablePaths {
+			fmt.Printf("(%d) %s\n", i+1, path)
 		}
 
 		fmt.Print("Enter a number: ")
@@ -157,32 +166,28 @@ func firstRun() error {
 			goto choosePath
 		}
 
-		if answer == "" || index < 0 || index > len(paths)-1 {
+		if answer == "" || index < 1 || index > len(writablePaths) {
 			color.Red("Invalid choice, try again")
 			goto choosePath
 		}
 
-		fmt.Print("Installing into " + paths[index] + "...")
+		status := getSpinner("Installing to "+writablePaths[index-1]+"/akamai...", "Installing to "+writablePaths[index-1]+"/akamai...... ["+color.GreenString("OK")+"]\n")
+		status.Start()
 
 		suffix := ""
 		if runtime.GOOS == "windows" {
 			suffix = ".exe"
 		}
 
-		err = os.Rename(selfPath, paths[index]+"/akamai"+suffix)
-		os.Args[0] = paths[index] + "/akamai" + suffix
+		err = os.Rename(selfPath, writablePaths[index-1]+"/akamai"+suffix)
+		os.Args[0] = writablePaths[index-1] + "/akamai" + suffix
 
-		status := color.GreenString("OK")
 		if err != nil {
-			status = color.RedString("FAIL")
-		}
-
-		fmt.Printf("... [%s]\n", status)
-		if err != nil {
+			status.FinalMSG = "Installing to " + writablePaths[index-1] + "/akamai...... [" + color.RedString("FAIL") + "]\n"
+			status.Stop()
 			color.Red(err.Error())
 		}
-
-		time.Sleep(time.Second * 3)
+		status.Stop()
 	}
 
 checkUpdate:
