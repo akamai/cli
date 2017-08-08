@@ -731,7 +731,7 @@ func installPackage(dir string) bool {
 			if cmd.Bin != "" {
 				if first {
 					first = false
-					fmt.Println("... [" + color.RedString("FAIL") + "]")
+					fmt.Println("... [" + color.CyanString("WARN") + "]")
 					color.Red(err.Error())
 					fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
 					answer := ""
