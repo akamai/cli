@@ -463,7 +463,20 @@ func findExec(cmd string) ([]string, error) {
 				bin, err = exec.LookPath("nodejs")
 			}
 			cmd = []string{bin, cmdFile}
-		// Other languages (php, perl, ruby, python, java, etc.)
+		case language == "python":
+			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+				bin, err = exec.LookPath("python3")
+				if err != nil {
+					bin, err = exec.LookPath("python")
+				}
+			} else {
+				bin, err = exec.LookPath("python2")
+				if err != nil {
+					bin, err = exec.LookPath("python")
+				}
+			}
+			cmd = []string{bin, cmdFile}
+		// Other languages (php, perl, ruby, etc.)
 		default:
 			bin, err = exec.LookPath(language)
 			cmd = []string{bin, cmdFile}
@@ -921,9 +934,40 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 }
 
 func installPython(dir string, cmdPackage commandPackage) (bool, error) {
-	bin, err := exec.LookPath("python")
-	if err != nil {
-		return false, cli.NewExitError(("Unable to locate Python runtime"), 1)
+	var (
+		bin string
+		err error
+	)
+
+	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
+		if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+			bin, err = exec.LookPath("python3")
+			if err != nil {
+				bin, err = exec.LookPath("python")
+				if err != nil {
+					return false, cli.NewExitError("Unable to locate Python 3 runtime", 1)
+				}
+			}
+		} else {
+			bin, err = exec.LookPath("python2")
+			if err != nil {
+				bin, err = exec.LookPath("python")
+				if err != nil {
+					return false, cli.NewExitError("Unable to locate Python 2 runtime", 1)
+				}
+			}
+		}
+	} else {
+		bin, err = exec.LookPath("python3")
+		if err != nil {
+			bin, err = exec.LookPath("python2")
+			if err != nil {
+				bin, err = exec.LookPath("python")
+				if err != nil {
+					return false, cli.NewExitError("Unable to locate Python runtime", 1)
+				}
+			}
+		}
 	}
 
 	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
@@ -937,7 +981,37 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	}
 
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
-		bin, err := exec.LookPath("pip")
+		if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
+			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+				bin, err = exec.LookPath("pip3")
+				if err != nil {
+					bin, err = exec.LookPath("pip")
+					if err != nil {
+						return false, cli.NewExitError("Unable to find package manager.", 1)
+					}
+				}
+			} else {
+				bin, err = exec.LookPath("pip2")
+				if err != nil {
+					bin, err = exec.LookPath("pip")
+					if err != nil {
+						return false, cli.NewExitError("Unable to find package manager.", 1)
+					}
+				}
+			}
+		} else {
+			bin, err = exec.LookPath("pip3")
+			if err != nil {
+				bin, err = exec.LookPath("pip2")
+				if err != nil {
+					bin, err = exec.LookPath("pip")
+					if err != nil {
+						return false, cli.NewExitError("Unable to find package manager.", 1)
+					}
+				}
+			}
+		}
+
 		if err == nil {
 			if runtime.GOOS != "windows" {
 				systemHome := os.Getenv("HOME")
@@ -958,7 +1032,7 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	return false, cli.NewExitError("Unable to find package manager.", 1)
+	return true, nil
 }
 
 func setPythonPath(packageDir string) error {
