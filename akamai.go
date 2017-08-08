@@ -67,9 +67,9 @@ func main() {
 		}
 	}
 
-	helpInfo := getHelp()
-
-	for _, cmd := range helpInfo {
+	var builtinCmds map[string]bool = make(map[string]bool)
+	for _, cmd := range getBuiltinCommands() {
+		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
 		app.Commands = append(
 			app.Commands,
 			cli.Command{
@@ -86,7 +86,7 @@ func main() {
 
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
-			if _, ok := helpInfo[command.Name]; ok {
+			if _, ok := builtinCmds[command.Name]; ok {
 				continue
 			}
 
@@ -294,18 +294,6 @@ func getLatestReleaseVersion() string {
 	return latestVersion
 }
 
-func showBanner() {
-	fmt.Println()
-	bg := color.New(color.BgMagenta)
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
-	fg := bg.Add(color.FgWhite)
-	title := "Welcome to Akamai CLI v" + VERSION
-	ws := strings.Repeat(" ", 16)
-	fg.Printf(ws + title + ws + "\n")
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
-	fmt.Println()
-}
-
 func updateCli(latestVersion string) bool {
 	status := getSpinner("Updating Akamai CLI", "Updating Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
@@ -426,10 +414,14 @@ func cmdUpdate(c *cli.Context) error {
 	cmd := c.Args().First()
 
 	if cmd == "" {
-		help := getHelp()
+		var builtinCmds map[string]bool = make(map[string]bool)
+		for _, cmd := range getBuiltinCommands() {
+			builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
+		}
+
 		for _, cmd := range getCommands() {
 			for _, command := range cmd.Commands {
-				if _, ok := help[command.Name]; !ok {
+				if _, ok := builtinCmds[command.Name]; !ok {
 					if err := updatePackage(command.Name); err != nil {
 						return err
 					}
@@ -499,46 +491,31 @@ func cmdHelp(c *cli.Context) error {
 	if c.Args().Present() {
 		cmd := c.Args().First()
 
-		help := getHelp()
-		if _, ok := help[cmd]; !ok {
-			args := append([]string{"help"}, c.Args().Tail()...)
-
-			executable, err := findExec(cmd)
-			if err != nil {
-				return err
+		builtinCmds := getBuiltinCommands()
+		for _, builtInCmd := range builtinCmds {
+			if builtInCmd.Commands[0].Name == cmd {
+				return cli.ShowCommandHelp(c, cmd)
 			}
-
-			executable = append(executable, args...)
-			return passthruCommand(executable)
 		}
 
-		return cli.ShowCommandHelp(c, cmd)
+		args := append([]string{"help"}, c.Args().Tail()...)
+
+		executable, err := findExec(cmd)
+		if err != nil {
+			return err
+		}
+
+		executable = append(executable, args...)
+		return passthruCommand(executable)
+
 	}
 
 	return cli.ShowAppHelp(c)
 }
 
-func passthruCommand(executable []string) error {
-	subCmd := exec.Command(executable[0], executable[1:]...)
-	subCmd.Stdin = os.Stdin
-	subCmd.Stderr = os.Stderr
-	subCmd.Stdout = os.Stdout
-	err := subCmd.Run()
-	if err != nil {
-		return cli.NewExitError("", 1)
-	}
-	return nil
-}
-
-func self() string {
-	return path.Base(os.Args[0])
-}
-
-type help map[string]commandPackage
-
-func getHelp() help {
-	return help{
-		"help": {
+func getBuiltinCommands() []commandPackage {
+	return []commandPackage{
+		{
 			Commands: []Command{
 				{
 					Name:        "help",
@@ -548,7 +525,7 @@ func getHelp() help {
 			},
 			action: cmdHelp,
 		},
-		"list": {
+		{
 			Commands: []Command{
 				{
 					Name:        "list",
@@ -557,7 +534,7 @@ func getHelp() help {
 			},
 			action: cmdList,
 		},
-		"install": {
+		{
 			Commands: []Command{
 				{
 					Name:        "install",
@@ -568,7 +545,7 @@ func getHelp() help {
 			},
 			action: cmdInstall,
 		},
-		"update": {
+		{
 			Commands: []Command{
 				{
 					Name:        "update",
@@ -578,7 +555,7 @@ func getHelp() help {
 			},
 			action: cmdUpdate,
 		},
-		"upgrade": {
+		{
 			Commands: []Command{
 				{
 					Name:        "upgrade",
@@ -594,7 +571,7 @@ func getCommands() []commandPackage {
 	var commands []commandPackage
 	var commandMap map[string]bool = make(map[string]bool)
 
-	for _, cmd := range getHelp() {
+	for _, cmd := range getBuiltinCommands() {
 		commandMap[cmd.Commands[0].Name] = true
 		commands = append(commands, cmd)
 	}
@@ -679,212 +656,6 @@ func getPackageBinPaths() string {
 	}
 
 	return path
-}
-
-func findExec(cmd string) ([]string, error) {
-	// "command" becomes: akamai-command, and akamaiCommand
-	// "command-name" becomes: akamai-command-name, and akamaiCommandName
-	cmdName := "akamai"
-	cmdNameTitle := "akamai"
-	for _, cmdPart := range strings.Split(cmd, "-") {
-		cmdName += "-" + strings.ToLower(cmdPart)
-		cmdNameTitle += strings.Title(strings.ToLower(cmdPart))
-	}
-
-	systemPath := os.Getenv("PATH")
-	packagePaths := getPackageBinPaths()
-	os.Setenv("PATH", packagePaths)
-
-	// Quick look for executables on the path
-	var path string
-	path, err := exec.LookPath(cmdName)
-	if err != nil {
-		path, err = exec.LookPath(cmdNameTitle)
-	}
-
-	if path != "" {
-		os.Setenv("PATH", systemPath)
-		return []string{path}, nil
-	}
-
-	os.Setenv("PATH", systemPath)
-	if packagePaths == "" {
-		return nil, errors.New("No executables found.")
-	}
-
-	for _, path := range filepath.SplitList(packagePaths) {
-		filePaths := []string{
-			// Search for <path>/akamai-command, <path>/akamaiCommand
-			path + string(os.PathSeparator) + cmdName,
-			path + string(os.PathSeparator) + cmdNameTitle,
-
-			// Search for <path>/akamai-command.*, <path>/akamaiCommand.*
-			// This should catch .exe, .bat, .com, .cmd, and .jar
-			path + string(os.PathSeparator) + cmdName + ".*",
-			path + string(os.PathSeparator) + cmdNameTitle + ".*",
-		}
-
-		var files []string
-		for _, filePath := range filePaths {
-			files, _ = filepath.Glob(filePath)
-			if len(files) > 0 {
-				break
-			}
-		}
-
-		if len(files) == 0 {
-			continue
-		}
-
-		cmdFile := files[0]
-
-		packageDir := findPackageDir(filepath.Dir(cmdFile))
-		cmdPackage, err := readPackage(packageDir)
-		if err != nil {
-			return nil, err
-		}
-
-		language := determineCommandLanguage(cmdPackage)
-		bin := ""
-		cmd := []string{}
-		switch {
-		// Compiled Languages
-		case language == "go" || language == "c#" || language == "csharp":
-			err = nil
-			cmd = []string{cmdFile}
-		// Node is special
-		case language == "javascript":
-			bin, err = exec.LookPath("node")
-			if err != nil {
-				bin, err = exec.LookPath("nodejs")
-			}
-			cmd = []string{bin, cmdFile}
-		case language == "python":
-			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
-				bin, err = exec.LookPath("python3")
-				if err != nil {
-					bin, err = exec.LookPath("python")
-				}
-			} else {
-				bin, err = exec.LookPath("python2")
-				if err != nil {
-					bin, err = exec.LookPath("python")
-				}
-			}
-			cmd = []string{bin, cmdFile}
-		// Other languages (php, perl, ruby, etc.)
-		default:
-			bin, err = exec.LookPath(language)
-			cmd = []string{bin, cmdFile}
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		return cmd, nil
-	}
-
-	return nil, errors.New("No executables found.")
-}
-
-func updatePackage(cmd string) error {
-	exec, err := findExec(cmd)
-	if err != nil {
-		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
-	}
-
-	status := getSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
-	status.Start()
-
-	var repoDir string
-	if len(exec) == 1 {
-		repoDir = findPackageDir(filepath.Dir(exec[0]))
-	} else if len(exec) > 1 {
-		repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
-	}
-
-	if repoDir == "" {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai get\"")+"?"), 1)
-	}
-
-	repo, err := git.PlainOpen(repoDir)
-	if err != nil {
-		return err
-	}
-
-	err = repo.Fetch(&git.FetchOptions{
-		RemoteName: git.DefaultRemoteName,
-	})
-
-	if err != nil && err.Error() != "already up-to-date" {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		return cli.NewExitError("Unable to fetch updates", 1)
-	}
-
-	workdir, _ := repo.Worktree()
-	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
-	if err != nil {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		return cli.NewExitError("Unable to update command", 1)
-	}
-
-	head, _ := repo.Head()
-	if head.Hash() == ref.Hash() {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.CyanString("OK") + "]\n"
-		status.Stop()
-		color.Cyan("command \"%s\" already up-to-date", cmd)
-		return nil
-	}
-
-	err = workdir.Checkout(&git.CheckoutOptions{
-		Branch: ref.Name(),
-		Force:  true,
-	})
-
-	if err != nil {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		return cli.NewExitError("Unable to update command", 1)
-	}
-
-	status.Stop()
-
-	if !installPackage(repoDir) {
-		return cli.NewExitError("Unable to update command", 1)
-	}
-
-	return nil
-}
-
-func githubize(repo string) string {
-	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
-		return repo
-	}
-
-	if !strings.Contains(repo, "/") {
-		repo = "akamai/cli-" + strings.TrimPrefix(repo, "cli-")
-	}
-
-	return "https://github.com/" + repo + ".git"
-}
-
-func findPackageDir(dir string) string {
-	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
-		if os.IsNotExist(err) {
-			if path.Dir(dir) == "" {
-				return ""
-			}
-
-			return findPackageDir(filepath.Dir(dir))
-		}
-	}
-
-	return dir
 }
 
 func listDiff(oldcmds []commandPackage) {
@@ -1080,28 +851,77 @@ func installPackage(dir string) bool {
 	return true
 }
 
-func determineCommandLanguage(cmdPackage commandPackage) string {
-	if cmdPackage.Requirements.Php != "" {
-		return "php"
+func updatePackage(cmd string) error {
+	exec, err := findExec(cmd)
+	if err != nil {
+		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
 	}
 
-	if cmdPackage.Requirements.Node != "" {
-		return "javascript"
+	status := getSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
+	status.Start()
+
+	var repoDir string
+	if len(exec) == 1 {
+		repoDir = findPackageDir(filepath.Dir(exec[0]))
+	} else if len(exec) > 1 {
+		repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
 	}
 
-	if cmdPackage.Requirements.Ruby != "" {
-		return "ruby"
+	if repoDir == "" {
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai get\"")+"?"), 1)
 	}
 
-	if cmdPackage.Requirements.Go != "" {
-		return "go"
+	repo, err := git.PlainOpen(repoDir)
+	if err != nil {
+		return err
 	}
 
-	if cmdPackage.Requirements.Python != "" {
-		return "python"
+	err = repo.Fetch(&git.FetchOptions{
+		RemoteName: git.DefaultRemoteName,
+	})
+
+	if err != nil && err.Error() != "already up-to-date" {
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to fetch updates", 1)
 	}
 
-	return ""
+	workdir, _ := repo.Worktree()
+	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
+	if err != nil {
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to update command", 1)
+	}
+
+	head, _ := repo.Head()
+	if head.Hash() == ref.Hash() {
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.CyanString("OK") + "]\n"
+		status.Stop()
+		color.Cyan("command \"%s\" already up-to-date", cmd)
+		return nil
+	}
+
+	err = workdir.Checkout(&git.CheckoutOptions{
+		Branch: ref.Name(),
+		Force:  true,
+	})
+
+	if err != nil {
+		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		return cli.NewExitError("Unable to update command", 1)
+	}
+
+	status.Stop()
+
+	if !installPackage(repoDir) {
+		return cli.NewExitError("Unable to update command", 1)
+	}
+
+	return nil
 }
 
 func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
@@ -1345,48 +1165,6 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	return true, nil
 }
 
-func setPythonPath(packageDir string) error {
-	var pythonPath string
-
-	if runtime.GOOS == "linux" {
-		packageDir += string(os.PathSeparator) + ".local" + string(os.PathSeparator) + "lib" + string(os.PathSeparator) + "python*"
-	} else if runtime.GOOS == "darwin" {
-		packageDir += string(os.PathSeparator) + "Library" + string(os.PathSeparator) + "Python" + string(os.PathSeparator) + "*"
-	} else if runtime.GOOS == "windows" {
-		packageDir += string(os.PathSeparator) + "Lib"
-	}
-
-	pythonPaths, err := filepath.Glob(packageDir)
-	if err != nil {
-		return err
-	}
-
-	if len(pythonPaths) > 0 {
-		pythonPath = pythonPaths[0]
-	}
-
-	systemPythonPath := os.Getenv("PYTHONPATH")
-	if systemPythonPath == "" {
-		bin, _ := exec.LookPath("python")
-		cmd := exec.Command(bin, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
-		output, _ := cmd.CombinedOutput()
-		systemPythonPath = strings.Trim(string(output), "\r\n")
-	}
-
-	pythonPath = string(os.PathListSeparator) + pythonPath
-	if systemPythonPath != "" {
-		pythonPath += string(os.PathListSeparator) + strings.TrimPrefix(systemPythonPath, string(os.PathListSeparator))
-	}
-
-	if len(pythonPath) == 0 {
-		return cli.NewExitError(color.RedString("Unable to determine package path."), 1)
-	}
-
-	os.Setenv("PYTHONPATH", pythonPath)
-
-	return nil
-}
-
 func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("go")
 	if err != nil {
@@ -1436,44 +1214,28 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	return true, nil
 }
 
-func versionCompare(compareTo string, isNewer string) bool {
-	leftParts := strings.Split(compareTo, ".")
-	leftMajor, _ := strconv.Atoi(leftParts[0])
-	leftMinor := 0
-	leftMicro := 0
-
-	if len(leftParts) > 1 {
-		leftMinor, _ = strconv.Atoi(leftParts[1])
-	}
-	if len(leftParts) > 2 {
-		leftMicro, _ = strconv.Atoi(leftParts[2])
+func determineCommandLanguage(cmdPackage commandPackage) string {
+	if cmdPackage.Requirements.Php != "" {
+		return "php"
 	}
 
-	rightParts := strings.Split(isNewer, ".")
-	rightMajor, _ := strconv.Atoi(rightParts[0])
-	rightMinor := 0
-	rightMicro := 0
-
-	if len(rightParts) > 1 {
-		rightMinor, _ = strconv.Atoi(rightParts[1])
-	}
-	if len(rightParts) > 2 {
-		rightMicro, _ = strconv.Atoi(rightParts[2])
+	if cmdPackage.Requirements.Node != "" {
+		return "javascript"
 	}
 
-	if leftMajor < rightMajor {
-		return false
+	if cmdPackage.Requirements.Ruby != "" {
+		return "ruby"
 	}
 
-	if leftMajor == rightMajor && leftMinor < rightMinor {
-		return false
+	if cmdPackage.Requirements.Go != "" {
+		return "go"
 	}
 
-	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro < rightMicro {
-		return false
+	if cmdPackage.Requirements.Python != "" {
+		return "python"
 	}
 
-	return true
+	return ""
 }
 
 func downloadBin(dir string, cmd Command) bool {
@@ -1521,12 +1283,255 @@ func downloadBin(dir string, cmd Command) bool {
 	return true
 }
 
+func setPythonPath(packageDir string) error {
+	var pythonPath string
+
+	if runtime.GOOS == "linux" {
+		packageDir += string(os.PathSeparator) + ".local" + string(os.PathSeparator) + "lib" + string(os.PathSeparator) + "python*"
+	} else if runtime.GOOS == "darwin" {
+		packageDir += string(os.PathSeparator) + "Library" + string(os.PathSeparator) + "Python" + string(os.PathSeparator) + "*"
+	} else if runtime.GOOS == "windows" {
+		packageDir += string(os.PathSeparator) + "Lib"
+	}
+
+	pythonPaths, err := filepath.Glob(packageDir)
+	if err != nil {
+		return err
+	}
+
+	if len(pythonPaths) > 0 {
+		pythonPath = pythonPaths[0]
+	}
+
+	systemPythonPath := os.Getenv("PYTHONPATH")
+	if systemPythonPath == "" {
+		bin, _ := exec.LookPath("python")
+		cmd := exec.Command(bin, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
+		output, _ := cmd.CombinedOutput()
+		systemPythonPath = strings.Trim(string(output), "\r\n")
+	}
+
+	pythonPath = string(os.PathListSeparator) + pythonPath
+	if systemPythonPath != "" {
+		pythonPath += string(os.PathListSeparator) + strings.TrimPrefix(systemPythonPath, string(os.PathListSeparator))
+	}
+
+	if len(pythonPath) == 0 {
+		return cli.NewExitError(color.RedString("Unable to determine package path."), 1)
+	}
+
+	os.Setenv("PYTHONPATH", pythonPath)
+
+	return nil
+}
+
+func self() string {
+	return path.Base(os.Args[0])
+}
+
+func findExec(cmd string) ([]string, error) {
+	// "command" becomes: akamai-command, and akamaiCommand
+	// "command-name" becomes: akamai-command-name, and akamaiCommandName
+	cmdName := "akamai"
+	cmdNameTitle := "akamai"
+	for _, cmdPart := range strings.Split(cmd, "-") {
+		cmdName += "-" + strings.ToLower(cmdPart)
+		cmdNameTitle += strings.Title(strings.ToLower(cmdPart))
+	}
+
+	systemPath := os.Getenv("PATH")
+	packagePaths := getPackageBinPaths()
+	os.Setenv("PATH", packagePaths)
+
+	// Quick look for executables on the path
+	var path string
+	path, err := exec.LookPath(cmdName)
+	if err != nil {
+		path, err = exec.LookPath(cmdNameTitle)
+	}
+
+	if path != "" {
+		os.Setenv("PATH", systemPath)
+		return []string{path}, nil
+	}
+
+	os.Setenv("PATH", systemPath)
+	if packagePaths == "" {
+		return nil, errors.New("No executables found.")
+	}
+
+	for _, path := range filepath.SplitList(packagePaths) {
+		filePaths := []string{
+			// Search for <path>/akamai-command, <path>/akamaiCommand
+			path + string(os.PathSeparator) + cmdName,
+			path + string(os.PathSeparator) + cmdNameTitle,
+
+			// Search for <path>/akamai-command.*, <path>/akamaiCommand.*
+			// This should catch .exe, .bat, .com, .cmd, and .jar
+			path + string(os.PathSeparator) + cmdName + ".*",
+			path + string(os.PathSeparator) + cmdNameTitle + ".*",
+		}
+
+		var files []string
+		for _, filePath := range filePaths {
+			files, _ = filepath.Glob(filePath)
+			if len(files) > 0 {
+				break
+			}
+		}
+
+		if len(files) == 0 {
+			continue
+		}
+
+		cmdFile := files[0]
+
+		packageDir := findPackageDir(filepath.Dir(cmdFile))
+		cmdPackage, err := readPackage(packageDir)
+		if err != nil {
+			return nil, err
+		}
+
+		language := determineCommandLanguage(cmdPackage)
+		bin := ""
+		cmd := []string{}
+		switch {
+		// Compiled Languages
+		case language == "go" || language == "c#" || language == "csharp":
+			err = nil
+			cmd = []string{cmdFile}
+			// Node is special
+		case language == "javascript":
+			bin, err = exec.LookPath("node")
+			if err != nil {
+				bin, err = exec.LookPath("nodejs")
+			}
+			cmd = []string{bin, cmdFile}
+		case language == "python":
+			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+				bin, err = exec.LookPath("python3")
+				if err != nil {
+					bin, err = exec.LookPath("python")
+				}
+			} else {
+				bin, err = exec.LookPath("python2")
+				if err != nil {
+					bin, err = exec.LookPath("python")
+				}
+			}
+			cmd = []string{bin, cmdFile}
+			// Other languages (php, perl, ruby, etc.)
+		default:
+			bin, err = exec.LookPath(language)
+			cmd = []string{bin, cmdFile}
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		return cmd, nil
+	}
+
+	return nil, errors.New("No executables found.")
+}
+
+func passthruCommand(executable []string) error {
+	subCmd := exec.Command(executable[0], executable[1:]...)
+	subCmd.Stdin = os.Stdin
+	subCmd.Stderr = os.Stderr
+	subCmd.Stdout = os.Stdout
+	err := subCmd.Run()
+	if err != nil {
+		return cli.NewExitError("", 1)
+	}
+	return nil
+}
+
+func githubize(repo string) string {
+	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
+		return repo
+	}
+
+	if !strings.Contains(repo, "/") {
+		repo = "akamai/cli-" + strings.TrimPrefix(repo, "cli-")
+	}
+
+	return "https://github.com/" + repo + ".git"
+}
+
+func findPackageDir(dir string) string {
+	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
+		if os.IsNotExist(err) {
+			if path.Dir(dir) == "" {
+				return ""
+			}
+
+			return findPackageDir(filepath.Dir(dir))
+		}
+	}
+
+	return dir
+}
+
+func versionCompare(compareTo string, isNewer string) bool {
+	leftParts := strings.Split(compareTo, ".")
+	leftMajor, _ := strconv.Atoi(leftParts[0])
+	leftMinor := 0
+	leftMicro := 0
+
+	if len(leftParts) > 1 {
+		leftMinor, _ = strconv.Atoi(leftParts[1])
+	}
+	if len(leftParts) > 2 {
+		leftMicro, _ = strconv.Atoi(leftParts[2])
+	}
+
+	rightParts := strings.Split(isNewer, ".")
+	rightMajor, _ := strconv.Atoi(rightParts[0])
+	rightMinor := 0
+	rightMicro := 0
+
+	if len(rightParts) > 1 {
+		rightMinor, _ = strconv.Atoi(rightParts[1])
+	}
+	if len(rightParts) > 2 {
+		rightMicro, _ = strconv.Atoi(rightParts[2])
+	}
+
+	if leftMajor < rightMajor {
+		return false
+	}
+
+	if leftMajor == rightMajor && leftMinor < rightMinor {
+		return false
+	}
+
+	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro < rightMicro {
+		return false
+	}
+
+	return true
+}
+
 func getSpinner(prefix string, finalMsg string) *spinner.Spinner {
 	status := spinner.New(spinner.CharSets[26], 500*time.Millisecond)
 	status.Prefix = prefix
 	status.FinalMSG = finalMsg
 
 	return status
+}
+
+func showBanner() {
+	fmt.Println()
+	bg := color.New(color.BgMagenta)
+	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fg := bg.Add(color.FgWhite)
+	title := "Welcome to Akamai CLI v" + VERSION
+	ws := strings.Repeat(" ", 16)
+	fg.Printf(ws + title + ws + "\n")
+	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fmt.Println()
 }
 
 func setCliTemplates() {
