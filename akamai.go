@@ -1180,7 +1180,10 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 			if err != nil {
 				bin, err = exec.LookPath("python")
 				if err != nil {
-					return false, cli.NewExitError("Unable to locate Python 2 runtime", 1)
+					bin, err = exec.LookPath("python3")
+					if err != nil {
+						return false, cli.NewExitError("Unable to locate Python runtime", 1)
+					}
 				}
 			}
 		}
@@ -1220,9 +1223,12 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 			} else {
 				bin, err = exec.LookPath("pip2")
 				if err != nil {
-					bin, err = exec.LookPath("pip")
+					bin, err = exec.LookPath("pip3")
 					if err != nil {
-						return false, cli.NewExitError("Unable to find package manager.", 1)
+						bin, err = exec.LookPath("pip")
+						if err != nil {
+							return false, cli.NewExitError("Unable to find package manager.", 1)
+						}
 					}
 				}
 			}
