@@ -1,5 +1,5 @@
 hash: 5379875234d7be61e8f13cb7d7624ed6f5613f0b9768182a180bdc705a87312c
-updated: 2017-08-08T00:06:09.082318064-07:00
+updated: 2017-08-09T21:53:40.225119727-07:00
 imports:
 - name: github.com/briandowns/spinner
   version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
@@ -10,8 +10,8 @@ imports:
   subpackages:
   - internal/binarydist
   - internal/osext
-- name: github.com/janeczku/go-spinner
-  version: cf8ef1d64394bf465addbb71bbe1c121f8b0f2e3
+- name: github.com/kardianos/osext
+  version: ae77be60afb1dcacde03767a8c37337fad28ac14
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -45,10 +45,8 @@ imports:
   - ssh
   - ssh/agent
   - ssh/knownhosts
-  - ssh/terminal
 - name: golang.org/x/sys
-  version: e24f485414aeafb646f6fca458b0bf869c0880a1
-  repo: https://go.googlesource.com/sys
+  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
   subpackages:
   - unix
 - name: gopkg.in/src-d/go-billy.v2
