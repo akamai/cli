@@ -767,9 +767,9 @@ func listDiff(oldcmds []commandPackage) {
 			if _, ok := unchanged[command.Name]; ok {
 				bold.Printf("  %s", command.Name)
 			} else if _, ok := added[command.Name]; ok {
-				fmt.Print(color.GreenString(" %s", command.Name))
+				fmt.Print(color.GreenString("  %s", command.Name))
 			} else if _, ok := removed[command.Name]; ok {
-				fmt.Print(color.RedString(" %s", command.Name))
+				fmt.Print(color.RedString("  %s", command.Name))
 			}
 			if len(command.Aliases) > 0 {
 				var aliases string
