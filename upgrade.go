@@ -57,7 +57,7 @@ func checkForUpgrade(force bool) string {
 		}
 
 		latestVersion := getLatestReleaseVersion()
-		if versionCompare(latestVersion, VERSION) {
+		if versionCompare(VERSION, latestVersion) == 1 {
 			if !force {
 				fmt.Printf(
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",

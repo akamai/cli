@@ -751,7 +751,7 @@ func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command. Unable to determine installed version.", cmdPackage.Requirements.Php), 1)
 		}
 
-		if !versionCompare(matches[1], cmdPackage.Requirements.Php) {
+		if versionCompare(cmdPackage.Requirements.Php, matches[1]) == -1 {
 			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command.", cmdPackage.Requirements.Php), 1)
 		}
 	}
@@ -809,7 +809,7 @@ func installJavaScript(dir string, cmdPackage commandPackage) (bool, error) {
 		output, _ := cmd.Output()
 		r, _ := regexp.Compile("^v(.*?)\\s*$")
 		matches := r.FindStringSubmatch(string(output))
-		if !versionCompare(matches[1], cmdPackage.Requirements.Node) {
+		if versionCompare(cmdPackage.Requirements.Node, matches[1]) == -1 {
 			return false, cli.NewExitError(fmt.Sprintf("Node.js %s is required to install this command.", cmdPackage.Requirements.Node), 1)
 		}
 	}
@@ -854,7 +854,7 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 		output, _ := cmd.Output()
 		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
-		if !versionCompare(matches[1], cmdPackage.Requirements.Ruby) {
+		if versionCompare(cmdPackage.Requirements.Ruby, matches[1]) == -1 {
 			return false, cli.NewExitError(fmt.Sprintf("Ruby %s is required to install this command.", cmdPackage.Requirements.Ruby), 1)
 		}
 	}
@@ -882,7 +882,7 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	)
 
 	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
-		if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+		if versionCompare("3.0.0", cmdPackage.Requirements.Python) != -1 {
 			bin, err = exec.LookPath("python3")
 			if err != nil {
 				bin, err = exec.LookPath("python")
@@ -920,14 +920,14 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 		output, _ := cmd.CombinedOutput()
 		r, _ := regexp.Compile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))
-		if !versionCompare(matches[1], cmdPackage.Requirements.Python) {
+		if versionCompare(cmdPackage.Requirements.Python, matches[1]) == -1 {
 			return false, cli.NewExitError(fmt.Sprintf("Python %s is required to install this command.", cmdPackage.Requirements.Python), 1)
 		}
 	}
 
 	if _, err := os.Stat(dir + string(os.PathSeparator) + "/requirements.txt"); err == nil {
 		if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
-			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+			if versionCompare("3.0.0", cmdPackage.Requirements.Python) != -1 {
 				bin, err = exec.LookPath("pip3")
 				if err != nil {
 					bin, err = exec.LookPath("pip")
@@ -994,7 +994,7 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		output, _ := cmd.Output()
 		r, _ := regexp.Compile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
-		if !versionCompare(matches[1], cmdPackage.Requirements.Go) {
+		if versionCompare(cmdPackage.Requirements.Go, matches[1]) == -1 {
 			return false, cli.NewExitError(fmt.Sprintf("Go %s is required to install this command.", cmdPackage.Requirements.Go), 1)
 		}
 	}
@@ -1226,7 +1226,7 @@ func findExec(cmd string) ([]string, error) {
 			}
 			cmd = []string{bin, cmdFile}
 		case language == "python":
-			if !versionCompare("3.0.0", cmdPackage.Requirements.Python) {
+			if versionCompare("3.0.0", cmdPackage.Requirements.Python) != -1 {
 				bin, err = exec.LookPath("python3")
 				if err != nil {
 					bin, err = exec.LookPath("python")
@@ -1292,14 +1292,14 @@ func findPackageDir(dir string) string {
 	return dir
 }
 
-func versionCompare(compareTo string, isNewer string) bool {
-	leftParts := strings.Split(compareTo, ".")
+func versionCompare(left string, right string) int {
+	leftParts := strings.Split(left, ".")
 	leftMajor, _ := strconv.Atoi(leftParts[0])
 	leftMinor := 0
 	leftMicro := 0
 
-	if compareTo == isNewer {
-		return false
+	if left == right {
+		return 0
 	}
 
 	if len(leftParts) > 1 {
@@ -1309,7 +1309,7 @@ func versionCompare(compareTo string, isNewer string) bool {
 		leftMicro, _ = strconv.Atoi(leftParts[2])
 	}
 
-	rightParts := strings.Split(isNewer, ".")
+	rightParts := strings.Split(right, ".")
 	rightMajor, _ := strconv.Atoi(rightParts[0])
 	rightMinor := 0
 	rightMicro := 0
@@ -1321,19 +1321,19 @@ func versionCompare(compareTo string, isNewer string) bool {
 		rightMicro, _ = strconv.Atoi(rightParts[2])
 	}
 
-	if leftMajor < rightMajor {
-		return false
+	if leftMajor > rightMajor {
+		return -1
 	}
 
-	if leftMajor == rightMajor && leftMinor < rightMinor {
-		return false
+	if leftMajor == rightMajor && leftMinor > rightMinor {
+		return -1
 	}
 
-	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro < rightMicro {
-		return false
+	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro > rightMicro {
+		return -1
 	}
 
-	return true
+	return 1
 }
 
 func getSpinner(prefix string, finalMsg string) *spinner.Spinner {

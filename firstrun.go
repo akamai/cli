@@ -98,7 +98,7 @@ func firstRun() error {
 checkUpdate:
 
 	cliPath, _ := getAkamaiCliPath()
-	updateFile := cliPath + string(os.PathSeparator) + ".update-check"
+	updateFile := cliPath + string(os.PathSeparator) + ".upgrade-check"
 	_, err = os.Stat(updateFile)
 	if os.IsNotExist(err) {
 		if inPath {
