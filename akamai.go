@@ -94,11 +94,13 @@ func main() {
 			app.Commands = append(
 				app.Commands,
 				cli.Command{
-					Name:            strings.ToLower(command.Name),
-					Usage:           command.Usage,
-					ArgsUsage:       command.Arguments,
+					Name:        strings.ToLower(command.Name),
+					Aliases:     command.Aliases,
+					Usage:       command.Usage,
+					ArgsUsage:   command.Arguments,
+					Description: command.Description,
+
 					Action:          cmdSubcommand,
-					Description:     command.Description,
 					Category:        color.YellowString("Installed Commands:"),
 					SkipFlagParsing: true,
 				},
@@ -361,10 +363,32 @@ func updateCli(latestVersion string) bool {
 }
 
 func cmdList(c *cli.Context) {
-	color.Yellow("\nAvailable Commands:")
+	color.Yellow("\nAvailable Commands:\n\n")
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
-			fmt.Printf("  %-15s%s\n", command.Name, command.Description)
+			fmt.Print(color.GreenString("  %s", command.Name))
+			if len(command.Aliases) > 0 {
+				var aliases string
+
+				if len(command.Aliases) == 1 {
+					aliases = "alias"
+				} else {
+					aliases = "aliases"
+				}
+
+				fmt.Printf(" (%s: ", aliases)
+				for i, alias := range command.Aliases {
+					fmt.Print(color.GreenString(alias))
+					if i < len(command.Aliases)-1 {
+						fmt.Print(", ")
+					}
+				}
+				fmt.Print(")")
+			}
+
+			fmt.Println()
+
+			fmt.Printf("    %s\n", command.Description)
 		}
 	}
 	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
@@ -1542,7 +1566,7 @@ func showBanner() {
 func setCliTemplates() {
 	cli.AppHelpTemplate = "" +
 		color.YellowString("Usage: \n") +
-		color.BlueString("	 {{if .UsageText}}"+
+		color.BlueString("	{{if .UsageText}}"+
 			"{{.UsageText}}"+
 			"{{else}}"+
 			"{{.HelpName}} "+
@@ -1563,10 +1587,16 @@ func setCliTemplates() {
 		"\n{{.Name}}\n" +
 		"{{end}}" +
 		"{{range .VisibleCommands}}" +
-		"   {{printf `%-15s` .Name}}{{if .Description}}{{.Description}}{{end}}\n" +
+		color.GreenString("  {{.Name}}") +
+		"{{if .Aliases}} ({{ $length := len .Aliases }}{{if eq $length 1}}alias:{{else}}aliases:{{end}} " +
+		"{{range $index, $alias := .Aliases}}" +
+		"{{if $index}}, {{end}}" +
+		color.GreenString("{{$alias}}") +
+		"{{end}}" +
+		"){{end}}\n" +
 		"{{end}}" +
 		"{{end}}" +
-		"\n{{end}}" +
+		"{{end}}\n" +
 
 		"{{if .VisibleFlags}}" +
 		color.YellowString("Global Flags:\n") +
@@ -1576,16 +1606,8 @@ func setCliTemplates() {
 		"{{end}}" +
 		"\n\n{{end}}" +
 
-		"{{if len .Authors}}" +
-		color.YellowString("Author{{with $length := len .Authors}}{{if ne 1 $length}}s{{end}}{{end}}:\n") +
-		"{{range $index, $author := .Authors}}{{if $index}}\n{{end}}" +
-		"   {{$author}}" +
-		"{{end}}" +
-		"\n\n{{end}}" +
-
 		"{{if .Copyright}}" +
-		color.YellowString("Copyright:\n") +
-		"   {{.Copyright}}" +
+		color.HiBlackString("{{.Copyright}}") +
 		"{{end}}\n"
 
 	cli.CommandHelpTemplate = "" +
