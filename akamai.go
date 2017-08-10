@@ -389,10 +389,12 @@ func updateCli(latestVersion string) bool {
 }
 
 func cmdList(c *cli.Context) {
+	bold := color.New(color.FgWhite, color.Bold)
+
 	color.Yellow("\nAvailable Commands:\n\n")
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
-			fmt.Print(color.GreenString("  %s", command.Name))
+			bold.Printf("  %s", command.Name)
 			if len(command.Aliases) > 0 {
 				var aliases string
 
@@ -404,7 +406,7 @@ func cmdList(c *cli.Context) {
 
 				fmt.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
-					fmt.Print(color.GreenString(alias))
+					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
 						fmt.Print(", ")
 					}
@@ -708,7 +710,6 @@ func getPackageBinPaths() string {
 }
 
 func listDiff(oldcmds []commandPackage) {
-	color.Yellow("\nAvailable Commands:")
 	cmds := getCommands()
 
 	var old []Command
@@ -725,18 +726,22 @@ func listDiff(oldcmds []commandPackage) {
 		}
 	}
 
+	var unchanged map[string]bool = make(map[string]bool)
+	var added map[string]bool = make(map[string]bool)
+	var removed map[string]bool = make(map[string]bool)
+
 	for _, newCmd := range new {
 		found := false
 		for _, oldCmd := range old {
 			if newCmd.Name == oldCmd.Name {
 				found = true
-				fmt.Println("  " + newCmd.Name + "\t" + newCmd.Description)
+				unchanged[newCmd.Name] = true
 				break
 			}
 		}
 
 		if !found {
-			fmt.Println(color.GreenString("  "+newCmd.Name) + "\t" + newCmd.Description)
+			added[newCmd.Name] = true
 		}
 	}
 
@@ -750,10 +755,53 @@ func listDiff(oldcmds []commandPackage) {
 		}
 
 		if !found {
-			fmt.Println(color.RedString("  "+oldCmd.Name) + "\t" + oldCmd.Description)
+			removed[oldCmd.Name] = true
 		}
 	}
 
+	bold := color.New(color.FgWhite, color.Bold)
+
+	color.Yellow("\nAvailable Commands:\n\n")
+	for _, cmd := range getCommands() {
+		for _, command := range cmd.Commands {
+			if _, ok := unchanged[command.Name]; ok {
+				bold.Printf("  %s", command.Name)
+			} else if _, ok := added[command.Name]; ok {
+				fmt.Print(color.GreenString(" %s", command.Name))
+			} else if _, ok := removed[command.Name]; ok {
+				fmt.Print(color.RedString(" %s", command.Name))
+			}
+			if len(command.Aliases) > 0 {
+				var aliases string
+
+				if len(command.Aliases) == 1 {
+					aliases = "alias"
+				} else {
+					aliases = "aliases"
+				}
+
+				fmt.Printf(" (%s: ", aliases)
+				for i, alias := range command.Aliases {
+					if _, ok := unchanged[command.Name]; ok {
+						bold.Print(alias)
+					} else if _, ok := added[command.Name]; ok {
+						fmt.Print(color.GreenString(alias))
+					} else if _, ok := removed[command.Name]; ok {
+						fmt.Print(color.RedString(alias))
+					}
+
+					if i < len(command.Aliases)-1 {
+						fmt.Print(", ")
+					}
+				}
+				fmt.Print(")")
+			}
+
+			fmt.Println()
+
+			fmt.Printf("    %s\n", command.Description)
+		}
+	}
 	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
 }
 
