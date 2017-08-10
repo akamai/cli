@@ -41,7 +41,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"github.com/yookoala/realpath"
-	"golang.org/x/sys/unix"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -129,10 +128,8 @@ func firstRun() error {
 	}
 
 	for _, path := range paths {
-		if runtime.GOOS != "windows" {
-			if unix.Access(path, unix.W_OK) != nil {
-				continue
-			}
+		if checkAccess(path, ACCESS_W_OK) != nil {
+			continue
 		}
 		writablePaths = append(writablePaths, path)
 
