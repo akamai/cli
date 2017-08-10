@@ -1506,6 +1506,10 @@ func versionCompare(compareTo string, isNewer string) bool {
 	leftMinor := 0
 	leftMicro := 0
 
+	if compareTo == isNewer {
+		return false
+	}
+
 	if len(leftParts) > 1 {
 		leftMinor, _ = strconv.Atoi(leftParts[1])
 	}
