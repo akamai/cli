@@ -31,7 +31,7 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: 441034a159e0c2f2d378b49d00143700f95359d7
+  version: a9920b123ba1f6819a8c03209582d4d28e9fd831 
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 - name: github.com/yookoala/realpath
