@@ -96,8 +96,6 @@ func main() {
 				cli.Command{
 					Name:        strings.ToLower(command.Name),
 					Aliases:     command.Aliases,
-					Usage:       command.Usage,
-					ArgsUsage:   command.Arguments,
 					Description: command.Description,
 
 					Action:          cmdSubcommand,
@@ -555,16 +553,10 @@ func cmdHelp(c *cli.Context) error {
 			}
 		}
 
-		args := append([]string{"help"}, c.Args().Tail()...)
-
-		executable, err := findExec(cmd)
-		if err != nil {
-			return err
-		}
-
-		executable = append(executable, args...)
-		return passthruCommand(executable)
-
+		// The arg mangling ensures that aliases are handled
+		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
+		main()
+		return nil
 	}
 
 	return cli.ShowAppHelp(c)
