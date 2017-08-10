@@ -34,6 +34,7 @@ import (
 	"text/template"
 	"time"
 
+	"encoding/hex"
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
@@ -325,15 +326,42 @@ func updateCli(latestVersion string) bool {
 	url := buf.String()
 	status.Start()
 	resp, err := http.Get(url)
-	if err != nil {
+	defer resp.Body.Close()
+	if err != nil || resp.StatusCode != 200 {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		color.Red("Unable to download release, please try again.")
 		return false
 	}
-	defer resp.Body.Close()
 
-	// TODO: Support SHA256 checksums and/or public signatures
+	shaResp, err := http.Get(url + ".sig")
+	defer shaResp.Body.Close()
+	if err != nil || shaResp.StatusCode != 200 {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		color.Red("Unable to retrieve signature for verification, please try again.")
+		return false
+	}
+
+	shabody, err := ioutil.ReadAll(shaResp.Body)
+	if err != nil {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		color.Red("Unable to retrieve signature for verification, please try again.")
+		return false
+	}
+
+	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
+	if err != nil {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		color.Red("Unable to retrieve signature for verification, please try again.")
+		return false
+	}
+
 	selfPath, err := realpath.Realpath(os.Args[0])
 
-	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath})
+	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
@@ -341,6 +369,9 @@ func updateCli(latestVersion string) bool {
 			color.Red("Unable to install or rollback, please re-install.")
 			os.Exit(1)
 			return false
+		} else if strings.HasPrefix(err.Error(), "Updated file has wrong checksum.") {
+			color.Red(err.Error())
+			color.Red("Checksums do not match, please try again.")
 		}
 		return false
 	}
@@ -467,7 +498,7 @@ func cmdUpgrade(c *cli.Context) error {
 	status.Start()
 	if latestVersion := checkForUpdate(true); latestVersion != "" {
 		status.Stop()
-		fmt.Printf("Found new version: %s\n", color.BlueString("v"+latestVersion))
+		fmt.Printf("Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+VERSION))
 		os.Args = []string{os.Args[0], "--version"}
 		updateCli(latestVersion)
 	} else {
