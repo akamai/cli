@@ -3,10 +3,14 @@ import:
 - package: github.com/fatih/color
   version: ^1.4.1
 - package: github.com/mitchellh/go-homedir
-- package: github.com/src-d/go-git
-  version: ~4.0.0-rc9
 - package: github.com/sergi/go-diff
   subpackages:
   - diffmatchpatch
 - package: github.com/urfave/cli
   version: ^1.19.1
+- package: github.com/yookoala/realpath
+- package: github.com/inconshreveable/go-update
+- package: github.com/briandowns/spinner
+  version: ^1.0.0
+- package: github.com/src-d/go-git
+  version: ~4.0.0-rc13

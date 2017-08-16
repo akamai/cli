@@ -1,8 +1,21 @@
-hash: ed2f11fb5a1533d117f5302fb423ca5a5bc591ede68f695b30edb5b7becdc741
-updated: 2017-07-31T16:42:42.969226856-04:00
+hash: 60478877ecbb447febf535d3d25b62be29fb4c601bd13a846593d7a0aaf4cbd8
+updated: 2017-08-10T11:22:17.504990463-07:00
 imports:
+- name: github.com/briandowns/spinner
+  version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
+- name: github.com/inconshreveable/go-update
+  version: 8152e7eb6ccf8679a64582a66b78519688d156ad
+  subpackages:
+  - internal/binarydist
+  - internal/osext
+- name: github.com/jbenet/go-context
+  version: d14ea06fba99483203c19d92cfcd13ebe73135f4
+  subpackages:
+  - io
+- name: github.com/kardianos/osext
+  version: ae77be60afb1dcacde03767a8c37337fad28ac14
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -22,11 +35,15 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: c17627c5ee10ed6e9ef92dafb8d5b46160484e0d
+  version: 8ddbecf782c2e340fd85bb4ba4d00dc73d749f87
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: github.com/xanzy/ssh-agent
+  version: ba9c9e33906f58169366275e3450db66139a31a9
+- name: github.com/yookoala/realpath
+  version: 80fa1befd17fc3b89a788874137207ddad1115c1
 - name: golang.org/x/crypto
-  version: 850760c427c516be930bc91280636328f1a62286
+  version: b176d7def5d71bdd214203491f89843ed217f420
   subpackages:
   - curve25519
   - ed25519
@@ -34,17 +51,23 @@ imports:
   - ssh
   - ssh/agent
   - ssh/knownhosts
+- name: golang.org/x/net
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  subpackages:
+  - context
 - name: golang.org/x/sys
-  version: e24f485414aeafb646f6fca458b0bf869c0880a1
-  repo: https://go.googlesource.com/sys
+  version: e42485b6e20ae7d2304ec72e535b103ed350cc02
   subpackages:
   - unix
-- name: gopkg.in/src-d/go-billy.v2
-  version: 52497601f113730d14baa00453674376fca22f22
+- name: gopkg.in/src-d/go-billy.v3
+  version: c329b7bc7b9d24905d2bc1b85bfa29f7ae266314
   subpackages:
+  - helper/chroot
+  - helper/polyfill
   - osfs
+  - util
 - name: gopkg.in/src-d/go-git.v4
-  version: 7e249dfcf28765939bde8f38784b3274b522f880
+  version: 8ddbecf782c2e340fd85bb4ba4d00dc73d749f87
   subpackages:
   - config
   - internal/revision
@@ -53,6 +76,7 @@ imports:
   - plumbing/filemode
   - plumbing/format/config
   - plumbing/format/diff
+  - plumbing/format/gitignore
   - plumbing/format/idxfile
   - plumbing/format/index
   - plumbing/format/objfile
