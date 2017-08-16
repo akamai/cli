@@ -67,15 +67,17 @@ The container contains Akamai CLI, as well as the `purge` and `property` subcomm
 
 If you want to compile it from source, you will need Go 1.7 or later, and the [Glide](https://glide.sh) package manager installed:
 
-1. Fetch the package:
+1. Fetch the package:  
   `go get -d github.com/akamai/cli`
 2. Change to the package directory:  
   `cd $GOPATH/src/github.com/akamai/cli`
-3. Install dependencies using Glide:
+3. Install dependencies using Glide:  
   `glide install`
 4. Compile the binary:
-  - Linux/macOS/*nix: `go build -o akamai`
-  - Windows `go build -o akamai.exe`
+  - Linux/macOS/*nix  
+  `go build -o akamai`
+  - Windows  
+  `go build -o akamai.exe`
 5. Move the binary (`akamai` or `akamai.exe`) it to your `PATH`
 
 ### Credentials
