@@ -75,7 +75,7 @@ If you want to compile it from source, you will need Go 1.7 or later, and the [G
   `glide install`
 4. Compile the binary:  
   - Linux/macOS/*nix: `go install -o $GOPATH/bin/akamai .``
-  - Windows `go build -o $GOPATH/bin/akamai.exe`
+  - Windows `go build -o %GOPATH%/bin/akamai.exe`
 
 ### Credentials
 
