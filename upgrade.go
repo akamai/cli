@@ -17,7 +17,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
-	"github.com/yookoala/realpath"
+	"github.com/kardianos/osext"
 )
 
 func checkForUpgrade(force bool) string {
@@ -158,7 +158,13 @@ func upgradeCli(latestVersion string) bool {
 		return false
 	}
 
-	selfPath, err := realpath.Realpath(os.Args[0])
+	selfPath, err := osext.Executable()
+	if err != nil {
+		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
+		status.Stop()
+		color.Red("Unable to determine install location")
+		return false
+	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {

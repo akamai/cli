@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -18,11 +17,15 @@ import (
 
 func firstRun() error {
 	selfPath, err := osext.Executable()
-	os.Args[0] = selfPath
 	if err != nil {
 		return err
 	}
-	dirPath := path.Dir(selfPath)
+	os.Args[0] = selfPath
+	dirPath := filepath.Dir(selfPath)
+
+	if runtime.GOOS == "windows" {
+		dirPath = strings.ToLower(dirPath)
+	}
 
 	sysPath := os.Getenv("PATH")
 	paths := filepath.SplitList(sysPath)
@@ -34,9 +37,14 @@ func firstRun() error {
 	}
 
 	for _, path := range paths {
-		if checkAccess(path, ACCESS_W_OK) != nil {
+		if checkAccess(path, ACCESS_W_OK) != nil || len(strings.TrimSpace(path)) == 0 {
 			continue
 		}
+
+		if runtime.GOOS == "windows" {
+			path = strings.ToLower(path)
+		}
+
 		writablePaths = append(writablePaths, path)
 
 		if path == dirPath {
@@ -76,19 +84,24 @@ func firstRun() error {
 			goto choosePath
 		}
 
-		status := getSpinner("Installing to "+writablePaths[index-1]+"/akamai...", "Installing to "+writablePaths[index-1]+"/akamai...... ["+color.GreenString("OK")+"]\n")
-		status.Start()
-
 		suffix := ""
 		if runtime.GOOS == "windows" {
 			suffix = ".exe"
 		}
 
-		err = os.Rename(selfPath, writablePaths[index-1]+"/akamai"+suffix)
-		os.Args[0] = writablePaths[index-1] + "/akamai" + suffix
+		newPath := writablePaths[index-1]+string(os.PathSeparator)+"akamai" + suffix
+
+		status := getSpinner(
+			"Installing to "+ newPath + "...",
+			"Installing to "+ newPath + "...... ["+color.GreenString("OK")+"]\n",
+		)
+		status.Start()
+
+		err = os.Rename(selfPath, newPath)
+		os.Args[0] = newPath
 
 		if err != nil {
-			status.FinalMSG = "Installing to " + writablePaths[index-1] + "/akamai...... [" + color.RedString("FAIL") + "]\n"
+			status.FinalMSG = "Installing to "+ newPath + "...... [" + color.RedString("FAIL") + "]\n"
 			status.Stop()
 			color.Red(err.Error())
 		}
