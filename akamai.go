@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	VERSION = "0.3.2"
+	VERSION = "0.3.3"
 )
 
 func main() {
@@ -77,6 +77,7 @@ func main() {
 				Description: cmd.Commands[0].Description,
 				Action:      cmd.action,
 				UsageText:   cmd.Commands[0].Docs,
+				Flags:       cmd.Commands[0].Flags,
 			},
 		)
 	}
@@ -174,7 +175,7 @@ func cmdInstall(c *cli.Context) error {
 
 	fmt.Println("... [" + color.GreenString("OK") + "]")
 
-	if !installPackage(srcPath + string(os.PathSeparator) + dirName) {
+	if !installPackage(srcPath+string(os.PathSeparator)+dirName, c.Bool("force")) {
 		os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
 		return cli.NewExitError("", 1)
 	}
@@ -196,7 +197,7 @@ func cmdUpdate(c *cli.Context) error {
 		for _, cmd := range getCommands() {
 			for _, command := range cmd.Commands {
 				if _, ok := builtinCmds[command.Name]; !ok {
-					if err := updatePackage(command.Name); err != nil {
+					if err := updatePackage(command.Name, c.Bool("force")); err != nil {
 						return err
 					}
 				}
@@ -206,7 +207,7 @@ func cmdUpdate(c *cli.Context) error {
 		return nil
 	}
 
-	return updatePackage(cmd)
+	return updatePackage(cmd, c.Bool("force"))
 }
 
 func cmdUpgrade(c *cli.Context) error {
@@ -305,8 +306,14 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:        "install",
-					Arguments:   "<package name or repository URL>",
+					Name:      "install",
+					Arguments: "<package name or repository URL>",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "force",
+							Usage: "Force binary installation if available when source installation fails",
+						},
+					},
 					Description: "Fetch and install a package from a Git repository.",
 					Docs:        "Examples:\n\n   akamai install property\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
 				},
@@ -316,8 +323,14 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:        "update",
-					Arguments:   "[command]",
+					Name:      "update",
+					Arguments: "[command]",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "force",
+							Usage: "Force binary installation if available when source installation fails",
+						},
+					},
 					Description: "Update a command. If no command is specified, all commands are updated",
 				},
 			},
@@ -535,17 +548,18 @@ type commandPackage struct {
 }
 
 type Command struct {
-	Name        string   `json:"name"`
-	Aliases     []string `json:"aliases"`
-	Version     string   `json:"version"`
-	Description string   `json:"description"`
-	Usage       string   `json:"usage"`
-	Docs        string   `json:-`
-	Arguments   string   `json:"arguments"`
-	Bin         string   `json:"bin"`
-	BinSuffix   string   `json:"-"`
-	OS          string   `json:"-"`
-	Arch        string   `json:"-"`
+	Name        string     `json:"name"`
+	Aliases     []string   `json:"aliases"`
+	Version     string     `json:"version"`
+	Description string     `json:"description"`
+	Usage       string     `json:"usage"`
+	Docs        string     `json:-`
+	Arguments   string     `json:"arguments"`
+	Flags       []cli.Flag `json:"-"`
+	Bin         string     `json:"bin"`
+	BinSuffix   string     `json:"-"`
+	OS          string     `json:"-"`
+	Arch        string     `json:"-"`
 }
 
 func readPackage(dir string) (commandPackage, error) {
@@ -574,7 +588,7 @@ func readPackage(dir string) (commandPackage, error) {
 	return packageData, nil
 }
 
-func installPackage(dir string) bool {
+func installPackage(dir string, forceBinary bool) bool {
 	status := getSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	status.Start()
@@ -621,11 +635,13 @@ func installPackage(dir string) bool {
 					status.FinalMSG = "Installing...... [" + color.CyanString("WARN") + "]\n"
 					status.Stop()
 					color.Cyan(err.Error())
-					fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
-					answer := ""
-					fmt.Scanln(&answer)
-					if answer != "" && strings.ToLower(answer) != "y" {
-						return false
+					if !forceBinary {
+						fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
+						answer := ""
+						fmt.Scanln(&answer)
+						if answer != "" && strings.ToLower(answer) != "y" {
+							return false
+						}
 					}
 
 					os.MkdirAll(dir+string(os.PathSeparator)+"bin", 0775)
@@ -663,7 +679,7 @@ func installPackage(dir string) bool {
 	return true
 }
 
-func updatePackage(cmd string) error {
+func updatePackage(cmd string, forceBinary bool) error {
 	exec, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
@@ -729,7 +745,7 @@ func updatePackage(cmd string) error {
 
 	status.Stop()
 
-	if !installPackage(repoDir) {
+	if !installPackage(repoDir, forceBinary) {
 		return cli.NewExitError("Unable to update command", 1)
 	}
 
