@@ -18,6 +18,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 - [Akamai CLI for Property Manager](https://github.com/akamai/cli-property)
 - [Akamai CLI for Purge](https://github.com/akamai/cli-purge)
+- [Akamai CLI for Visitor Prioritization](https://github.com/akamai/cli-visitor-prioritization)
 
 ## Installation
 
