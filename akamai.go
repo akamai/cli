@@ -145,39 +145,39 @@ func cmdInstall(c *cli.Context) error {
 		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
 	}
 
-	repo := c.Args().First()
-
-	srcPath, err := getAkamaiCliSrcPath()
-	if err != nil {
-		return err
-	}
-
-	_ = os.MkdirAll(srcPath, 0775)
-
 	oldCmds := getCommands()
 
-	repo = githubize(repo)
+	for _, repo := range c.Args() {
+		srcPath, err := getAkamaiCliSrcPath()
+		if err != nil {
+			return err
+		}
 
-	fmt.Print("Attempting to fetch command...")
+		_ = os.MkdirAll(srcPath, 0775)
 
-	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
+		repo = githubize(repo)
 
-	_, err = git.PlainClone(srcPath+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
-		URL:      repo,
-		Progress: nil,
-	})
+		fmt.Printf("Attempting to fetch command from %s...", repo)
 
-	if err != nil {
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
-		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
-	}
+		dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 
-	fmt.Println("... [" + color.GreenString("OK") + "]")
+		_, err = git.PlainClone(srcPath+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
+			URL:      repo,
+			Progress: nil,
+		})
 
-	if !installPackage(srcPath+string(os.PathSeparator)+dirName, c.Bool("force")) {
-		os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
-		return cli.NewExitError("", 1)
+		if err != nil {
+			fmt.Println("... [" + color.RedString("FAIL") + "]")
+			os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
+			return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+		}
+
+		fmt.Println("... [" + color.GreenString("OK") + "]")
+
+		if !installPackage(srcPath+string(os.PathSeparator)+dirName, c.Bool("force")) {
+			os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
+			return cli.NewExitError("", 1)
+		}
 	}
 
 	listDiff(oldCmds)
@@ -186,9 +186,7 @@ func cmdInstall(c *cli.Context) error {
 }
 
 func cmdUpdate(c *cli.Context) error {
-	cmd := c.Args().First()
-
-	if cmd == "" {
+	if !c.Args().Present() {
 		var builtinCmds map[string]bool = make(map[string]bool)
 		for _, cmd := range getBuiltinCommands() {
 			builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
@@ -207,7 +205,14 @@ func cmdUpdate(c *cli.Context) error {
 		return nil
 	}
 
-	return updatePackage(cmd, c.Bool("force"))
+	for _, cmd := range c.Args() {
+		if err := updatePackage(cmd, c.Bool("force")); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func cmdUninstall(c *cli.Context) error {
 	for _, cmd := range c.Args() {
@@ -341,15 +346,15 @@ func getBuiltinCommands() []commandPackage {
 			Commands: []Command{
 				{
 					Name:      "install",
-					Arguments: "<package name or repository URL>",
+					Arguments: "<package name or repository URL>...",
 					Flags: []cli.Flag{
 						cli.BoolFlag{
 							Name:  "force",
 							Usage: "Force binary installation if available when source installation fails",
 						},
 					},
-					Description: "Fetch and install a package from a Git repository.",
-					Docs:        "Examples:\n\n   akamai install property\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
+					Description: "Fetch and install packages from a Git repository.",
+					Docs:        "Examples:\n\n   akamai install property purge\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
 				},
 			},
 			action: cmdInstall,
@@ -357,11 +362,6 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:      "update",
-					Arguments: "[command]",
-					Flags: []cli.Flag{
-						cli.BoolFlag{
-							Name:  "force",
 					Name:        "uninstall",
 					Arguments:   "<command>...",
 					Description: "Uninstall package containing <command>",
@@ -372,10 +372,15 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
+					Name:      "update",
+					Arguments: "[<command>...]",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "force",
 							Usage: "Force binary installation if available when source installation fails",
 						},
 					},
-					Description: "Update a command. If no command is specified, all commands are updated",
+					Description: "Update one or more commands. If no command is specified, all commands are updated",
 				},
 			},
 			action: cmdUpdate,
@@ -742,7 +747,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	if repoDir == "" {
 		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai get\"")+"?"), 1)
+		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	repo, err := git.PlainOpen(repoDir)
