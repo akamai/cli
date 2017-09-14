@@ -17,6 +17,7 @@ func TestVersionCompare(t *testing.T) {
 		{"0.3.1", "0.3.0", -1},
 		{"1", "2", 1},
 		{"1.1", "1.2", 1},
+		{"3.0.0", "3.1.4", 1},
 	}
 
 	for _, tt := range versionTests {
