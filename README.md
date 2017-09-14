@@ -131,9 +131,19 @@ akamai install akamai/cli-property
 akamai install https://github.com/akamai/cli-property.git
 ```
 
+You can specify _multiple_ packages to install at once.
+
+#### Uninstall
+
+To uninstall a package installed with `akamai install`, you call `akamai uninstall <command>`, where `<command>` is any command within that package.
+
+You can specify _multiple_ packages to uninstall at once.
+
 #### Update
 
 To update a package installed with `akamai install`, you call `akamai update <command>`, where `<command>` is any command within that package.
+
+You can specify _multiple_ packages to update at once.
 
 Calling `akamai update` with no arguments will update _all_ packages installed using `akamai install`
 
