@@ -208,6 +208,40 @@ func cmdUpdate(c *cli.Context) error {
 	}
 
 	return updatePackage(cmd, c.Bool("force"))
+
+func cmdUninstall(c *cli.Context) error {
+	for _, cmd := range c.Args() {
+		exec, err := findExec(cmd)
+		if err != nil {
+			return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
+		}
+
+		status := getSpinner(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd), fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd)+"... ["+color.GreenString("OK")+"]\n")
+		status.Start()
+
+		var repoDir string
+		if len(exec) == 1 {
+			repoDir = findPackageDir(filepath.Dir(exec[0]))
+		} else if len(exec) > 1 {
+			repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
+		}
+
+		if repoDir == "" {
+			status.FinalMSG = fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+			status.Stop()
+			return cli.NewExitError(color.RedString("unable to uninstall, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
+		}
+
+		if err := os.RemoveAll(repoDir); err != nil {
+			status.FinalMSG = fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
+			status.Stop()
+			return cli.NewExitError(color.RedString("unable to remove directory: %s", repoDir), 1)
+		}
+
+		status.Stop()
+	}
+
+	return nil
 }
 
 func cmdUpgrade(c *cli.Context) error {
@@ -328,6 +362,16 @@ func getBuiltinCommands() []commandPackage {
 					Flags: []cli.Flag{
 						cli.BoolFlag{
 							Name:  "force",
+					Name:        "uninstall",
+					Arguments:   "<command>...",
+					Description: "Uninstall package containing <command>",
+				},
+			},
+			action: cmdUninstall,
+		},
+		{
+			Commands: []Command{
+				{
 							Usage: "Force binary installation if available when source installation fails",
 						},
 					},
