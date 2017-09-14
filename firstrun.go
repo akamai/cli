@@ -89,11 +89,11 @@ func firstRun() error {
 			suffix = ".exe"
 		}
 
-		newPath := writablePaths[index-1]+string(os.PathSeparator)+"akamai" + suffix
+		newPath := writablePaths[index-1] + string(os.PathSeparator) + "akamai" + suffix
 
 		status := getSpinner(
-			"Installing to "+ newPath + "...",
-			"Installing to "+ newPath + "...... ["+color.GreenString("OK")+"]\n",
+			"Installing to "+newPath+"...",
+			"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 		)
 		status.Start()
 
@@ -101,7 +101,7 @@ func firstRun() error {
 		os.Args[0] = newPath
 
 		if err != nil {
-			status.FinalMSG = "Installing to "+ newPath + "...... [" + color.RedString("FAIL") + "]\n"
+			status.FinalMSG = "Installing to " + newPath + "...... [" + color.RedString("FAIL") + "]\n"
 			status.Stop()
 			color.Red(err.Error())
 		}
