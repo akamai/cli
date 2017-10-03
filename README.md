@@ -20,6 +20,10 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 - [Akamai CLI for Purge](https://github.com/akamai/cli-purge)
 - [Akamai CLI for Visitor Prioritization](https://github.com/akamai/cli-visitor-prioritization)
 
+## Unofficial Packages
+
+- [Akamai CLI for Certificate Operations (CPS)](https://github.com/rajiv/akamai-cli-certs)
+
 ## Installation
 
 Akamai CLI itself has no dependencies, but may rely on packages that can be written using any language and may require additional runtimes.
