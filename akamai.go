@@ -160,22 +160,27 @@ func cmdInstall(c *cli.Context) error {
 		fmt.Printf("Attempting to fetch command from %s...", repo)
 
 		dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
+		packageDir := srcPath + string(os.PathSeparator) + dirName
+		if _, err := os.Stat(packageDir); err == nil {
+			fmt.Println("... [" + color.RedString("FAIL") + "]")
+			return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
+		}
 
-		_, err = git.PlainClone(srcPath+string(os.PathSeparator)+dirName, false, &git.CloneOptions{
+		_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
 			URL:      repo,
 			Progress: nil,
 		})
 
 		if err != nil {
 			fmt.Println("... [" + color.RedString("FAIL") + "]")
-			os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
+			os.RemoveAll(packageDir)
 			return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
 		}
 
 		fmt.Println("... [" + color.GreenString("OK") + "]")
 
-		if !installPackage(srcPath+string(os.PathSeparator)+dirName, c.Bool("force")) {
-			os.RemoveAll(srcPath + string(os.PathSeparator) + dirName)
+		if !installPackage(packageDir, c.Bool("force")) {
+			os.RemoveAll(packageDir)
 			return cli.NewExitError("", 1)
 		}
 	}
