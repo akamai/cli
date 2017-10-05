@@ -1,4 +1,5 @@
 #!/bin/bash
+# Creates unsigned binaries for macOS (64bit), and Linux/Windows (32 and 64bit) 
 function check_version {
 	grep "VERSION" ./akamai.go | grep  \"$1\"
 	if [[ $? -eq 1 ]]
