@@ -37,7 +37,7 @@ func firstRun() error {
 	}
 
 	for _, path := range paths {
-		if checkAccess(path, ACCESS_W_OK) != nil || len(strings.TrimSpace(path)) == 0 {
+		if len(strings.TrimSpace(path)) == 0 {
 			continue
 		}
 
@@ -45,7 +45,9 @@ func firstRun() error {
 			path = strings.ToLower(path)
 		}
 
-		writablePaths = append(writablePaths, path)
+		if checkAccess(path, ACCESS_W_OK) != nil {
+			writablePaths = append(writablePaths, path)
+		}
 
 		if path == dirPath {
 			inPath = true
