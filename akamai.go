@@ -36,6 +36,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
@@ -690,6 +691,10 @@ func installPackage(dir string, forceBinary bool) bool {
 					status.Stop()
 					color.Cyan(err.Error())
 					if !forceBinary {
+						if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+							return false
+						}
+
 						fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
 						answer := ""
 						fmt.Scanln(&answer)

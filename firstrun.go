@@ -13,9 +13,14 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
+	"github.com/mattn/go-isatty"
 )
 
 func firstRun() error {
+	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		return nil
+	}
+
 	selfPath, err := osext.Executable()
 	if err != nil {
 		return err

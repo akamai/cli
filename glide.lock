@@ -1,5 +1,5 @@
-hash: 60478877ecbb447febf535d3d25b62be29fb4c601bd13a846593d7a0aaf4cbd8
-updated: 2017-08-10T11:22:17.504990463-07:00
+hash: b13315fad92eb9aaed051f689a3ef35a0e96c7366a27020bb9929c99a5b7bcd5
+updated: 2017-11-06T20:25:29.751642487-08:00
 imports:
 - name: github.com/briandowns/spinner
   version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
@@ -20,12 +20,11 @@ imports:
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
 - name: github.com/mattn/go-isatty
-  version: 57fdcb988a5c543893cc61bce354a6e24ab70022
-  repo: https://github.com/mattn/go-isatty
+  version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/sergi/go-diff
-  version: feef008d51ad2b3778f85d387ccf91735543008d
+  version: 2fc9cd33b5f86077aa3e0f442fa0476a9fa9a1dc
   subpackages:
   - diffmatchpatch
 - name: github.com/src-d/gcfg
@@ -35,15 +34,15 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: 8ddbecf782c2e340fd85bb4ba4d00dc73d749f87
+  version: f9879dd043f84936a1f8acb8a53b74332a7ae135
 - name: github.com/urfave/cli
-  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+  version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: github.com/yookoala/realpath
-  version: 80fa1befd17fc3b89a788874137207ddad1115c1
+  version: d19ef9c409d9817c1e685775e53d361b03eabbc8
 - name: golang.org/x/crypto
-  version: b176d7def5d71bdd214203491f89843ed217f420
+  version: 687d4b818545e443c8ba223cbef20b1721afd4db
   subpackages:
   - curve25519
   - ed25519
@@ -52,13 +51,18 @@ imports:
   - ssh/agent
   - ssh/knownhosts
 - name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  version: 01c190206fbdffa42f334f4b2bf2220f50e64920
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: e42485b6e20ae7d2304ec72e535b103ed350cc02
+  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
   subpackages:
   - unix
+- name: golang.org/x/text
+  version: 88f656faf3f37f690df1a32515b479415e1a6769
+  subpackages:
+  - transform
+  - unicode/norm
 - name: gopkg.in/src-d/go-billy.v3
   version: c329b7bc7b9d24905d2bc1b85bfa29f7ae266314
   subpackages:
@@ -67,7 +71,7 @@ imports:
   - osfs
   - util
 - name: gopkg.in/src-d/go-git.v4
-  version: 8ddbecf782c2e340fd85bb4ba4d00dc73d749f87
+  version: f9879dd043f84936a1f8acb8a53b74332a7ae135
   subpackages:
   - config
   - internal/revision

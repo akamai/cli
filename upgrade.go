@@ -18,9 +18,14 @@ import (
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
+	"github.com/mattn/go-isatty"
 )
 
 func checkForUpgrade(force bool) string {
+	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		return ""
+	}
+
 	cliPath, _ := getAkamaiCliPath()
 	upgradeFile := cliPath + string(os.PathSeparator) + ".upgrade-check"
 	data, err := ioutil.ReadFile(upgradeFile)
