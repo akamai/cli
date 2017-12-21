@@ -23,6 +23,6 @@ RUN echo "export PATH=${PATH}:/opt/bin" >> /root/.bashrc
 RUN echo "export GOPATH=/opt" >> /root/.bashrc
 RUN echo "PS1='Akamai CLI Sandbox >> '" >> /root/.bashrc
 WORKDIR /opt
-RUN akamai get akamai/cli-property
-RUN akamai get akamai/cli-purge
+RUN akamai install property
+RUN akamai install purge
 ENTRYPOINT ["/bin/bash"]
