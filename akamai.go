@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	VERSION = "0.4.2"
+	VERSION = "0.4.3"
 )
 
 func main() {
@@ -1344,6 +1344,10 @@ func passthruCommand(executable []string) error {
 func githubize(repo string) string {
 	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
 		return strings.TrimPrefix(repo, "ssh://")
+	}
+
+	if strings.HasPrefix(repo, "file://") {
+		return repo
 	}
 
 	if !strings.Contains(repo, "/") {
