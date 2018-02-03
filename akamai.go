@@ -289,9 +289,9 @@ func cmdSubcommand(c *cli.Context) error {
 
 	var packageDir string
 	if len(executable) == 1 {
-		packageDir = findPackageDir(executable[0])
+		packageDir = findPackageDir(filepath.Dir(executable[0]))
 	} else if len(executable) > 1 {
-		packageDir = findPackageDir(executable[1])
+		packageDir = findPackageDir(filepath.Dir(executable[1]))
 	}
 
 	cmdPackage, _ := readPackage(packageDir)
@@ -1193,7 +1193,7 @@ func setPythonPath(packageDir string) error {
 	}
 
 	if len(pythonPaths) > 0 {
-		pythonPath = pythonPaths[0]
+		pythonPath = pythonPaths[0] + string(os.PathSeparator) + "site-packages"
 	}
 
 	systemPythonPath := os.Getenv("PYTHONPATH")
