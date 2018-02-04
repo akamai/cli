@@ -55,7 +55,7 @@ func firstRun() error {
 			path = strings.ToLower(path)
 		}
 
-		if checkAccess(path, ACCESS_W_OK) != nil {
+		if err := checkAccess(path, ACCESS_W_OK); err == nil {
 			writablePaths = append(writablePaths, path)
 		}
 
@@ -134,11 +134,12 @@ checkUpdate:
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
 			setConfigValue("cli", "last-upgrade-check", "ignore")
-
+			saveConfig()
 			return nil
 		}
 
 		setConfigValue("cli", "last-upgrade-check", "never")
+		saveConfig()
 	}
 
 	return nil

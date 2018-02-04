@@ -92,10 +92,9 @@ func migrateConfig() {
 	}
 
 	setConfigValue("cli", "config-version", configVersion)
+	saveConfig()
 	
 	cliPath, _ := getAkamaiCliPath()
-
-	setConfigValue("cli", "last-upgrade-check", "never")
 
 	var data []byte
 	upgradeFile := filepath.Join(cliPath, ".upgrade-check")
@@ -105,17 +104,23 @@ func migrateConfig() {
 		upgradeFile = filepath.Join(cliPath, ".update-check")
 		if _, err := os.Stat(upgradeFile); err == nil {
 			data, err = ioutil.ReadFile(upgradeFile)
+		} else {
+			return
 		}
 	}
 
 	if len(data) != 0 {
 		date := string(data)
-		if m := strings.LastIndex(date, "m="); m != -1 {
-			date = date[0:m-1]
-		}
-		lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
-		if err == nil {
-			setConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
+		if date == "never" || date == "ignore" {
+			setConfigValue("cli", "last-upgrade-check", date)
+		} else {
+			if m := strings.LastIndex(date, "m="); m != -1 {
+				date = date[0:m-1]
+			}
+			lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
+			if err == nil {
+				setConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
+			}
 		}
 
 		os.Remove(upgradeFile)
