@@ -298,7 +298,7 @@ func cmdSubcommand(c *cli.Context) error {
 	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
-		err = setPythonPath(packageDir)
+		err = setPythonPath(packageDir, cmdPackage.Requirements.Python)
 		if err != nil {
 			return err
 		}
@@ -1005,7 +1005,7 @@ func findPythonBins(version string) (pythonBins, error) {
 	var err error
 
 	bins := pythonBins{}
-	if version != "" && version!= "*" {
+	if version != "" && version != "*" {
 		if versionCompare("3.0.0", version) != -1 {
 			bins.python, err = exec.LookPath("python3")
 			if err != nil {
@@ -1195,7 +1195,7 @@ func downloadBin(dir string, cmd Command) bool {
 	return true
 }
 
-func setPythonPath(packageDir string) error {
+func setPythonPath(packageDir string, version string) error {
 	var pythonPath string
 
 	if runtime.GOOS == "linux" {
@@ -1217,8 +1217,8 @@ func setPythonPath(packageDir string) error {
 
 	systemPythonPath := os.Getenv("PYTHONPATH")
 	if systemPythonPath == "" {
-		bin, _ := exec.LookPath("python")
-		cmd := exec.Command(bin, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
+		bins, _ := findPythonBins(version)
+		cmd := exec.Command(bins.python, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
 		output, _ := cmd.CombinedOutput()
 		systemPythonPath = strings.Trim(string(output), "\r\n")
 	}
