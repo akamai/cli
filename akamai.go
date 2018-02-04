@@ -50,6 +50,7 @@ func main() {
 	setCliTemplates()
 
 	os.Setenv("AKAMAI_CLI", "1")
+	exportConfigEnv()
 
 	app := cli.NewApp()
 	app.Name = "akamai"

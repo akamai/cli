@@ -1,10 +1,12 @@
-hash: b13315fad92eb9aaed051f689a3ef35a0e96c7366a27020bb9929c99a5b7bcd5
-updated: 2017-11-06T20:25:29.751642487-08:00
+hash: b3f4139d1b46b6a6cb2cfb9830094af74c6b7183d6e9df757617d02d4f605616
+updated: 2018-02-03T19:36:37.799155398-08:00
 imports:
 - name: github.com/briandowns/spinner
   version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
+- name: github.com/go-ini/ini
+  version: 32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a
 - name: github.com/inconshreveable/go-update
   version: 8152e7eb6ccf8679a64582a66b78519688d156ad
   subpackages:
@@ -16,6 +18,8 @@ imports:
   - io
 - name: github.com/kardianos/osext
   version: ae77be60afb1dcacde03767a8c37337fad28ac14
+- name: github.com/kevinburke/ssh_config
+  version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -23,8 +27,10 @@ imports:
   version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/pelletier/go-buffruneio
+  version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - name: github.com/sergi/go-diff
-  version: 2fc9cd33b5f86077aa3e0f442fa0476a9fa9a1dc
+  version: 217d392c389de447c964f954cc5e4774cde4b66b
   subpackages:
   - diffmatchpatch
 - name: github.com/src-d/gcfg
@@ -34,7 +40,7 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: f9879dd043f84936a1f8acb8a53b74332a7ae135
+  version: bf3b1f1fb9e0a04d0f87511a7ded2562b48a19d8
 - name: github.com/urfave/cli
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: github.com/xanzy/ssh-agent
@@ -42,36 +48,47 @@ imports:
 - name: github.com/yookoala/realpath
   version: d19ef9c409d9817c1e685775e53d361b03eabbc8
 - name: golang.org/x/crypto
-  version: 687d4b818545e443c8ba223cbef20b1721afd4db
+  version: a6600008915114d9c087fad9f03d75087b1a74df
   subpackages:
+  - cast5
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
+  - internal/chacha20
+  - openpgp
+  - openpgp/armor
+  - openpgp/elgamal
+  - openpgp/errors
+  - openpgp/packet
+  - openpgp/s2k
+  - poly1305
   - ssh
   - ssh/agent
   - ssh/knownhosts
 - name: golang.org/x/net
-  version: 01c190206fbdffa42f334f4b2bf2220f50e64920
+  version: 2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
+  version: e24f485414aeafb646f6fca458b0bf869c0880a1
+  repo: https://go.googlesource.com/sys
   subpackages:
   - unix
+  - windows
 - name: golang.org/x/text
-  version: 88f656faf3f37f690df1a32515b479415e1a6769
+  version: e19ae1496984b1c655b8044a65c0300a3c878dd3
   subpackages:
   - transform
   - unicode/norm
-- name: gopkg.in/src-d/go-billy.v3
-  version: c329b7bc7b9d24905d2bc1b85bfa29f7ae266314
+- name: gopkg.in/src-d/go-billy.v4
+  version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
   subpackages:
   - helper/chroot
   - helper/polyfill
   - osfs
   - util
 - name: gopkg.in/src-d/go-git.v4
-  version: f9879dd043f84936a1f8acb8a53b74332a7ae135
+  version: e9247ce9c5ce12126f646ca3ddf0066e4829bd14
   subpackages:
   - config
   - internal/revision
@@ -113,5 +130,5 @@ imports:
   - utils/merkletrie/internal/frame
   - utils/merkletrie/noder
 - name: gopkg.in/warnings.v0
-  version: 8a331561fe74dadba6edfc59f3be66c22c3b065d
+  version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 testImports: []

@@ -37,6 +37,10 @@ func firstRun() error {
 	inPath := false
 	writablePaths := []string{}
 
+	if getConfigValue("cli", "install-in-path") == "no" {
+		goto checkUpdate
+	}
+
 	if len(paths) == 0 {
 		goto checkUpdate
 	}
@@ -66,6 +70,8 @@ func firstRun() error {
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
+			setConfigValue("install-in-path", "no")
+			saveConfig()
 			goto checkUpdate
 		}
 

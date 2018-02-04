@@ -26,25 +26,21 @@ func checkForUpgrade(force bool) string {
 		return ""
 	}
 
-	cliPath, _ := getAkamaiCliPath()
-	upgradeFile := cliPath + string(os.PathSeparator) + ".upgrade-check"
-	data, err := ioutil.ReadFile(upgradeFile)
-	if err != nil {
-		fmt.Printf("%#v", err)
-		return ""
-	}
+	data := strings.TrimSpace(getConfigValue("last-upgrade-check"))
 
-	if string(data) == "ignore" {
+	if data == "ignore" {
 		return ""
 	}
 
 	checkForUpgrade := false
-	if strings.TrimSpace(string(data)) == "never" || force {
+	if data == "never" || force {
 		checkForUpgrade = true
 	}
 
 	if !checkForUpgrade {
-		lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", string(data))
+		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data),"\""), "\"")
+		lastUpgrade, err := time.Parse(time.RFC3339, configValue)
+
 		if err != nil {
 			return ""
 		}
@@ -56,7 +52,8 @@ func checkForUpgrade(force bool) string {
 	}
 
 	if checkForUpgrade {
-		err := ioutil.WriteFile(upgradeFile, []byte(time.Now().String()), 0644)
+		setConfigValue("last-upgrade-check", time.Now().Format(time.RFC3339))
+		err := saveConfig()
 		if err != nil {
 			return ""
 		}

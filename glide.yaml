@@ -16,3 +16,5 @@ import:
   version: ~4.0.0-rc13
 - package: github.com/mattn/go-isatty
   version: ^0.0.3
+- package: github.com/go-ini/ini
+  version: ^1.31.1
