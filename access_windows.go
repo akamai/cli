@@ -1,7 +1,7 @@
 package main
 
 const (
-	ACCESS_R_OK = 0
+	ACCESS_R_OK = iota
 	ACCESS_W_OK
 	ACCESS_X_OK
 )
