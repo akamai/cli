@@ -658,12 +658,6 @@ func installPackage(dir string, forceBinary bool) bool {
 	}
 
 	lang := determineCommandLanguage(cmdPackage)
-	if lang == "" {
-		status.FinalMSG = "Installing...... [" + color.BlueString("OK") + "]\n"
-		status.Stop()
-		color.Blue("Package installed successfully, however package type is unknown, and may or may not function correctly.")
-		return true
-	}
 
 	var success bool
 	switch lang {
@@ -678,64 +672,55 @@ func installPackage(dir string, forceBinary bool) bool {
 	case "go":
 		success, err = installGolang(dir, cmdPackage)
 	default:
-		success = false
-		err = nil
-	}
-
-	if success == false || err != nil {
-		first := true
-		for _, cmd := range cmdPackage.Commands {
-			if cmd.Bin != "" {
-				if first {
-					first = false
-					status.FinalMSG = "Installing...... [" + color.CyanString("WARN") + "]\n"
-					status.Stop()
-					color.Cyan(err.Error())
-					if !forceBinary {
-						if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-							return false
-						}
-
-						fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
-						answer := ""
-						fmt.Scanln(&answer)
-						if answer != "" && strings.ToLower(answer) != "y" {
-							return false
-						}
-					}
-
-					os.MkdirAll(filepath.Join(dir, "bin"), 0775)
-				}
-
-				status := getSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
-				status.Start()
-				if !downloadBin(filepath.Join(dir, "bin"), cmd) {
-					status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
-					status.Stop()
-					color.Red("Unable to download binary")
-					return false
-				}
-				success = true
-				err = nil
-			}
-		}
-	}
-
-	if err != nil {
-		status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
+		status.FinalMSG = "Installing...... [" + color.CyanString("OK") + "]\n"
 		status.Stop()
-		fmt.Println("... [" + color.RedString("FAIL") + "]")
-		color.Red(err.Error())
-		return false
+		color.Cyan("Package installed successfully, however package type is unknown, and may or may not function correctly.")
+		return true
 	}
 
-	if success {
+	if success && err == nil {
 		status.Stop()
 		return true
 	}
 
-	status.FinalMSG = "Downloading binary...... [" + color.CyanString("OK") + "]\n"
-	status.Stop()
+	first := true
+	for _, cmd := range cmdPackage.Commands {
+		if cmd.Bin != "" {
+			if first {
+				first = false
+				status.FinalMSG = "Installing...... [" + color.CyanString("WARN") + "]\n"
+				status.Stop()
+				color.Cyan(err.Error())
+				if !forceBinary {
+					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+						return false
+					}
+
+					fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
+					answer := ""
+					fmt.Scanln(&answer)
+					if answer != "" && strings.ToLower(answer) != "y" {
+						return false
+					}
+				}
+
+				os.MkdirAll(filepath.Join(dir, "bin"), 0775)
+			}
+
+			status := getSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
+			status.Start()
+			if downloadBin(filepath.Join(dir, "bin"), cmd) {
+				status.Stop()
+				return true
+			} else {
+				status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
+				status.Stop()
+				color.Red("Unable to download binary: " + err.Error())
+				return false
+			}
+		}
+	}
+
 	return true
 }
 
