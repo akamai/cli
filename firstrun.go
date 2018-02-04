@@ -70,7 +70,7 @@ func firstRun() error {
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
-			setConfigValue("install-in-path", "no")
+			setConfigValue("cli", "install-in-path", "no")
 			saveConfig()
 			goto checkUpdate
 		}

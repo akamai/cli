@@ -106,44 +106,24 @@ func migrateConfig() {
 	saveConfig()
 }
 
-func getConfigValue(sectionOrKey string, keyName ...string) string {
-	var key string
-	if len(keyName) == 0 {
-		key = sectionOrKey
-		sectionOrKey = "cli"
-	} else {
-		key = keyName[0]
-	}
-
+func getConfigValue(sectionName string, key string) string {
 	config, err := openConfig()
 	if err != nil {
 		return ""
 	}
 
-	section := config.Section(sectionOrKey)
+	section := config.Section(sectionName)
 	return section.Key(key).String()
 }
 
-func setConfigValue(sectionOrKey string, keyOrValue string, value ...string) {
-	var val string
-	var key string
-
-	if len(value) == 0 {
-		val = keyOrValue
-		key = sectionOrKey
-		sectionOrKey = "cli"
-	} else {
-		val = value[0]
-		key = keyOrValue
-	}
-
+func setConfigValue(sectionName string, key string, value string) {
 	config, err := openConfig()
 	if err != nil {
 		return
 	}
 
-	section := config.Section(sectionOrKey)
-	section.Key(key).SetValue(val)
+	section := config.Section(sectionName)
+	section.Key(key).SetValue(value)
 }
 
 func exportConfigEnv() {
