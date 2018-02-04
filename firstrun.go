@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -123,10 +122,7 @@ func firstRun() error {
 
 checkUpdate:
 
-	cliPath, _ := getAkamaiCliPath()
-	updateFile := cliPath + string(os.PathSeparator) + ".upgrade-check"
-	_, err = os.Stat(updateFile)
-	if os.IsNotExist(err) {
+	if getConfigValue("cli", "last-update-check") == "" {
 		if inPath {
 			showBanner()
 		}
@@ -135,18 +131,12 @@ checkUpdate:
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
-			err := ioutil.WriteFile(updateFile, []byte("ignore"), 0644)
-			if err != nil {
-				return err
-			}
+			setConfigValue("cli", "last-update-check", "ignore")
 
 			return nil
 		}
 
-		err := ioutil.WriteFile(updateFile, []byte("never"), 0644)
-		if err != nil {
-			return err
-		}
+		setConfigValue("cli", "last-update-check", "never")
 	}
 
 	return nil
