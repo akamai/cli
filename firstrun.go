@@ -37,10 +37,12 @@ func firstRun() error {
 	writablePaths := []string{}
 
 	if getConfigValue("cli", "install-in-path") == "no" {
+		inPath = true
 		goto checkUpdate
 	}
 
 	if len(paths) == 0 {
+		inPath = true
 		goto checkUpdate
 	}
 
