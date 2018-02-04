@@ -1371,8 +1371,8 @@ func githubize(repo string) string {
 }
 
 func findPackageDir(dir string) string {
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
-		if os.IsNotExist(err) {
+	if stat, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
+		if os.IsNotExist(err) || (stat != nil && !stat.IsDir()) {
 			if path.Dir(dir) == "" {
 				return ""
 			}
