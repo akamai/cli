@@ -298,7 +298,7 @@ func cmdSubcommand(c *cli.Context) error {
 	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
-		err = setPythonPath(packageDir, cmdPackage.Requirements.Python)
+		os.Setenv("PYTHONUSERBASE", packageDir)
 		if err != nil {
 			return err
 		}
@@ -975,12 +975,10 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 
 		if err == nil {
 			if runtime.GOOS != "windows" {
-				systemHome := os.Getenv("HOME")
-				os.Setenv("HOME", dir)
+				os.Setenv("PYTHONUSERBASE", dir)
 				cmd := exec.Command(bins.pip, "install", "--user", "-r", "requirements.txt")
 				cmd.Dir = dir
 				err = cmd.Run()
-				os.Setenv("HOME", systemHome)
 			} else {
 				cmd := exec.Command(bins.pip, "install", "--isolated", "--prefix", dir, "-r", "requirements.txt")
 				cmd.Dir = dir
@@ -1193,50 +1191,6 @@ func downloadBin(dir string, cmd Command) bool {
 	}
 
 	return true
-}
-
-func setPythonPath(packageDir string, version string) error {
-	var pythonPath string
-
-	if runtime.GOOS == "linux" {
-		packageDir = filepath.Join(packageDir, ".local", "lib", "python*")
-	} else if runtime.GOOS == "darwin" {
-		packageDir = filepath.Join(packageDir, "Library", "Python", "*")
-	} else if runtime.GOOS == "windows" {
-		packageDir = filepath.Join(packageDir, "Lib")
-	}
-
-	pythonPaths, err := filepath.Glob(packageDir)
-	if err != nil {
-		return err
-	}
-
-	if len(pythonPaths) > 0 {
-		pythonPath = pythonPaths[0]
-	}
-
-	systemPythonPath := os.Getenv("PYTHONPATH")
-	if systemPythonPath == "" {
-		bins, _ := findPythonBins(version)
-		cmd := exec.Command(bins.python, "-c", "import sys, os; print(os.pathsep.join(sys.path))")
-		output, _ := cmd.CombinedOutput()
-		systemPythonPath = strings.Trim(string(output), "\r\n")
-	}
-
-	pythonPath += string(os.PathListSeparator) + filepath.Join(pythonPath, "site-packages")
-	if systemPythonPath != "" {
-		pythonPath += string(os.PathListSeparator) + strings.TrimPrefix(systemPythonPath, string(os.PathListSeparator))
-	}
-
-	if len(pythonPath) == 0 {
-		return cli.NewExitError(color.RedString("Unable to determine package path."), 1)
-	}
-
-	fmt.Println("PYTHONPATH: " + pythonPath)
-
-	os.Setenv("PYTHONPATH", pythonPath)
-
-	return nil
 }
 
 func self() string {
