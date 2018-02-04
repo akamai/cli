@@ -162,7 +162,7 @@ func cmdInstall(c *cli.Context) error {
 		fmt.Printf("Attempting to fetch command from %s...", repo)
 
 		dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
-		packageDir := srcPath + string(os.PathSeparator) + dirName
+		packageDir := filepath.Join(srcPath, dirName)
 		if _, err := os.Stat(packageDir); err == nil {
 			fmt.Println("... [" + color.RedString("FAIL") + "]")
 			return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
@@ -436,7 +436,7 @@ func getAkamaiCliPath() (string, error) {
 		}
 	}
 
-	cliPath := cliHome + string(os.PathSeparator) + ".akamai-cli"
+	cliPath := filepath.Join(cliHome, ".akamai-cli")
 	err := os.MkdirAll(cliPath, 0755)
 	if err != nil {
 		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
@@ -448,13 +448,13 @@ func getAkamaiCliPath() (string, error) {
 func getAkamaiCliSrcPath() (string, error) {
 	cliHome, _ := getAkamaiCliPath()
 
-	return cliHome + string(os.PathSeparator) + "src", nil
+	return filepath.Join(cliHome, "src"), nil
 }
 
 func getAkamaiCliCachePath() (string, error) {
 	cliHome, _ := getAkamaiCliPath()
 
-	cachePath := cliHome + string(os.PathSeparator) + ".akamai-cli" + string(os.PathSeparator) + "cache"
+	cachePath := filepath.Join(cliHome, ".akamai-cli", "cache")
 	err := os.MkdirAll(cachePath, 0775)
 	if err != nil {
 		return "", err
@@ -467,7 +467,7 @@ func getPackagePaths() string {
 	path := ""
 	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
-		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
+		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
 		if len(paths) > 0 {
 			path += strings.Join(paths, string(os.PathListSeparator))
 		}
@@ -480,11 +480,11 @@ func getPackageBinPaths() string {
 	path := ""
 	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
-		paths, _ := filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*")
+		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
 		if len(paths) > 0 {
 			path += strings.Join(paths, string(os.PathListSeparator))
 		}
-		paths, _ = filepath.Glob(akamaiCliPath + string(os.PathSeparator) + "*" + string(os.PathSeparator) + "bin")
+		paths, _ = filepath.Glob(filepath.Join(akamaiCliPath, "*", "bin"))
 		if len(paths) > 0 {
 			path += string(os.PathListSeparator) + strings.Join(paths, string(os.PathListSeparator))
 		}
@@ -619,15 +619,15 @@ type Command struct {
 }
 
 func readPackage(dir string) (commandPackage, error) {
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/cli.json"); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = path.Dir(dir)
-		if _, err = os.Stat(dir + string(os.PathSeparator) + "/cli.json"); err != nil {
+		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 			return commandPackage{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
 		}
 	}
 
 	var packageData commandPackage
-	cliJson, err := ioutil.ReadFile(dir + string(os.PathSeparator) + "/cli.json")
+	cliJson, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
 		return commandPackage{}, err
 	}
@@ -704,12 +704,12 @@ func installPackage(dir string, forceBinary bool) bool {
 						}
 					}
 
-					os.MkdirAll(dir+string(os.PathSeparator)+"bin", 0775)
+					os.MkdirAll(filepath.Join(dir, "bin"), 0775)
 				}
 
 				status := getSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 				status.Start()
-				if !downloadBin(dir+string(os.PathSeparator)+"bin", cmd) {
+				if !downloadBin(filepath.Join(dir, "bin"), cmd) {
 					status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
 					status.Stop()
 					color.Red("Unable to download binary")
@@ -832,9 +832,9 @@ func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.json"); err == nil {
-		if _, err := os.Stat(dir + string(os.PathSeparator) + "/composer.phar"); err == nil {
-			cmd := exec.Command(bin, dir+string(os.PathSeparator)+"/composer.phar", "install")
+	if _, err := os.Stat(filepath.Join(dir, "composer.json")); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, "composer.phar")); err == nil {
+			cmd := exec.Command(bin, filepath.Join(dir, "composer.phar"), "install")
 			cmd.Dir = dir
 			err = cmd.Run()
 			if err != nil {
@@ -890,7 +890,7 @@ func installJavaScript(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/yarn.lock"); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "yarn.lock")); err == nil {
 		bin, err := exec.LookPath("yarn")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
@@ -903,7 +903,7 @@ func installJavaScript(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/package.json"); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "package.json")); err == nil {
 		bin, err := exec.LookPath("npm")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
@@ -935,7 +935,7 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "/Gemfile"); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
 		bin, err := exec.LookPath("bundle")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
@@ -1097,10 +1097,10 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	if err != nil {
 		return false, cli.NewExitError(color.RedString("Unable to determine home directory"), 1)
 	}
-	goPath += string(os.PathSeparator) + ".akamai-cli"
+	goPath = filepath.Join(goPath, ".akamai-cli")
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath)
 
-	if _, err := os.Stat(dir + string(os.PathSeparator) + "glide.lock"); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
 		bin, err := exec.LookPath("glide")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
@@ -1170,7 +1170,7 @@ func downloadBin(dir string, cmd Command) bool {
 
 	url := buf.String()
 
-	bin, err := os.Create(dir + string(os.PathSeparator) + "akamai-" + strings.ToLower(cmd.Name) + cmd.BinSuffix)
+	bin, err := os.Create(filepath.Join(dir, "akamai-" + strings.ToLower(cmd.Name) + cmd.BinSuffix))
 	bin.Chmod(0775)
 	if err != nil {
 		return false
@@ -1199,11 +1199,11 @@ func setPythonPath(packageDir string) error {
 	var pythonPath string
 
 	if runtime.GOOS == "linux" {
-		packageDir += string(os.PathSeparator) + ".local" + string(os.PathSeparator) + "lib" + string(os.PathSeparator) + "python*"
+		packageDir = filepath.Join(packageDir, ".local", "lib", "python*")
 	} else if runtime.GOOS == "darwin" {
-		packageDir += string(os.PathSeparator) + "Library" + string(os.PathSeparator) + "Python" + string(os.PathSeparator) + "*"
+		packageDir = filepath.Join(packageDir, "Library", "Python", "*")
 	} else if runtime.GOOS == "windows" {
-		packageDir += string(os.PathSeparator) + "Lib"
+		packageDir = filepath.Join(packageDir, "Lib")
 	}
 
 	pythonPaths, err := filepath.Glob(packageDir)
@@ -1223,7 +1223,7 @@ func setPythonPath(packageDir string) error {
 		systemPythonPath = strings.Trim(string(output), "\r\n")
 	}
 
-	pythonPath = string(os.PathListSeparator) + pythonPath
+	pythonPath += string(os.PathListSeparator) + filepath.Join(pythonPath, "site-packages")
 	if systemPythonPath != "" {
 		pythonPath += string(os.PathListSeparator) + strings.TrimPrefix(systemPythonPath, string(os.PathListSeparator))
 	}
@@ -1231,6 +1231,8 @@ func setPythonPath(packageDir string) error {
 	if len(pythonPath) == 0 {
 		return cli.NewExitError(color.RedString("Unable to determine package path."), 1)
 	}
+
+	fmt.Println("PYTHONPATH: " + pythonPath)
 
 	os.Setenv("PYTHONPATH", pythonPath)
 
@@ -1275,13 +1277,13 @@ func findExec(cmd string) ([]string, error) {
 	for _, path := range filepath.SplitList(packagePaths) {
 		filePaths := []string{
 			// Search for <path>/akamai-command, <path>/akamaiCommand
-			path + string(os.PathSeparator) + cmdName,
-			path + string(os.PathSeparator) + cmdNameTitle,
+			filepath.Join(path, cmdName),
+			filepath.Join(path, cmdNameTitle),
 
 			// Search for <path>/akamai-command.*, <path>/akamaiCommand.*
 			// This should catch .exe, .bat, .com, .cmd, and .jar
-			path + string(os.PathSeparator) + cmdName + ".*",
-			path + string(os.PathSeparator) + cmdNameTitle + ".*",
+			filepath.Join(path, cmdName + ".*"),
+			filepath.Join(path, cmdNameTitle + ".*"),
 		}
 
 		var files []string
@@ -1369,7 +1371,7 @@ func githubize(repo string) string {
 }
 
 func findPackageDir(dir string) string {
-	if _, err := os.Stat(dir + string(os.PathSeparator) + ".git"); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
 		if os.IsNotExist(err) {
 			if path.Dir(dir) == "" {
 				return ""
