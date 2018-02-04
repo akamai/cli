@@ -47,9 +47,11 @@ const (
 )
 
 func main() {
-	setCliTemplates()
-
 	os.Setenv("AKAMAI_CLI", "1")
+
+	setCliTemplates()
+	getAkamaiCliCachePath()
+
 	exportConfigEnv()
 
 	app := cli.NewApp()
@@ -275,12 +277,6 @@ func cmdUpgrade(c *cli.Context) error {
 }
 
 func cmdSubcommand(c *cli.Context) error {
-	cachePath, err := getAkamaiCliCachePath()
-	if err != nil {
-		return cli.NewExitError("Unable to determine cache path.", 1)
-	}
-	os.Setenv("AKAMAI_CLI_CACHE_DIR", cachePath)
-
 	cmd := c.Command.Name
 
 	executable, err := findExec(cmd)
@@ -452,6 +448,10 @@ func getAkamaiCliSrcPath() (string, error) {
 }
 
 func getAkamaiCliCachePath() (string, error) {
+	if cachePath := getConfigValue("cli", "cache-path"); cachePath != "" {
+		return cachePath, nil
+	}
+
 	cliHome, _ := getAkamaiCliPath()
 
 	cachePath := filepath.Join(cliHome, "cache")
@@ -459,6 +459,9 @@ func getAkamaiCliCachePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	setConfigValue("cli", "cache-path", cachePath)
+	saveConfig()
 
 	return cachePath, nil
 }
