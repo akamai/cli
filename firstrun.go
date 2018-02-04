@@ -124,7 +124,7 @@ func firstRun() error {
 
 checkUpdate:
 
-	if getConfigValue("cli", "last-update-check") == "" {
+	if getConfigValue("cli", "last-upgrade-check") == "" {
 		if inPath {
 			showBanner()
 		}
@@ -133,12 +133,12 @@ checkUpdate:
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
-			setConfigValue("cli", "last-update-check", "ignore")
+			setConfigValue("cli", "last-upgrade-check", "ignore")
 
 			return nil
 		}
 
-		setConfigValue("cli", "last-update-check", "never")
+		setConfigValue("cli", "last-upgrade-check", "never")
 	}
 
 	return nil
