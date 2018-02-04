@@ -454,7 +454,7 @@ func getAkamaiCliSrcPath() (string, error) {
 func getAkamaiCliCachePath() (string, error) {
 	cliHome, _ := getAkamaiCliPath()
 
-	cachePath := filepath.Join(cliHome, ".akamai-cli", "cache")
+	cachePath := filepath.Join(cliHome, "cache")
 	err := os.MkdirAll(cachePath, 0775)
 	if err != nil {
 		return "", err
