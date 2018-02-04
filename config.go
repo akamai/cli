@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ func getConfigFilePath() (string, error) {
 		return "", err
 	}
 	
-	return cliPath + string(os.PathSeparator) + "config", nil
+	return filepath.Join(cliPath, "config"), nil
 }
 
 func openConfig() (*ini.File, error) {
@@ -93,7 +94,7 @@ func migrateConfig() {
 	setConfigValue("cli", "config-version", configVersion)
 	
 	cliPath, _ := getAkamaiCliPath()
-	upgradeFile := cliPath + string(os.PathSeparator) + ".upgrade-check"
+	upgradeFile := filepath.Join(cliPath, ".upgrade-check")
 
 	setConfigValue("cli", "last-upgrade-check", "never")
 
@@ -104,7 +105,7 @@ func migrateConfig() {
 			setConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
 		}
 	} else {
-		upgradeFile = cliPath + string(os.PathSeparator) + ".update-check"
+		upgradeFile = filepath.Join(cliPath, ".update-check")
 		if _, err := os.Stat(upgradeFile); err == nil {
 			data, err := ioutil.ReadFile(upgradeFile)
 			lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", string(data))

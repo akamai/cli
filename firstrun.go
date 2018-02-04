@@ -101,7 +101,7 @@ func firstRun() error {
 			suffix = ".exe"
 		}
 
-		newPath := writablePaths[index-1] + string(os.PathSeparator) + "akamai" + suffix
+		newPath := filepath.Join(writablePaths[index-1], "akamai" + suffix)
 
 		status := getSpinner(
 			"Installing to "+newPath+"...",
