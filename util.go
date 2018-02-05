@@ -188,6 +188,11 @@ func githubize(repo string) string {
 		repo = "akamai/cli-" + strings.TrimPrefix(repo, "cli-")
 	}
 
+	// Handle Github migration from akamai-open -> akamai
+	if strings.HasPrefix(repo, "akamai-open/") {
+		repo = "akamai/" + strings.TrimPrefix(repo, "akamai-open/")
+	}
+
 	return "https://github.com/" + repo + ".git"
 }
 

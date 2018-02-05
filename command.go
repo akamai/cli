@@ -151,6 +151,7 @@ func getBuiltinCommands() []commandPackage {
 							Usage: "Force binary installation if available when source installation fails",
 						},
 					},
+					Aliases: []string{"get"},
 					Description: "Fetch and install packages from a Git repository.",
 					Docs:        "Examples:\n\n   akamai install property purge\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
 				},
