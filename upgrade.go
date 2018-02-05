@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"text/template"
@@ -95,7 +95,7 @@ func getLatestReleaseVersion() string {
 	}
 
 	location := resp.Header.Get("Location")
-	latestVersion := path.Base(location)
+	latestVersion := filepath.Base(location)
 
 	return latestVersion
 }

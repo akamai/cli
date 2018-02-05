@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -51,7 +50,7 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	execName := "akamai-" + strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(path.Base(dir), "akamai-"), "cli-"))
+	execName := "akamai-" + strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(filepath.Base(dir), "akamai-"), "cli-"))
 
 	cmd := exec.Command(bin, "build", "-o", execName, ".")
 	cmd.Dir = dir

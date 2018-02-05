@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -32,7 +31,7 @@ type commandPackage struct {
 
 func readPackage(dir string) (commandPackage, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-		dir = path.Dir(dir)
+		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 			return commandPackage{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
 		}
@@ -89,12 +88,12 @@ func getPackageBinPaths() string {
 
 func findPackageDir(dir string) string {
 	if stat, err :=  os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
-		dir = path.Dir(dir)
+		dir = filepath.Dir(dir)
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
 		if os.IsNotExist(err) {
-			if path.Dir(dir) == "" {
+			if filepath.Dir(dir) == "" {
 				return ""
 			}
 

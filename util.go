@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,7 +17,7 @@ import (
 )
 
 func self() string {
-	return path.Base(os.Args[0])
+	return filepath.Base(os.Args[0])
 }
 
 func getAkamaiCliPath() (string, error) {
