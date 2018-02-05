@@ -20,7 +20,10 @@ func cmdInstall(c *cli.Context) error {
 	oldCmds := getCommands()
 
 	for _, repo := range c.Args() {
-		installPackage(repo, c.Bool("force"))
+		err := installPackage(repo, c.Bool("force"))
+		if err != nil {
+			return err
+		}
 	}
 
 	packageListDiff(oldCmds)
@@ -44,7 +47,7 @@ func installPackage(repo string, forceBinary bool) error {
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err := os.Stat(packageDir); err == nil {
-		status.FinalMSG = "... [" + color.RedString("FAIL") + "]"
+		status.FinalMSG = status.Prefix + "... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
@@ -58,7 +61,7 @@ func installPackage(repo string, forceBinary bool) error {
 	if err != nil {
 		os.RemoveAll(packageDir)
 
-		status.FinalMSG = "... [" + color.RedString("FAIL") + "]"
+		status.FinalMSG = status.Prefix + "... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 
 		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
