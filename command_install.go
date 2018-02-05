@@ -69,6 +69,10 @@ func installPackage(repo string, forceBinary bool) error {
 
 	status.Stop()
 
+	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true {
+		color.Cyan("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+	}
+
 	if !installPackageDependencies(packageDir, forceBinary) {
 		os.RemoveAll(packageDir)
 		return cli.NewExitError("", 1)
