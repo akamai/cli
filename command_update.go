@@ -105,7 +105,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 
 	status.Stop()
 
-	if !installPackage(repoDir, forceBinary) {
+	if !installPackageDependencies(repoDir, forceBinary) {
 		return cli.NewExitError("Unable to update command", 1)
 	}
 

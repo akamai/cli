@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
 
@@ -34,16 +36,10 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 
 		if err == nil {
-			if runtime.GOOS != "windows" {
-				os.Setenv("PYTHONUSERBASE", dir)
-				cmd := exec.Command(bins.pip, "install", "--user", "-r", "requirements.txt")
-				cmd.Dir = dir
-				err = cmd.Run()
-			} else {
-				cmd := exec.Command(bins.pip, "install", "--isolated", "--prefix", dir, "-r", "requirements.txt")
-				cmd.Dir = dir
-				err = cmd.Run()
-			}
+			os.Setenv("PYTHONUSERBASE", dir)
+			cmd := exec.Command(bins.pip, "install", "--user","--ignore-installed", "-r", "requirements.txt")
+			cmd.Dir = dir
+			err = cmd.Run()
 			if err != nil {
 				return false, err
 			}
@@ -133,4 +129,35 @@ func findPythonBins(version string) (pythonBins, error) {
 	}
 
 	return bins, nil
+}
+
+func migratePythonPackage(cmd string, dir string) error {
+	var err error
+	if runtime.GOOS == "linux" {
+		_, err = os.Stat(filepath.Join(dir, ".local"))
+	} else if runtime.GOOS == "darwin" {
+		_, err = os.Stat(filepath.Join(dir, "Library"))
+	} else if runtime.GOOS == "windows" {
+		_, err = os.Stat(filepath.Join(dir, "Lib"))
+	}
+
+	if err == nil {
+		color.Cyan("You must reinstall this package to continue.")
+		fmt.Print("Would you like to reinstall it? (Y/n): ")
+		answer := ""
+		fmt.Scanln(&answer)
+		if answer != "" && strings.ToLower(answer) != "y" {
+			return cli.NewExitError("You must reinstall this package to continue", -1)
+		}
+
+		if err := uninstallPackage(cmd); err != nil {
+			return err
+		}
+
+		if err := installPackage(cmd, false); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

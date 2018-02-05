@@ -25,6 +25,10 @@ func cmdSubcommand(c *cli.Context) error {
 	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
+		if err := migratePythonPackage(cmd, packageDir); err != nil {
+			return err
+		}
+
 		os.Setenv("PYTHONUSERBASE", packageDir)
 		if err != nil {
 			return err

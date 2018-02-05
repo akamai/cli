@@ -20,41 +20,7 @@ func cmdInstall(c *cli.Context) error {
 	oldCmds := getCommands()
 
 	for _, repo := range c.Args() {
-		srcPath, err := getAkamaiCliSrcPath()
-		if err != nil {
-			return err
-		}
-
-		_ = os.MkdirAll(srcPath, 0775)
-
-		repo = githubize(repo)
-
-		fmt.Printf("Attempting to fetch command from %s...", repo)
-
-		dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
-		packageDir := filepath.Join(srcPath, dirName)
-		if _, err := os.Stat(packageDir); err == nil {
-			fmt.Println("... [" + color.RedString("FAIL") + "]")
-			return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
-		}
-
-		_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
-			URL:      repo,
-			Progress: nil,
-		})
-
-		if err != nil {
-			fmt.Println("... [" + color.RedString("FAIL") + "]")
-			os.RemoveAll(packageDir)
-			return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
-		}
-
-		fmt.Println("... [" + color.GreenString("OK") + "]")
-
-		if !installPackage(packageDir, c.Bool("force")) {
-			os.RemoveAll(packageDir)
-			return cli.NewExitError("", 1)
-		}
+		installPackage(repo, c.Bool("force"))
 	}
 
 	packageListDiff(oldCmds)
@@ -62,7 +28,53 @@ func cmdInstall(c *cli.Context) error {
 	return nil
 }
 
-func installPackage(dir string, forceBinary bool) bool {
+func installPackage(repo string, forceBinary bool) error {
+	srcPath, err := getAkamaiCliSrcPath()
+	if err != nil {
+		return err
+	}
+
+	_ = os.MkdirAll(srcPath, 0775)
+
+	repo = githubize(repo)
+
+	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), "... [" + color.GreenString("OK") + "]")
+	status.Start()
+
+	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
+	packageDir := filepath.Join(srcPath, dirName)
+	if _, err := os.Stat(packageDir); err == nil {
+		status.FinalMSG = "... [" + color.RedString("FAIL") + "]"
+		status.Stop()
+
+		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
+	}
+
+	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
+		URL:      repo,
+		Progress: nil,
+	})
+
+	if err != nil {
+		os.RemoveAll(packageDir)
+
+		status.FinalMSG = "... [" + color.RedString("FAIL") + "]"
+		status.Stop()
+
+		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+	}
+
+	status.Stop()
+
+	if !installPackageDependencies(packageDir, forceBinary) {
+		os.RemoveAll(packageDir)
+		return cli.NewExitError("", 1)
+	}
+
+	return nil
+}
+
+func installPackageDependencies(dir string, forceBinary bool) bool {
 	status := getSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	status.Start()
