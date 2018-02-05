@@ -38,7 +38,7 @@ func installPackage(repo string, forceBinary bool) error {
 
 	repo = githubize(repo)
 
-	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), "... [" + color.GreenString("OK") + "]")
+	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo) + "... [" + color.GreenString("OK") + "]\n")
 	status.Start()
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")

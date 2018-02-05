@@ -147,7 +147,7 @@ func migratePythonPackage(cmd string, dir string) error {
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
-			return cli.NewExitError("You must reinstall this package to continue", -1)
+			return cli.NewExitError(color.RedString("You must reinstall this package to continue"), -1)
 		}
 
 		if err := uninstallPackage(cmd); err != nil {
