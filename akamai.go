@@ -40,6 +40,7 @@ func main() {
 	app.Usage = "Akamai CLI"
 	app.Version = VERSION
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
+	app.Writer = color.Output
 
 	firstRun()
 
