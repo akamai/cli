@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-colorable"
 	"github.com/urfave/cli"
 )
 
@@ -40,7 +41,8 @@ func main() {
 	app.Usage = "Akamai CLI"
 	app.Version = VERSION
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Writer = color.Output
+	app.Writer = colorable.NewColorableStdout()
+	app.ErrWriter = colorable.NewColorableStderr()
 
 	firstRun()
 
