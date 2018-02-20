@@ -9,18 +9,20 @@ import (
 )
 
 type Command struct {
-	Name        string     `json:"name"`
-	Aliases     []string   `json:"aliases"`
-	Version     string     `json:"version"`
-	Description string     `json:"description"`
-	Usage       string     `json:"usage"`
-	Docs        string     `json:-`
-	Arguments   string     `json:"arguments"`
-	Flags       []cli.Flag `json:"-"`
-	Bin         string     `json:"bin"`
-	BinSuffix   string     `json:"-"`
-	OS          string     `json:"-"`
-	Arch        string     `json:"-"`
+	Name         string   `json:"name"`
+	Aliases      []string `json:"aliases"`
+	Version      string   `json:"version"`
+	Description  string   `json:"description"`
+	Usage        string   `json:"usage"`
+	Arguments    string   `json:"arguments"`
+	Bin          string   `json:"bin"`
+	AutoComplete bool     `json:"auto-complete"`
+
+	Flags       []cli.Flag    `json:"-"`
+	Docs        string        `json:"-"`
+	BinSuffix   string        `json:"-"`
+	OS          string        `json:"-"`
+	Arch        string        `json:"-"`
 	Subcommands []cli.Command `json:"-"`
 }
 
@@ -126,8 +128,8 @@ func getBuiltinCommands() []commandPackage {
 			Commands: []Command{
 				{
 					Name:        "help",
-					Arguments:   "[command] [sub-command]",
 					Description: "Displays help information",
+					Arguments:   "[command] [sub-command]",
 				},
 			},
 			action: cmdHelp,
@@ -137,6 +139,12 @@ func getBuiltinCommands() []commandPackage {
 				{
 					Name:        "list",
 					Description: "Displays available commands",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "remote",
+							Usage: "Display all available packages",
+						},
+					},
 				},
 			},
 			action: cmdList,
@@ -144,8 +152,41 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:      "install",
-					Arguments: "<package name or repository URL>...",
+					Name:        "config",
+					Arguments:   "<action> <setting> [value]",
+					Description: "Manage configuration",
+					Subcommands: []cli.Command{
+						{
+							Name:      "get",
+							ArgsUsage: "<setting>",
+							Action:    cmdConfigGet,
+						},
+						{
+							Name:      "set",
+							ArgsUsage: "<setting> <value>",
+							Action:    cmdConfigSet,
+						},
+						{
+							Name:      "list",
+							ArgsUsage: "[section]",
+							Action:    cmdConfigList,
+						},
+						{
+							Name:      "unset",
+							Aliases:   []string{"rm"},
+							ArgsUsage: "<setting>",
+							Action:    cmdConfigUnset,
+						},
+					},
+				},
+			},
+		},
+		{
+			Commands: []Command{
+				{
+					Name:        "install",
+					Arguments:   "<package name or repository URL>...",
+					Description: "Fetch and install packages from a Git repository.",
 					Flags: []cli.Flag{
 						cli.BoolFlag{
 							Name:  "force",
@@ -153,8 +194,7 @@ func getBuiltinCommands() []commandPackage {
 						},
 					},
 					Aliases: []string{"get"},
-					Description: "Fetch and install packages from a Git repository.",
-					Docs:        "Examples:\n\n   akamai install property purge\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
+					Docs:    "Examples:\n\n   akamai install property purge\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
 				},
 			},
 			action: cmdInstall,
@@ -162,8 +202,8 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:      "search",
-					Arguments: "<keyword>...",
+					Name:        "search",
+					Arguments:   "<keyword>...",
 					Description: "Search for packages in the official Akamai CLI package repository",
 					Docs:        "Examples:\n\n   akamai search property",
 				},
@@ -183,15 +223,15 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:      "update",
-					Arguments: "[<command>...]",
+					Name:        "update",
+					Arguments:   "[<command>...]",
+					Description: "Update one or more commands. If no command is specified, all commands are updated",
 					Flags: []cli.Flag{
 						cli.BoolFlag{
 							Name:  "force",
 							Usage: "Force binary installation if available when source installation fails",
 						},
 					},
-					Description: "Update one or more commands. If no command is specified, all commands are updated",
 				},
 			},
 			action: cmdUpdate,
@@ -229,4 +269,3 @@ func getCommands() []commandPackage {
 
 	return commands
 }
-

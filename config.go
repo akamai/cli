@@ -22,7 +22,7 @@ func getConfigFilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return filepath.Join(cliPath, "config"), nil
 }
 
@@ -68,7 +68,6 @@ func saveConfig() error {
 		return err
 	}
 
-
 	return nil
 }
 
@@ -93,7 +92,7 @@ func migrateConfig() {
 
 	setConfigValue("cli", "config-version", configVersion)
 	saveConfig()
-	
+
 	cliPath, _ := getAkamaiCliPath()
 
 	var data []byte
@@ -115,7 +114,7 @@ func migrateConfig() {
 			setConfigValue("cli", "last-upgrade-check", date)
 		} else {
 			if m := strings.LastIndex(date, "m="); m != -1 {
-				date = date[0:m-1]
+				date = date[0 : m-1]
 			}
 			lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
 			if err == nil {
@@ -129,14 +128,19 @@ func migrateConfig() {
 	saveConfig()
 }
 
-func getConfigValue(sectionName string, key string) string {
+func getConfigValue(sectionName string, keyName string) string {
 	config, err := openConfig()
 	if err != nil {
 		return ""
 	}
 
 	section := config.Section(sectionName)
-	return section.Key(key).String()
+	key := section.Key(keyName)
+	if key != nil {
+		return key.String()
+	}
+
+	return ""
 }
 
 func setConfigValue(sectionName string, key string, value string) {
@@ -147,6 +151,30 @@ func setConfigValue(sectionName string, key string, value string) {
 
 	section := config.Section(sectionName)
 	section.Key(key).SetValue(value)
+}
+
+func unsetConfigValue(sectionName string, key string) {
+	config, err := openConfig()
+	if err != nil {
+		return
+	}
+
+	section := config.Section(sectionName)
+	section.DeleteKey(key)
+}
+
+func addConfigComment(sectionName string, key string, comment string) {
+	config, err := openConfig()
+	if err != nil {
+		return
+	}
+
+	section := config.Section(sectionName)
+	configKey, err := section.GetKey(key)
+	if err != nil {
+		return
+	}
+	configKey.Comment = comment
 }
 
 func exportConfigEnv() {
