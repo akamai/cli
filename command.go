@@ -162,6 +162,17 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
+					Name:      "search",
+					Arguments: "<keyword>...",
+					Description: "Search for packages in the official Akamai CLI package repository",
+					Docs:        "Examples:\n\n   akamai search property",
+				},
+			},
+			action: cmdSearch,
+		},
+		{
+			Commands: []Command{
+				{
 					Name:        "uninstall",
 					Arguments:   "<command>...",
 					Description: "Uninstall package containing <command>",
