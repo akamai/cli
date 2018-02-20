@@ -121,6 +121,7 @@ func upgradeCli(latestVersion string) bool {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -132,6 +133,7 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		color.Red("Unable to download release, please try again.")
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -141,6 +143,7 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		color.Red("Unable to retrieve signature for verification, please try again.")
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -149,6 +152,7 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		color.Red("Unable to retrieve signature for verification, please try again.")
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -157,6 +161,7 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		color.Red("Unable to retrieve signature for verification, please try again.")
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -165,6 +170,7 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		color.Red("Unable to determine install location")
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
@@ -174,15 +180,18 @@ func upgradeCli(latestVersion string) bool {
 		status.Stop()
 		if rerr := update.RollbackError(err); rerr != nil {
 			color.Red("Unable to install or rollback, please re-install.")
+			trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
 			color.Red(err.Error())
 			color.Red("Checksums do not match, please try again.")
 		}
+		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
+	trackEvent("upgrade.success", "to: "+latestVersion+" from:"+VERSION)
 	status.Stop()
 
 	if err == nil {

@@ -48,7 +48,10 @@ func main() {
 
 	if latestVersion := checkForUpgrade(false); latestVersion != "" {
 		if upgradeCli(latestVersion) {
+			trackEvent("upgrade.auto.success", "to: " + latestVersion + " from:" + VERSION)
 			return
+		} else {
+			trackEvent("upgrade.auto.failed", "to: "+latestVersion+" from:"+VERSION)
 		}
 	}
 

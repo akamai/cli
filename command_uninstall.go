@@ -12,8 +12,10 @@ import (
 func cmdUninstall(c *cli.Context) error {
 	for _, cmd := range c.Args() {
 		if err := uninstallPackage(cmd); err != nil {
+			trackEvent("uninstall.failed", cmd)
 			return err
 		}
+		trackEvent("uninstall.success", cmd)
 	}
 
 	return nil

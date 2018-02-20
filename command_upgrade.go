@@ -16,7 +16,12 @@ func cmdUpgrade(c *cli.Context) error {
 		status.Stop()
 		fmt.Printf("Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+VERSION))
 		os.Args = []string{os.Args[0], "--version"}
-		upgradeCli(latestVersion)
+		success := upgradeCli(latestVersion)
+		if success {
+			trackEvent("upgrade.success", "to: " + latestVersion + " from:" + VERSION)
+		} else {
+			trackEvent("upgrade.failed", "to: " + latestVersion + " from:" + VERSION)
+		}
 	} else {
 		status.FinalMSG = "Checking for upgrades...... [" + color.CyanString("OK") + "]\n"
 		status.Stop()

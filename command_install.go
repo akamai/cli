@@ -20,9 +20,18 @@ func cmdInstall(c *cli.Context) error {
 	oldCmds := getCommands()
 
 	for _, repo := range c.Args() {
+		repo := githubize(repo)
 		err := installPackage(repo, c.Bool("force"))
 		if err != nil {
+			// Only track public github repos
+			if !strings.HasPrefix(repo,"https://github.com/") {
+				trackEvent("install.failed", repo)
+			}
 			return err
+		}
+
+		if strings.HasPrefix(repo,"https://github.com/") {
+			trackEvent("install.success", repo)
 		}
 	}
 
@@ -38,8 +47,6 @@ func installPackage(repo string, forceBinary bool) error {
 	}
 
 	_ = os.MkdirAll(srcPath, 0775)
-
-	repo = githubize(repo)
 
 	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo) + "... [" + color.GreenString("OK") + "]\n")
 	status.Start()
