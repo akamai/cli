@@ -24,6 +24,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 - [Akamai CLI for Netstorage] (https://github.com/partamonov/akamai-cli-netstorage)
 - [Akamai CLI for Siteshield] (https://github.com/partamonov/akamai-cli-siteshield)
 - [Akamai CLI for Firewall Rules Notifications] (https://github.com/partamonov/akamai-cli-frn)
+- [Akamai CLI for Network Lists] (https://github.com/RafPe/akamai-cli-netlist)
 
 
 ## Installation
