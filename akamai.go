@@ -31,7 +31,7 @@ const (
 func main() {
 	os.Setenv("AKAMAI_CLI", "1")
 
-	setCliTemplates()
+	setHelpTemplates()
 	getAkamaiCliCachePath()
 
 	exportConfigEnv()
@@ -66,6 +66,7 @@ func main() {
 				Action:      cmd.action,
 				UsageText:   cmd.Commands[0].Docs,
 				Flags:       cmd.Commands[0].Flags,
+				Subcommands: cmd.Commands[0].Subcommands,
 			},
 		)
 	}

@@ -260,7 +260,7 @@ func showBanner() {
 	fmt.Println()
 }
 
-func setCliTemplates() {
+func setHelpTemplates() {
 	cli.AppHelpTemplate = "" +
 		color.YellowString("Usage: \n") +
 		color.BlueString("	{{if .UsageText}}" +
@@ -326,26 +326,9 @@ func setCliTemplates() {
 		color.YellowString("Flags: \n") +
 		"{{range .VisibleFlags}}   {{.}}\n\n{{end}}{{end}}" +
 
+		"{{if .Subcommands}}" +
+		color.YellowString("Subcommands: \n") +
+		"{{range .Subcommands}}   {{.Name}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n{{end}}{{end}}" +
+
 		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
-
-	cli.SubcommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}} - {{.Usage}}\n\n" +
-
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-
-		color.YellowString("Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"{{.Name}}:" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		`{{join .Names ", "}}{{"\t"}}{{.Usage}}` +
-		"{{end}}\n\n" +
-		"{{end}}" +
-
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags:\n") +
-		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
 }

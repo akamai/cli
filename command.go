@@ -21,6 +21,7 @@ type Command struct {
 	BinSuffix   string     `json:"-"`
 	OS          string     `json:"-"`
 	Arch        string     `json:"-"`
+	Subcommands []cli.Command `json:"-"`
 }
 
 func packageListDiff(oldcmds []commandPackage) {
