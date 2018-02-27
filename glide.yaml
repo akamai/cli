@@ -13,7 +13,7 @@ import:
 - package: github.com/briandowns/spinner
   version: ^1.0.0
 - package: github.com/src-d/go-git
-  version: ~4.0.0-rc13
+  version: ^4.0.0
 - package: github.com/mattn/go-isatty
   version: ^0.0.3
 - package: github.com/go-ini/ini
