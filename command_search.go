@@ -18,14 +18,18 @@ type packageList struct {
 }
 
 type packageListPackage struct {
-	Title    string `json:"title"`
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	URL      string `json:"url"`
-	Issues   string `json:"issues"`
-	Commands []Command `json:"commands"`
+	Title        string    `json:"title"`
+	Name         string    `json:"name"`
+	Version      string    `json:"version"`
+	URL          string    `json:"url"`
+	Issues       string    `json:"issues"`
+	Commands     []Command `json:"commands"`
 	Requirements struct {
-		Node string `json:"node"`
+		Go     string `json:"go"`
+		Php    string `json:"php"`
+		Node   string `json:"node"`
+		Ruby   string `json:"ruby"`
+		Python string `json:"python"`
 	} `json:"requirements"`
 }
 
@@ -109,7 +113,6 @@ func searchPackages(keywords []string, packageList *packageList) error {
 
 			packageList.Packages[key].Commands = valid_cmds
 		}
-
 
 		if hits > 0 {
 			if _, ok := results[hits]; !ok {
