@@ -162,6 +162,14 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				color.Red("Unable to download binary: " + err.Error())
 				return false
 			}
+		} else {
+			if first {
+				first = false
+				status.FinalMSG = "Installing...... [" + color.RedString("FAIL") + "]\n"
+				status.Stop()
+				color.Red(err.Error())
+				return false
+			}
 		}
 	}
 
