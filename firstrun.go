@@ -173,6 +173,7 @@ func checkStats(bannerShown bool) bool {
 		}
 
 		setConfigValue("cli", "enable-cli-statistics", "true")
+		setConfigValue("cli", "last-ping", "never")
 		setupUuid()
 		saveConfig()
 		trackEvent("first-run", "true")

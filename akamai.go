@@ -51,6 +51,8 @@ func main() {
 		}
 	}
 
+	checkPing()
+
 	var builtinCmds map[string]bool = make(map[string]bool)
 	for _, cmd := range getBuiltinCommands() {
 		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true

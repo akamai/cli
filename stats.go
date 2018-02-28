@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	time "time"
 
 	"github.com/tuvistavie/securerandom"
 )
@@ -33,13 +34,13 @@ func trackEvent(action string, value string) {
 
 	form := url.Values{}
 	form.Add("tid", "UA-34796267-20")
-	form.Add("v", "1") // Version 1
-	form.Add("aip", "1") // Anonymize IP
+	form.Add("v", "1")                                  // Version 1
+	form.Add("aip", "1")                                // Anonymize IP
 	form.Add("cid", getConfigValue("cli", "client-id")) // Unique Cilent ID
-	form.Add("t", "event") // Type
-	form.Add("ec", "akamai-cli") // Category
-	form.Add("ea", action) // Action
-	form.Add("el", value) // Label
+	form.Add("t", "event")                              // Type
+	form.Add("ec", "akamai-cli")                        // Category
+	form.Add("ea", action)                              // Action
+	form.Add("el", value)                               // Label
 
 	hc := http.Client{}
 	req, err := http.NewRequest("POST", "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
@@ -49,4 +50,37 @@ func trackEvent(action string, value string) {
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	hc.Do(req)
+}
+
+func checkPing() {
+	if getConfigValue("cli", "enable-cli-statistics") == "false" {
+		return
+	}
+
+	data := strings.TrimSpace(getConfigValue("cli", "last-ping"))
+
+	doPing := false
+	if data == "" || data == "never" {
+		doPing = true
+	}
+
+	if !doPing {
+		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
+		lastPing, err := time.Parse(time.RFC3339, configValue)
+
+		if err != nil {
+			return
+		}
+
+		currentTime := time.Now()
+		if lastPing.Add(time.Hour * 24).Before(currentTime) {
+			doPing = true
+		}
+	}
+
+	if doPing {
+		trackEvent("ping", "pong")
+		setConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
+		saveConfig()
+	}
 }
