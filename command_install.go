@@ -41,7 +41,7 @@ func installPackage(repo string, forceBinary bool) error {
 
 	repo = githubize(repo)
 
-	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo) + "... [" + color.GreenString("OK") + "]\n")
+	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
 	status.Start()
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
@@ -153,6 +153,14 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
 				status.Stop()
 				color.Red("Unable to download binary: " + err.Error())
+				return false
+			}
+		} else {
+			if first {
+				first = false
+				status.FinalMSG = "Installing...... [" + color.RedString("FAIL") + "]\n"
+				status.Stop()
+				color.Red(err.Error())
 				return false
 			}
 		}
