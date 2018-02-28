@@ -16,10 +16,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/kardianos/osext"
 	"github.com/mattn/go-colorable"
 	"github.com/urfave/cli"
 )
@@ -36,19 +38,13 @@ func main() {
 
 	exportConfigEnv()
 
-	app := cli.NewApp()
-	app.Name = "akamai"
-	app.Usage = "Akamai CLI"
-	app.Version = VERSION
-	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Writer = colorable.NewColorableStdout()
-	app.ErrWriter = colorable.NewColorableStderr()
+	app := createApp()
 
 	firstRun()
 
 	if latestVersion := checkForUpgrade(false); latestVersion != "" {
 		if upgradeCli(latestVersion) {
-			trackEvent("upgrade.auto.success", "to: " + latestVersion + " from:" + VERSION)
+			trackEvent("upgrade.auto.success", "to: "+latestVersion+" from:"+VERSION)
 			return
 		} else {
 			trackEvent("upgrade.auto.failed", "to: "+latestVersion+" from:"+VERSION)
@@ -70,6 +66,7 @@ func main() {
 				UsageText:   cmd.Commands[0].Docs,
 				Flags:       cmd.Commands[0].Flags,
 				Subcommands: cmd.Commands[0].Subcommands,
+				HideHelp:    true,
 			},
 		)
 	}
@@ -90,10 +87,90 @@ func main() {
 					Action:          cmdSubcommand,
 					Category:        color.YellowString("Installed Commands:"),
 					SkipFlagParsing: true,
+					BashComplete: func(c *cli.Context) {
+						if command.AutoComplete {
+							executable, err := findExec(c.Command.Name)
+							if err != nil {
+								return
+							}
+
+							executable = append(executable, os.Args[2:]...)
+							passthruCommand(executable)
+						}
+					},
 				},
 			)
 		}
 	}
 
 	app.Run(os.Args)
+}
+func createApp() *cli.App {
+	app := cli.NewApp()
+	app.Name = "akamai"
+	app.Usage = "Akamai CLI"
+	app.Version = VERSION
+	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
+	app.Writer = colorable.NewColorableStdout()
+	app.ErrWriter = colorable.NewColorableStderr()
+	app.EnableBashCompletion = true
+	cli.BashCompletionFlag = cli.BoolFlag{
+		Name:   "generate-auto-complete",
+		Hidden: true,
+	}
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "bash",
+			Usage: "Output bash auto-complete",
+		},
+		cli.BoolFlag{
+			Name:  "zsh",
+			Usage: "Output zsh auto-complete",
+		},
+	}
+	app.Action = func(c *cli.Context) {
+		defaultAction(c, app)
+	}
+	return app
+}
+
+func defaultAction(c *cli.Context, app *cli.App) {
+	cmd, err := osext.Executable()
+	if err != nil {
+		cmd = self()
+	}
+
+	zshScript := `set -k
+# To enable zsh auto-completion, run: eval "$(` + cmd + ` --zsh)"
+# We recommend adding this to your .zshrc file
+autoload -U compinit && compinit
+autoload -U bashcompinit && bashcompinit`
+
+	bashComments := `# To enable bash auto-completion, run: eval "$(` + cmd + ` --bash)"
+# We recommend adding this to your .bashrc or .bash_profile file`
+
+	bashScript := `_akamai_cli_bash_autocomplete() {
+    local cur opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-auto-complete )
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+
+complete -F _akamai_cli_bash_autocomplete ` + self()
+
+	if c.Bool("bash") {
+		fmt.Println(bashComments)
+		fmt.Println(bashScript)
+		return
+	}
+
+	if c.Bool("zsh") {
+		fmt.Println(zshScript)
+		fmt.Println(bashScript)
+		return
+	}
+
+	cli.ShowAppHelpAndExit(c, 0)
 }
