@@ -107,6 +107,7 @@ func main() {
 
 	app.Run(os.Args)
 }
+
 func createApp() *cli.App {
 	app := cli.NewApp()
 	app.Name = "akamai"
