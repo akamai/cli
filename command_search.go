@@ -52,7 +52,7 @@ func cmdSearch(c *cli.Context) error {
 }
 
 func fetchPackageList() (*packageList, error) {
-	repo := "http://localhost:4000/cli/package-list/"
+	repo := "https://developer.akamai.com/cli/package-list"
 	resp, err := http.Get(repo)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
@@ -141,7 +141,7 @@ func searchPackages(keywords []string, packageList *packageList) error {
 		for _, pkg_name := range resultPkgs {
 			if _, ok := results[hits][pkg_name]; ok {
 				pkg := results[hits][pkg_name]
-				color.Green("Package: %s (rank: %d)\n", pkg.Name, hits)
+				color.Green("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits)
 				for _, cmd := range results[hits][pkg_name].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
