@@ -33,7 +33,7 @@ func trackEvent(action string, value string) {
 	}
 
 	form := url.Values{}
-	form.Add("tid", "UA-34796267-20")
+	form.Add("tid", "UA-34796267-23")
 	form.Add("v", "1")                                  // Version 1
 	form.Add("aip", "1")                                // Anonymize IP
 	form.Add("cid", getConfigValue("cli", "client-id")) // Unique Cilent ID
