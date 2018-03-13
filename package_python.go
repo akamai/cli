@@ -19,7 +19,6 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 		return false, err
 	}
 
-
 	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
 		cmd := exec.Command(bins.python, "--version")
 		output, _ := cmd.CombinedOutput()
@@ -37,7 +36,7 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 
 		if err == nil {
 			os.Setenv("PYTHONUSERBASE", dir)
-			cmd := exec.Command(bins.pip, "install", "--user","--ignore-installed", "-r", "requirements.txt")
+			cmd := exec.Command(bins.pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt")
 			cmd.Dir = dir
 			err = cmd.Run()
 			if err != nil {
@@ -50,9 +49,9 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 	return true, nil
 }
 
-type pythonBins struct{
+type pythonBins struct {
 	python string
-	pip string
+	pip    string
 }
 
 func findPythonBins(version string) (pythonBins, error) {
@@ -142,8 +141,8 @@ func migratePythonPackage(cmd string, dir string) error {
 	}
 
 	if err == nil {
-		color.Cyan("You must reinstall this package to continue.")
-		fmt.Print("Would you like to reinstall it? (Y/n): ")
+		fmt.Fprintln(app.Writer, color.CyanString("You must reinstall this package to continue."))
+		fmt.Fprint(app.Writer, "Would you like to reinstall it? (Y/n): ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {

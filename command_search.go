@@ -86,7 +86,7 @@ func searchPackages(keywords []string, packageList *packageList) error {
 				hits += 50
 			}
 
-			valid_cmds := make([]Command, 0)
+			validCmds := make([]Command, 0)
 			for _, cmd := range pkg.Commands {
 				cmdMatches := false
 				if strings.Contains(strings.ToLower(cmd.Name), keyword) {
@@ -107,11 +107,11 @@ func searchPackages(keywords []string, packageList *packageList) error {
 				}
 
 				if cmdMatches {
-					valid_cmds = append(valid_cmds, cmd)
+					validCmds = append(validCmds, cmd)
 				}
 			}
 
-			packageList.Packages[key].Commands = valid_cmds
+			packageList.Packages[key].Commands = validCmds
 		}
 
 		if hits > 0 {
@@ -135,14 +135,14 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	sort.Strings(resultPkgs)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	color.Yellow("Results Found: %d\n\n", len(resultPkgs))
+	fmt.Fprintln(app.Writer, color.YellowString("Results Found: %d\n\n", len(resultPkgs)))
 
 	for _, hits := range resultHits {
-		for _, pkg_name := range resultPkgs {
-			if _, ok := results[hits][pkg_name]; ok {
-				pkg := results[hits][pkg_name]
-				color.Green("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits)
-				for _, cmd := range results[hits][pkg_name].Commands {
+		for _, pkgName := range resultPkgs {
+			if _, ok := results[hits][pkgName]; ok {
+				pkg := results[hits][pkgName]
+				fmt.Fprintln(app.Writer, color.GreenString("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits))
+				for _, cmd := range results[hits][pkgName].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
 						aliases = fmt.Sprintf("(alias: %s)", cmd.Aliases[0])
@@ -150,8 +150,8 @@ func searchPackages(keywords []string, packageList *packageList) error {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
 
-					bold.Printf("    Command: %s %s\n", cmd.Name, aliases)
-					fmt.Printf("        %s\n\n", cmd.Description)
+					fmt.Fprintf(app.Writer, bold.Sprintf("    Command: %s %s\n", cmd.Name, aliases))
+					fmt.Fprintf(app.Writer, "        %s\n\n", cmd.Description)
 				}
 			}
 		}

@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
 
 func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
-		return false, cli.NewExitError(("Unable to locate Ruby runtime"), 1)
+		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
 	}
 
 	if cmdPackage.Requirements.Ruby != "" && cmdPackage.Requirements.Ruby != "*" {

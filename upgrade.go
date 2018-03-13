@@ -38,7 +38,7 @@ func checkForUpgrade(force bool) string {
 	}
 
 	if !checkForUpgrade {
-		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data),"\""), "\"")
+		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
 		lastUpgrade, err := time.Parse(time.RFC3339, configValue)
 
 		if err != nil {
@@ -52,7 +52,7 @@ func checkForUpgrade(force bool) string {
 	}
 
 	if checkForUpgrade {
-		setConfigValue("cli","last-upgrade-check", time.Now().Format(time.RFC3339))
+		setConfigValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
 		err := saveConfig()
 		if err != nil {
 			return ""
@@ -61,7 +61,8 @@ func checkForUpgrade(force bool) string {
 		latestVersion := getLatestReleaseVersion()
 		if versionCompare(VERSION, latestVersion) == 1 {
 			if !force {
-				fmt.Printf(
+				fmt.Fprintf(
+					app.Writer,
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(VERSION),
@@ -132,7 +133,7 @@ func upgradeCli(latestVersion string) bool {
 	if err != nil || resp.StatusCode != 200 {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red("Unable to download release, please try again.")
+		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to download release, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -142,7 +143,7 @@ func upgradeCli(latestVersion string) bool {
 	if err != nil || shaResp.StatusCode != 200 {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -151,7 +152,7 @@ func upgradeCli(latestVersion string) bool {
 	if err != nil {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -160,7 +161,7 @@ func upgradeCli(latestVersion string) bool {
 	if err != nil {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -169,7 +170,7 @@ func upgradeCli(latestVersion string) bool {
 	if err != nil {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red("Unable to determine install location")
+		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to determine install location"))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -179,13 +180,13 @@ func upgradeCli(latestVersion string) bool {
 		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
 		if rerr := update.RollbackError(err); rerr != nil {
-			color.Red("Unable to install or rollback, please re-install.")
+			fmt.Fprintln(app.ErrWriter, color.RedString("Unable to install or rollback, please re-install."))
 			trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			color.Red(err.Error())
-			color.Red("Checksums do not match, please try again.")
+			fmt.Fprintln(app.ErrWriter, color.RedString(err.Error()))
+			fmt.Fprintln(app.ErrWriter, color.RedString("Checksums do not match, please try again."))
 		}
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false

@@ -11,11 +11,11 @@ func cmdList(c *cli.Context) error {
 	bold := color.New(color.FgWhite, color.Bold)
 
 	commands := make(map[string]bool)
-	color.Yellow("\nInstalled Commands:\n\n")
+	fmt.Fprintln(app.Writer, color.YellowString("\nInstalled Commands:\n\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true
-			bold.Printf("  %s", command.Name)
+			fmt.Fprintf(app.Writer, bold.Sprintf("  %s", command.Name))
 			if len(command.Aliases) > 0 {
 				var aliases string
 
@@ -25,23 +25,23 @@ func cmdList(c *cli.Context) error {
 					aliases = "aliases"
 				}
 
-				fmt.Printf(" (%s: ", aliases)
+				fmt.Fprintf(app.Writer, " (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
-						fmt.Print(", ")
+						fmt.Fprint(app.Writer, ", ")
 					}
 				}
-				fmt.Print(")")
+				fmt.Fprint(app.Writer, ")")
 			}
 
-			fmt.Println()
+			fmt.Fprintln(app.Writer)
 
-			fmt.Printf("    %s\n", command.Description)
+			fmt.Fprintf(app.Writer, "    %s\n", command.Description)
 		}
 	}
 
-	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	fmt.Fprintf(app.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
 
 	packageList, err := fetchPackageList()
 	if err != nil {
@@ -59,7 +59,7 @@ func cmdList(c *cli.Context) error {
 	}
 
 	if !foundCommands {
-		color.Yellow("\nAvailable Commands:\n\n")
+		fmt.Fprintln(app.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 	} else {
 		return nil
 	}
@@ -79,19 +79,19 @@ func cmdList(c *cli.Context) error {
 					aliases = "aliases"
 				}
 
-				fmt.Printf(" (%s: ", aliases)
+				fmt.Fprintf(app.Writer, " (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
-						fmt.Print(", ")
+						fmt.Fprint(app.Writer, ", ")
 					}
 				}
-				fmt.Print(")")
+				fmt.Fprint(app.Writer, ")")
 			}
 
-			fmt.Println()
+			fmt.Fprintln(app.Writer)
 
-			fmt.Printf("    %s\n", command.Description)
+			fmt.Fprintf(app.Writer, "    %s\n", command.Description)
 		}
 	}
 

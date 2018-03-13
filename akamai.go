@@ -30,6 +30,10 @@ const (
 	VERSION = "0.6.0"
 )
 
+var (
+	app *cli.App
+)
+
 func main() {
 	os.Setenv("AKAMAI_CLI", "1")
 
@@ -38,7 +42,7 @@ func main() {
 
 	exportConfigEnv()
 
-	app := createApp()
+	app = createApp()
 
 	firstRun()
 
@@ -164,14 +168,14 @@ autoload -U bashcompinit && bashcompinit`
 complete -F _akamai_cli_bash_autocomplete ` + self()
 
 	if c.Bool("bash") {
-		fmt.Println(bashComments)
-		fmt.Println(bashScript)
+		fmt.Fprintln(app.Writer, bashComments)
+		fmt.Fprintln(app.Writer, bashScript)
 		return
 	}
 
 	if c.Bool("zsh") {
-		fmt.Println(zshScript)
-		fmt.Println(bashScript)
+		fmt.Fprintln(app.Writer, zshScript)
+		fmt.Fprintln(app.Writer, bashScript)
 		return
 	}
 

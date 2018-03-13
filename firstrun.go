@@ -78,7 +78,7 @@ func checkPath() (bool, error) {
 
 	if !inPath && len(writablePaths) > 0 {
 		showBanner()
-		fmt.Print("Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
+		fmt.Fprint(app.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
@@ -94,20 +94,20 @@ func checkPath() (bool, error) {
 }
 
 func choosePath(writablePaths []string, answer string, selfPath string) {
-	color.Yellow("Choose where you would like to install Akamai CLI:")
+	fmt.Fprintln(app.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
 	for i, path := range writablePaths {
-		fmt.Printf("(%d) %s\n", i+1, path)
+		fmt.Fprintf(app.Writer, "(%d) %s\n", i+1, path)
 	}
-	fmt.Print("Enter a number: ")
+	fmt.Fprint(app.Writer, "Enter a number: ")
 	answer = ""
 	fmt.Scanln(&answer)
 	index, err := strconv.Atoi(answer)
 	if err != nil {
-		color.Red("Invalid choice, try again")
+		fmt.Fprintln(app.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	if answer == "" || index < 1 || index > len(writablePaths) {
-		color.Red("Invalid choice, try again")
+		fmt.Fprintln(app.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	suffix := ""
@@ -125,7 +125,7 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 	if err != nil {
 		status.FinalMSG = "Installing to " + newPath + "...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		color.Red(err.Error())
+		fmt.Fprintln(app.Writer, color.RedString(err.Error()))
 	}
 	status.Stop()
 }
@@ -136,7 +136,7 @@ func checkUpdate(bannerShown bool) bool {
 			bannerShown = true
 			showBanner()
 		}
-		fmt.Print("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
+		fmt.Fprint(app.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
 
 		answer := ""
 		fmt.Scanln(&answer)
@@ -160,9 +160,9 @@ func checkStats(bannerShown bool) bool {
 			showBanner()
 		}
 		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
-		fmt.Printf("Help Akamai improve Akamai CLI by automatically sending %s diagnotics and usage data.\n", anonymous)
-		fmt.Println("Examples of data being send include upgrade statistics, and packages installed and updated.\n\n")
-		fmt.Printf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		fmt.Fprintf(app.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnotics and usage data.\n", anonymous)
+		fmt.Fprintln(app.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n")
+		fmt.Fprintf(app.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
 		fmt.Scanln(&answer)

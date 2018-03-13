@@ -36,10 +36,10 @@ func packageListDiff(oldcmds []commandPackage) {
 		}
 	}
 
-	var new []Command
+	var newCmds []Command
 	for _, newcmd := range cmds {
 		for _, cmd := range newcmd.Commands {
-			new = append(new, cmd)
+			newCmds = append(newCmds, cmd)
 		}
 	}
 
@@ -47,7 +47,7 @@ func packageListDiff(oldcmds []commandPackage) {
 	var added = make(map[string]bool)
 	var removed = make(map[string]bool)
 
-	for _, newCmd := range new {
+	for _, newCmd := range newCmds {
 		found := false
 		for _, oldCmd := range old {
 			if newCmd.Name == oldCmd.Name {
@@ -64,7 +64,7 @@ func packageListDiff(oldcmds []commandPackage) {
 
 	for _, oldCmd := range old {
 		found := false
-		for _, newCmd := range new {
+		for _, newCmd := range newCmds {
 			if newCmd.Name == oldCmd.Name {
 				found = true
 				break
@@ -78,15 +78,15 @@ func packageListDiff(oldcmds []commandPackage) {
 
 	bold := color.New(color.FgWhite, color.Bold)
 
-	color.Yellow("\nAvailable Commands:\n\n")
+	fmt.Fprintln(app.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			if _, ok := unchanged[command.Name]; ok {
-				bold.Printf("  %s", command.Name)
+				fmt.Fprintf(app.Writer, bold.Sprintf("  %s", command.Name))
 			} else if _, ok := added[command.Name]; ok {
-				fmt.Print(color.GreenString("  %s", command.Name))
+				fmt.Fprint(app.Writer, color.GreenString("  %s", command.Name))
 			} else if _, ok := removed[command.Name]; ok {
-				fmt.Print(color.RedString("  %s", command.Name))
+				fmt.Fprint(app.Writer, color.RedString("  %s", command.Name))
 			}
 			if len(command.Aliases) > 0 {
 				var aliases string
@@ -97,29 +97,29 @@ func packageListDiff(oldcmds []commandPackage) {
 					aliases = "aliases"
 				}
 
-				fmt.Printf(" (%s: ", aliases)
+				fmt.Fprintf(app.Writer, " (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					if _, ok := unchanged[command.Name]; ok {
 						bold.Print(alias)
 					} else if _, ok := added[command.Name]; ok {
-						fmt.Print(color.GreenString(alias))
+						fmt.Fprint(app.Writer, color.GreenString(alias))
 					} else if _, ok := removed[command.Name]; ok {
-						fmt.Print(color.RedString(alias))
+						fmt.Fprint(app.Writer, color.RedString(alias))
 					}
 
 					if i < len(command.Aliases)-1 {
-						fmt.Print(", ")
+						fmt.Fprint(app.Writer, ", ")
 					}
 				}
-				fmt.Print(")")
+				fmt.Fprint(app.Writer, ")")
 			}
 
-			fmt.Println()
+			fmt.Fprintln(app.Writer)
 
-			fmt.Printf("    %s\n", command.Description)
+			fmt.Fprintf(app.Writer, "    %s\n", command.Description)
 		}
 	}
-	fmt.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	fmt.Fprintf(app.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
 }
 
 func getBuiltinCommands() []commandPackage {

@@ -88,7 +88,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	if head.Hash() == ref.Hash() {
 		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.CyanString("OK") + "]\n"
 		status.Stop()
-		color.Cyan("command \"%s\" already up-to-date", cmd)
+		fmt.Fprintln(app.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
 	}
 

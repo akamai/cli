@@ -14,18 +14,18 @@ func cmdUpgrade(c *cli.Context) error {
 	status.Start()
 	if latestVersion := checkForUpgrade(true); latestVersion != "" {
 		status.Stop()
-		fmt.Printf("Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+VERSION))
+		fmt.Fprintf(app.Writer, "Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+VERSION))
 		os.Args = []string{os.Args[0], "--version"}
 		success := upgradeCli(latestVersion)
 		if success {
-			trackEvent("upgrade.success", "to: " + latestVersion + " from:" + VERSION)
+			trackEvent("upgrade.success", "to: "+latestVersion+" from:"+VERSION)
 		} else {
-			trackEvent("upgrade.failed", "to: " + latestVersion + " from:" + VERSION)
+			trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		}
 	} else {
 		status.FinalMSG = "Checking for upgrades...... [" + color.CyanString("OK") + "]\n"
 		status.Stop()
-		fmt.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+VERSION))
+		fmt.Fprintf(app.Writer, "Akamai CLI (%s) is already up-to-date", color.CyanString("v"+VERSION))
 	}
 
 	return nil

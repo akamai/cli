@@ -249,27 +249,27 @@ func getSpinner(prefix string, finalMsg string) *spinner.Spinner {
 }
 
 func showBanner() {
-	fmt.Println()
+	fmt.Fprintln(app.ErrWriter)
 	bg := color.New(color.BgMagenta)
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fmt.Fprintf(app.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
 	fg := bg.Add(color.FgWhite)
 	title := "Welcome to Akamai CLI v" + VERSION
 	ws := strings.Repeat(" ", 16)
-	fg.Printf(ws + title + ws + "\n")
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
-	fmt.Println()
+	fmt.Fprintf(app.ErrWriter, fg.Sprintf(ws+title+ws+"\n"))
+	fmt.Fprintf(app.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
+	fmt.Fprintln(app.ErrWriter)
 }
 
 func setHelpTemplates() {
 	cli.AppHelpTemplate = "" +
 		color.YellowString("Usage: \n") +
-		color.BlueString("	{{if .UsageText}}" +
-			"{{.UsageText}}" +
-			"{{else}}" +
-			"{{.HelpName}} " +
-			"{{if .VisibleFlags}}[global flags]{{end}}" +
-			"{{if .Commands}} command [command flags]{{end}} " +
-			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}" +
+		color.BlueString("	{{if .UsageText}}"+
+			"{{.UsageText}}"+
+			"{{else}}"+
+			"{{.HelpName}} "+
+			"{{if .VisibleFlags}}[global flags]{{end}}"+
+			"{{if .Commands}} command [command flags]{{end}} "+
+			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}"+
 			"\n\n{{end}}") +
 
 		"{{if .Description}}\n\n" +

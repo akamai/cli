@@ -24,13 +24,13 @@ func cmdInstall(c *cli.Context) error {
 		err := installPackage(repo, c.Bool("force"))
 		if err != nil {
 			// Only track public github repos
-			if !strings.HasPrefix(repo,"https://github.com/") {
+			if !strings.HasPrefix(repo, "https://github.com/") {
 				trackEvent("install.failed", repo)
 			}
 			return err
 		}
 
-		if strings.HasPrefix(repo,"https://github.com/") {
+		if strings.HasPrefix(repo, "https://github.com/") {
 			trackEvent("install.success", repo)
 		}
 	}
@@ -48,7 +48,7 @@ func installPackage(repo string, forceBinary bool) error {
 
 	_ = os.MkdirAll(srcPath, 0775)
 
-	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo) + "... [" + color.GreenString("OK") + "]\n")
+	status := getSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
 	status.Start()
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
@@ -77,7 +77,7 @@ func installPackage(repo string, forceBinary bool) error {
 	status.Stop()
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		color.Cyan("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+		fmt.Fprintln(app.ErrWriter, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
 	if !installPackageDependencies(packageDir, forceBinary) {
@@ -97,7 +97,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 	if err != nil {
 		status.FinalMSG = "Installing...... [" + color.RedString("FAIL") + "]\n"
 		status.Stop()
-		fmt.Println(err.Error())
+		fmt.Fprintln(app.ErrWriter, err.Error())
 		return false
 	}
 
@@ -118,7 +118,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 	default:
 		status.FinalMSG = "Installing...... [" + color.CyanString("OK") + "]\n"
 		status.Stop()
-		color.Cyan("Package installed successfully, however package type is unknown, and may or may not function correctly.")
+		fmt.Fprintln(app.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
@@ -134,13 +134,13 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				first = false
 				status.FinalMSG = "Installing...... [" + color.CyanString("WARN") + "]\n"
 				status.Stop()
-				color.Cyan(err.Error())
+				fmt.Fprintln(app.Writer, color.CyanString(err.Error()))
 				if !forceBinary {
 					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 						return false
 					}
 
-					fmt.Print("Binary command(s) found, would you like to try download and install it? (Y/n): ")
+					fmt.Fprint(app.ErrWriter, "Binary command(s) found, would you like to try download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
 					if answer != "" && strings.ToLower(answer) != "y" {
@@ -159,7 +159,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 			} else {
 				status.FinalMSG = "Downloading binary...... [" + color.RedString("FAIL") + "]\n"
 				status.Stop()
-				color.Red("Unable to download binary: " + err.Error())
+				fmt.Fprintln(app.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
 				return false
 			}
 		} else {
@@ -167,7 +167,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				first = false
 				status.FinalMSG = "Installing...... [" + color.RedString("FAIL") + "]\n"
 				status.Stop()
-				color.Red(err.Error())
+				fmt.Fprintln(app.ErrWriter, color.RedString(err.Error()))
 				return false
 			}
 		}

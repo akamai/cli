@@ -64,7 +64,7 @@ func saveConfig() error {
 
 	err = config.SaveTo(path)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Fprintln(app.Writer, err.Error())
 		return err
 	}
 

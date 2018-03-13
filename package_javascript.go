@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
 
@@ -15,7 +16,7 @@ func installJavaScript(dir string, cmdPackage commandPackage) (bool, error) {
 	if err != nil {
 		bin, err = exec.LookPath("nodejs")
 		if err != nil {
-			return false, cli.NewExitError(("Unable to locate Node.js runtime"), 1)
+			return false, cli.NewExitError(color.RedString("Unable to locate Node.js runtime"), 1)
 		}
 	}
 
