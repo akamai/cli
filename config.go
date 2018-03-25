@@ -186,9 +186,8 @@ func exportConfigEnv() {
 	}
 
 	for _, section := range config.Sections() {
-		envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
-
 		for _, key := range section.Keys() {
+			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
 			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
 			os.Setenv(envVar, key.String())
 		}
