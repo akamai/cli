@@ -85,13 +85,12 @@ func getPackageBinPaths() string {
 	return path
 }
 
-
 func findPackageDir(dir string) string {
-	if stat, err :=  os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
+	if stat, err := os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
 		dir = filepath.Dir(dir)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		if os.IsNotExist(err) {
 			if filepath.Dir(dir) == "" {
 				return ""
@@ -103,7 +102,6 @@ func findPackageDir(dir string) string {
 
 	return dir
 }
-
 
 func determineCommandLanguage(cmdPackage commandPackage) string {
 	if cmdPackage.Requirements.Php != "" {
