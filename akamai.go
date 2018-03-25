@@ -136,10 +136,29 @@ func createApp() *cli.App {
 			Name:  "zsh",
 			Usage: "Output zsh auto-complete",
 		},
+		cli.StringFlag{
+			Name:  "proxy",
+			Usage: "Set a proxy to use",
+		},
 	}
 	app.Action = func(c *cli.Context) {
 		defaultAction(c, app)
 	}
+
+	app.Before = func(c *cli.Context) error {
+		if c.IsSet("proxy") {
+			proxy := c.String("proxy")
+			os.Setenv("HTTP_PROXY", proxy)
+			os.Setenv("http_proxy", proxy)
+			if strings.HasPrefix(proxy, "https") {
+				os.Setenv("HTTPS_PROXY", proxy)
+				os.Setenv("https_proxy", proxy)
+			}
+		}
+
+		return nil
+	}
+
 	return app
 }
 
