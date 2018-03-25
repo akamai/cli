@@ -332,3 +332,67 @@ func setHelpTemplates() {
 
 		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
 }
+
+func DefaultAutoComplete(ctx *cli.Context) {
+	if ctx.Command.Name == "help" {
+		var args []string
+		args = append(args, os.Args[0])
+		if len(os.Args) > 2 {
+			args = append(args, os.Args[2:]...)
+		}
+
+		ctx.App.Run(args)
+		return
+	}
+
+	commands := make([]cli.Command, 0)
+	flags := make([]cli.Flag, 0)
+
+	if ctx.Command.Name == "" {
+		commands = ctx.App.Commands
+		flags = ctx.App.Flags
+	} else {
+		if len(ctx.Command.Subcommands) != 0 {
+			commands = ctx.Command.Subcommands
+		}
+
+		if len(ctx.Command.Flags) != 0 {
+			flags = ctx.Command.Flags
+		}
+	}
+
+	for _, command := range commands {
+		if command.Hidden {
+			continue
+		}
+
+		for _, name := range command.Names() {
+			fmt.Fprintln(ctx.App.Writer, name)
+		}
+	}
+
+	for _, flag := range flags {
+	nextFlag:
+		for _, name := range strings.Split(flag.GetName(), ",") {
+			name = strings.TrimSpace(name)
+
+			if name == cli.BashCompletionFlag.GetName() {
+				continue
+			}
+
+			for _, arg := range os.Args {
+				if arg == "--"+name || arg == "-"+name {
+					continue nextFlag
+				}
+			}
+
+			switch len(name) {
+			case 0:
+			case 1:
+				fmt.Fprintln(ctx.App.Writer, "-"+name)
+			default:
+				fmt.Fprintln(ctx.App.Writer, "--"+name)
+			}
+		}
+	}
+}

@@ -63,16 +63,17 @@ func main() {
 		app.Commands = append(
 			app.Commands,
 			cli.Command{
-				Name:        strings.ToLower(cmd.Commands[0].Name),
-				Aliases:     cmd.Commands[0].Aliases,
-				Usage:       cmd.Commands[0].Usage,
-				ArgsUsage:   cmd.Commands[0].Arguments,
-				Description: cmd.Commands[0].Description,
-				Action:      cmd.action,
-				UsageText:   cmd.Commands[0].Docs,
-				Flags:       cmd.Commands[0].Flags,
-				Subcommands: cmd.Commands[0].Subcommands,
-				HideHelp:    true,
+				Name:         strings.ToLower(cmd.Commands[0].Name),
+				Aliases:      cmd.Commands[0].Aliases,
+				Usage:        cmd.Commands[0].Usage,
+				ArgsUsage:    cmd.Commands[0].Arguments,
+				Description:  cmd.Commands[0].Description,
+				Action:       cmd.action,
+				UsageText:    cmd.Commands[0].Docs,
+				Flags:        cmd.Commands[0].Flags,
+				Subcommands:  cmd.Commands[0].Subcommands,
+				HideHelp:     true,
+				BashComplete: DefaultAutoComplete,
 			},
 		)
 	}
@@ -121,6 +122,7 @@ func createApp() *cli.App {
 	app.Writer = colorable.NewColorableStdout()
 	app.ErrWriter = colorable.NewColorableStderr()
 	app.EnableBashCompletion = true
+	app.BashComplete = DefaultAutoComplete
 	cli.BashCompletionFlag = cli.BoolFlag{
 		Name:   "generate-auto-complete",
 		Hidden: true,
