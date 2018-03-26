@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/go-ini/ini"
 )
 
@@ -80,7 +81,7 @@ func saveConfig() error {
 
 	err = config.SaveTo(path)
 	if err != nil {
-		fmt.Fprintln(app.Writer, err.Error())
+		fmt.Fprintln(akamai.App.Writer, err.Error())
 		return err
 	}
 

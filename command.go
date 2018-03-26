@@ -18,8 +18,11 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -94,15 +97,15 @@ func packageListDiff(oldcmds []commandPackage) {
 
 	bold := color.New(color.FgWhite, color.Bold)
 
-	fmt.Fprintln(app.Writer, color.YellowString("\nAvailable Commands:\n\n"))
+	fmt.Fprintln(akamai.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			if _, ok := unchanged[command.Name]; ok {
-				fmt.Fprintf(app.Writer, bold.Sprintf("  %s", command.Name))
+				fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  %s", command.Name))
 			} else if _, ok := added[command.Name]; ok {
-				fmt.Fprint(app.Writer, color.GreenString("  %s", command.Name))
+				fmt.Fprint(akamai.App.Writer, color.GreenString("  %s", command.Name))
 			} else if _, ok := removed[command.Name]; ok {
-				fmt.Fprint(app.Writer, color.RedString("  %s", command.Name))
+				fmt.Fprint(akamai.App.Writer, color.RedString("  %s", command.Name))
 			}
 			if len(command.Aliases) > 0 {
 				var aliases string
@@ -113,29 +116,29 @@ func packageListDiff(oldcmds []commandPackage) {
 					aliases = "aliases"
 				}
 
-				fmt.Fprintf(app.Writer, " (%s: ", aliases)
+				fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					if _, ok := unchanged[command.Name]; ok {
 						bold.Print(alias)
 					} else if _, ok := added[command.Name]; ok {
-						fmt.Fprint(app.Writer, color.GreenString(alias))
+						fmt.Fprint(akamai.App.Writer, color.GreenString(alias))
 					} else if _, ok := removed[command.Name]; ok {
-						fmt.Fprint(app.Writer, color.RedString(alias))
+						fmt.Fprint(akamai.App.Writer, color.RedString(alias))
 					}
 
 					if i < len(command.Aliases)-1 {
-						fmt.Fprint(app.Writer, ", ")
+						fmt.Fprint(akamai.App.Writer, ", ")
 					}
 				}
-				fmt.Fprint(app.Writer, ")")
+				fmt.Fprint(akamai.App.Writer, ")")
 			}
 
-			fmt.Fprintln(app.Writer)
+			fmt.Fprintln(akamai.App.Writer)
 
-			fmt.Fprintf(app.Writer, "    %s\n", command.Description)
+			fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
 		}
 	}
-	fmt.Fprintf(app.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
 }
 
 func getBuiltinCommands() []commandPackage {
@@ -148,7 +151,7 @@ func getBuiltinCommands() []commandPackage {
 					Arguments:   "[command] [sub-command]",
 				},
 			},
-			action: cmdHelp,
+			action: akamai.CmdHelp,
 		},
 		{
 			Commands: []Command{
@@ -284,4 +287,62 @@ func getCommands() []commandPackage {
 	}
 
 	return commands
+}
+
+var commandLocator akamai.CommandLocator = func() ([]cli.Command, error) {
+	commands := make([]cli.Command, 0)
+	builtinCmds := make(map[string]bool)
+	for _, cmd := range getBuiltinCommands() {
+		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
+		commands = append(
+			commands,
+			cli.Command{
+				Name:         strings.ToLower(cmd.Commands[0].Name),
+				Aliases:      cmd.Commands[0].Aliases,
+				Usage:        cmd.Commands[0].Usage,
+				ArgsUsage:    cmd.Commands[0].Arguments,
+				Description:  cmd.Commands[0].Description,
+				Action:       cmd.action,
+				UsageText:    cmd.Commands[0].Docs,
+				Flags:        cmd.Commands[0].Flags,
+				Subcommands:  cmd.Commands[0].Subcommands,
+				HideHelp:     true,
+				BashComplete: akamai.DefaultAutoComplete,
+			},
+		)
+	}
+
+	for _, cmd := range getCommands() {
+		for _, command := range cmd.Commands {
+			if _, ok := builtinCmds[command.Name]; ok {
+				continue
+			}
+
+			commands = append(
+				commands,
+				cli.Command{
+					Name:        strings.ToLower(command.Name),
+					Aliases:     command.Aliases,
+					Description: command.Description,
+
+					Action:          cmdSubcommand,
+					Category:        color.YellowString("Installed Commands:"),
+					SkipFlagParsing: true,
+					BashComplete: func(c *cli.Context) {
+						if command.AutoComplete {
+							executable, err := findExec(c.Command.Name)
+							if err != nil {
+								return
+							}
+
+							executable = append(executable, os.Args[2:]...)
+							passthruCommand(executable)
+						}
+					},
+				},
+			)
+		}
+	}
+
+	return commands, nil
 }

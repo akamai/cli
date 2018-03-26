@@ -1,12 +1,27 @@
-hash: c398b6fa02c64310681913d13d3942e1b0b5d0d667444715287e0c98a0bfa33d
-updated: 2018-02-26T16:11:17.802382804-08:00
+hash: db004b3524fced023474d3b20bfe6b383af8ca092fcfaab15cf7c83f4cfca4e8
+updated: 2018-03-26T16:56:30.615254439-07:00
 imports:
+- name: github.com/akamai/AkamaiOPEN-edgegrid-golang
+  version: a494eba1efa1f38338393727dff63389a6a66534
+  subpackages:
+  - edgegrid
+- name: github.com/akamai/cli-common-golang
+  version: 57308d48c8b24cad7be973455961fe321f22616a
 - name: github.com/briandowns/spinner
   version: 48dbb65d7bd5c74ab50d53d04c949f20e3d14944
+- name: github.com/emirpasic/gods
+  version: b2394dfbb6314eeb616db55d1e01928f287da4b4
+  subpackages:
+  - containers
+  - lists
+  - lists/arraylist
+  - trees
+  - trees/binaryheap
+  - utils
 - name: github.com/fatih/color
   version: 507f6050b8568533fb3f5504de8e5205fa62a114
 - name: github.com/go-ini/ini
-  version: 32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a
+  version: 6333e38ac20b8949a8dd68baa3650f4dee8f39f0
 - name: github.com/inconshreveable/go-update
   version: 8152e7eb6ccf8679a64582a66b78519688d156ad
   subpackages:
@@ -19,9 +34,9 @@ imports:
 - name: github.com/kardianos/osext
   version: ae77be60afb1dcacde03767a8c37337fad28ac14
 - name: github.com/kevinburke/ssh_config
-  version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
+  version: b8c871d977a83aa18057e89f0fe06f160006835d
 - name: github.com/mattn/go-colorable
-  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
+  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
 - name: github.com/mattn/go-isatty
   version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
 - name: github.com/mitchellh/go-homedir
@@ -32,6 +47,8 @@ imports:
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/sirupsen/logrus
+  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/src-d/gcfg
   version: f187355171c936ac84a82793659ebb4936bc1c23
   subpackages:
@@ -39,7 +56,7 @@ imports:
   - token
   - types
 - name: github.com/src-d/go-git
-  version: 886dc83f3ed518a78772055497bcc7d7621b468e
+  version: 1d28459504251497e0ce6132a0fadd5eb44ffd22
 - name: github.com/tuvistavie/securerandom
   version: 15512123a948d62f6361bd84818e11f2ad84059a
 - name: github.com/urfave/cli
@@ -49,7 +66,7 @@ imports:
 - name: github.com/yookoala/realpath
   version: d19ef9c409d9817c1e685775e53d361b03eabbc8
 - name: golang.org/x/crypto
-  version: beaf6a35706e5032ae4c3fcf342c663c069f44d2
+  version: 88942b9c40a4c9d203b82b3731787b672d6e809b
   subpackages:
   - cast5
   - curve25519
@@ -67,7 +84,7 @@ imports:
   - ssh/agent
   - ssh/knownhosts
 - name: golang.org/x/net
-  version: cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb
+  version: 6078986fec03a1dcc236c34816c71b0e05018fda
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -76,10 +93,12 @@ imports:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 27420a1a391f5504f73155051cd274311bf70883
+  version: ab48842968a66deafa354805a8b031924668e059
   subpackages:
   - transform
   - unicode/norm
+- name: gopkg.in/mattes/go-expand-tilde.v1
+  version: cb884138e64c9a8bf5c7d6106d74b0fca082df0c
 - name: gopkg.in/src-d/go-billy.v4
   version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
   subpackages:
@@ -88,7 +107,7 @@ imports:
   - osfs
   - util
 - name: gopkg.in/src-d/go-git.v4
-  version: 886dc83f3ed518a78772055497bcc7d7621b468e
+  version: 1d28459504251497e0ce6132a0fadd5eb44ffd22
   subpackages:
   - config
   - internal/revision

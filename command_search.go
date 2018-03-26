@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -151,13 +152,13 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	sort.Strings(resultPkgs)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	fmt.Fprintln(app.Writer, color.YellowString("Results Found: %d\n\n", len(resultPkgs)))
+	fmt.Fprintln(akamai.App.Writer, color.YellowString("Results Found: %d\n\n", len(resultPkgs)))
 
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
-				fmt.Fprintln(app.Writer, color.GreenString("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits))
+				fmt.Fprintln(akamai.App.Writer, color.GreenString("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits))
 				for _, cmd := range results[hits][pkgName].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
@@ -166,8 +167,8 @@ func searchPackages(keywords []string, packageList *packageList) error {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
 
-					fmt.Fprintf(app.Writer, bold.Sprintf("    Command: %s %s\n", cmd.Name, aliases))
-					fmt.Fprintf(app.Writer, "        %s\n\n", cmd.Description)
+					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("    Command: %s %s\n", cmd.Name, aliases))
+					fmt.Fprintf(akamai.App.Writer, "        %s\n\n", cmd.Description)
 				}
 			}
 		}

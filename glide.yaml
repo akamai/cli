@@ -18,3 +18,4 @@ import:
   version: ^0.0.3
 - package: github.com/go-ini/ini
   version: ^1.31.1
+- package: github.com/akamai/cli-common-golang

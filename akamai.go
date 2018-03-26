@@ -20,9 +20,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/kardianos/osext"
-	"github.com/mattn/go-colorable"
 	"github.com/urfave/cli"
 )
 
@@ -30,22 +29,14 @@ const (
 	VERSION = "0.6.0"
 )
 
-var (
-	app *cli.App
-)
-
 func main() {
 	os.Setenv("AKAMAI_CLI", "1")
 
-	setHelpTemplates()
 	getAkamaiCliCachePath()
-
 	exportConfigEnv()
-
-	app = createApp()
+	createApp()
 
 	firstRun()
-
 	if latestVersion := checkForUpgrade(false); latestVersion != "" {
 		if upgradeCli(latestVersion) {
 			trackEvent("upgrade.auto.success", "to: "+latestVersion+" from:"+VERSION)
@@ -56,78 +47,13 @@ func main() {
 	}
 
 	checkPing()
-
-	var builtinCmds map[string]bool = make(map[string]bool)
-	for _, cmd := range getBuiltinCommands() {
-		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
-		app.Commands = append(
-			app.Commands,
-			cli.Command{
-				Name:         strings.ToLower(cmd.Commands[0].Name),
-				Aliases:      cmd.Commands[0].Aliases,
-				Usage:        cmd.Commands[0].Usage,
-				ArgsUsage:    cmd.Commands[0].Arguments,
-				Description:  cmd.Commands[0].Description,
-				Action:       cmd.action,
-				UsageText:    cmd.Commands[0].Docs,
-				Flags:        cmd.Commands[0].Flags,
-				Subcommands:  cmd.Commands[0].Subcommands,
-				HideHelp:     true,
-				BashComplete: DefaultAutoComplete,
-			},
-		)
-	}
-
-	for _, cmd := range getCommands() {
-		for _, command := range cmd.Commands {
-			if _, ok := builtinCmds[command.Name]; ok {
-				continue
-			}
-
-			app.Commands = append(
-				app.Commands,
-				cli.Command{
-					Name:        strings.ToLower(command.Name),
-					Aliases:     command.Aliases,
-					Description: command.Description,
-
-					Action:          cmdSubcommand,
-					Category:        color.YellowString("Installed Commands:"),
-					SkipFlagParsing: true,
-					BashComplete: func(c *cli.Context) {
-						if command.AutoComplete {
-							executable, err := findExec(c.Command.Name)
-							if err != nil {
-								return
-							}
-
-							executable = append(executable, os.Args[2:]...)
-							passthruCommand(executable)
-						}
-					},
-				},
-			)
-		}
-	}
-
-	app.Run(os.Args)
+	akamai.App.Run(os.Args)
 }
 
-func createApp() *cli.App {
-	app := cli.NewApp()
-	app.Name = "akamai"
-	app.Usage = "Akamai CLI"
-	app.Version = VERSION
-	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Writer = colorable.NewColorableStdout()
-	app.ErrWriter = colorable.NewColorableStderr()
-	app.EnableBashCompletion = true
-	app.BashComplete = DefaultAutoComplete
-	cli.BashCompletionFlag = cli.BoolFlag{
-		Name:   "generate-auto-complete",
-		Hidden: true,
-	}
-	app.Flags = []cli.Flag{
+func createApp() {
+	akamai.CreateApp("", "Akamai CLI", "", VERSION, "", commandLocator)
+
+	akamai.App.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "bash",
 			Usage: "Output bash auto-complete",
@@ -141,11 +67,12 @@ func createApp() *cli.App {
 			Usage: "Set a proxy to use",
 		},
 	}
-	app.Action = func(c *cli.Context) {
-		defaultAction(c, app)
+
+	akamai.App.Action = func(c *cli.Context) {
+		defaultAction(c)
 	}
 
-	app.Before = func(c *cli.Context) error {
+	akamai.App.Before = func(c *cli.Context) error {
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
 			os.Setenv("HTTP_PROXY", proxy)
@@ -158,11 +85,9 @@ func createApp() *cli.App {
 
 		return nil
 	}
-
-	return app
 }
 
-func defaultAction(c *cli.Context, app *cli.App) {
+func defaultAction(c *cli.Context) {
 	cmd, err := osext.Executable()
 	if err != nil {
 		cmd = self()
@@ -189,14 +114,14 @@ autoload -U bashcompinit && bashcompinit`
 complete -F _akamai_cli_bash_autocomplete ` + self()
 
 	if c.Bool("bash") {
-		fmt.Fprintln(app.Writer, bashComments)
-		fmt.Fprintln(app.Writer, bashScript)
+		fmt.Fprintln(akamai.App.Writer, bashComments)
+		fmt.Fprintln(akamai.App.Writer, bashScript)
 		return
 	}
 
 	if c.Bool("zsh") {
-		fmt.Fprintln(app.Writer, zshScript)
-		fmt.Fprintln(app.Writer, bashScript)
+		fmt.Fprintln(akamai.App.Writer, zshScript)
+		fmt.Fprintln(akamai.App.Writer, bashScript)
 		return
 	}
 

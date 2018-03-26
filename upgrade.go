@@ -31,6 +31,7 @@ import (
 	"text/template"
 	"time"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
@@ -78,7 +79,7 @@ func checkForUpgrade(force bool) string {
 		if versionCompare(VERSION, latestVersion) == 1 {
 			if !force {
 				fmt.Fprintf(
-					app.Writer,
+					akamai.App.Writer,
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(VERSION),
@@ -118,7 +119,7 @@ func getLatestReleaseVersion() string {
 }
 
 func upgradeCli(latestVersion string) bool {
-	status := getSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
+	akamai.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
 	cmd := Command{
 		Version: latestVersion,
@@ -143,13 +144,12 @@ func upgradeCli(latestVersion string) bool {
 	}
 
 	url := buf.String()
-	status.Start()
+
 	resp, err := http.Get(url)
 	defer resp.Body.Close()
 	if err != nil || resp.StatusCode != 200 {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to download release, please try again."))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download release, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
@@ -157,59 +157,54 @@ func upgradeCli(latestVersion string) bool {
 	shaResp, err := http.Get(url + ".sig")
 	defer shaResp.Body.Close()
 	if err != nil || shaResp.StatusCode != 200 {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
 	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
 	selfPath, err := osext.Executable()
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.ErrWriter, color.RedString("Unable to determine install location"))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to determine install location"))
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		if rerr := update.RollbackError(err); rerr != nil {
-			fmt.Fprintln(app.ErrWriter, color.RedString("Unable to install or rollback, please re-install."))
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to install or rollback, please re-install."))
 			trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			fmt.Fprintln(app.ErrWriter, color.RedString(err.Error()))
-			fmt.Fprintln(app.ErrWriter, color.RedString("Checksums do not match, please try again."))
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Checksums do not match, please try again."))
 		}
 		trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
 		return false
 	}
 
 	trackEvent("upgrade.success", "to: "+latestVersion+" from:"+VERSION)
-	status.Stop()
+	akamai.StopSpinnerOk()
 
 	if err == nil {
 		os.Args[0] = selfPath

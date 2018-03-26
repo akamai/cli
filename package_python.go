@@ -25,6 +25,7 @@ import (
 	"runtime"
 	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -157,8 +158,8 @@ func migratePythonPackage(cmd string, dir string) error {
 	}
 
 	if err == nil {
-		fmt.Fprintln(app.Writer, color.CyanString("You must reinstall this package to continue."))
-		fmt.Fprint(app.Writer, "Would you like to reinstall it? (Y/n): ")
+		fmt.Fprintln(akamai.App.Writer, color.CyanString("You must reinstall this package to continue."))
+		fmt.Fprint(akamai.App.Writer, "Would you like to reinstall it? (Y/n): ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {

@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
@@ -94,7 +95,7 @@ func checkPath() (bool, error) {
 
 	if !inPath && len(writablePaths) > 0 {
 		showBanner()
-		fmt.Fprint(app.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
+		fmt.Fprint(akamai.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
@@ -110,20 +111,20 @@ func checkPath() (bool, error) {
 }
 
 func choosePath(writablePaths []string, answer string, selfPath string) {
-	fmt.Fprintln(app.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
+	fmt.Fprintln(akamai.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
 	for i, path := range writablePaths {
-		fmt.Fprintf(app.Writer, "(%d) %s\n", i+1, path)
+		fmt.Fprintf(akamai.App.Writer, "(%d) %s\n", i+1, path)
 	}
-	fmt.Fprint(app.Writer, "Enter a number: ")
+	fmt.Fprint(akamai.App.Writer, "Enter a number: ")
 	answer = ""
 	fmt.Scanln(&answer)
 	index, err := strconv.Atoi(answer)
 	if err != nil {
-		fmt.Fprintln(app.Writer, color.RedString("Invalid choice, try again"))
+		fmt.Fprintln(akamai.App.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	if answer == "" || index < 1 || index > len(writablePaths) {
-		fmt.Fprintln(app.Writer, color.RedString("Invalid choice, try again"))
+		fmt.Fprintln(akamai.App.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	suffix := ""
@@ -131,19 +132,17 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 		suffix = ".exe"
 	}
 	newPath := filepath.Join(writablePaths[index-1], "akamai"+suffix)
-	status := getSpinner(
+	akamai.StartSpinner(
 		"Installing to "+newPath+"...",
 		"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 	)
-	status.Start()
 	err = os.Rename(selfPath, newPath)
 	os.Args[0] = newPath
 	if err != nil {
-		status.FinalMSG = "Installing to " + newPath + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.Writer, color.RedString(err.Error()))
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.Writer, color.RedString(err.Error()))
 	}
-	status.Stop()
+	akamai.StopSpinnerOk()
 }
 
 func checkUpdate(bannerShown bool) bool {
@@ -152,7 +151,7 @@ func checkUpdate(bannerShown bool) bool {
 			bannerShown = true
 			showBanner()
 		}
-		fmt.Fprint(app.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
+		fmt.Fprint(akamai.App.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
 
 		answer := ""
 		fmt.Scanln(&answer)
@@ -176,9 +175,9 @@ func checkStats(bannerShown bool) bool {
 			showBanner()
 		}
 		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
-		fmt.Fprintf(app.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnotics and usage data.\n", anonymous)
-		fmt.Fprintln(app.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n")
-		fmt.Fprintf(app.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnotics and usage data.\n", anonymous)
+		fmt.Fprintln(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n")
+		fmt.Fprintf(akamai.App.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
 		fmt.Scanln(&answer)

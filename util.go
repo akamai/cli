@@ -24,9 +24,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/briandowns/spinner"
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
@@ -256,159 +255,14 @@ func versionCompare(left string, right string) int {
 	return 1
 }
 
-func getSpinner(prefix string, finalMsg string) *spinner.Spinner {
-	status := spinner.New(spinner.CharSets[26], 500*time.Millisecond)
-	status.Prefix = prefix
-	status.FinalMSG = finalMsg
-
-	return status
-}
-
 func showBanner() {
-	fmt.Fprintln(app.ErrWriter)
+	fmt.Fprintln(akamai.App.ErrWriter)
 	bg := color.New(color.BgMagenta)
-	fmt.Fprintf(app.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
+	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
 	fg := bg.Add(color.FgWhite)
 	title := "Welcome to Akamai CLI v" + VERSION
 	ws := strings.Repeat(" ", 16)
-	fmt.Fprintf(app.ErrWriter, fg.Sprintf(ws+title+ws+"\n"))
-	fmt.Fprintf(app.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
-	fmt.Fprintln(app.ErrWriter)
-}
-
-func setHelpTemplates() {
-	cli.AppHelpTemplate = "" +
-		color.YellowString("Usage: \n") +
-		color.BlueString("	{{if .UsageText}}"+
-			"{{.UsageText}}"+
-			"{{else}}"+
-			"{{.HelpName}} "+
-			"{{if .VisibleFlags}}[global flags]{{end}}"+
-			"{{if .Commands}} command [command flags]{{end}} "+
-			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}"+
-			"\n\n{{end}}") +
-
-		"{{if .Description}}\n\n" +
-		color.YellowString("Description:\n") +
-		"   {{.Description}}" +
-		"\n\n{{end}}" +
-
-		"{{if .VisibleCommands}}" +
-		color.YellowString("Built-In Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"\n{{.Name}}\n" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		color.GreenString("  {{.Name}}") +
-		"{{if .Aliases}} ({{ $length := len .Aliases }}{{if eq $length 1}}alias:{{else}}aliases:{{end}} " +
-		"{{range $index, $alias := .Aliases}}" +
-		"{{if $index}}, {{end}}" +
-		color.GreenString("{{$alias}}") +
-		"{{end}}" +
-		"){{end}}\n" +
-		"{{end}}" +
-		"{{end}}" +
-		"{{end}}\n" +
-
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Global Flags:\n") +
-		"{{range $index, $option := .VisibleFlags}}" +
-		"{{if $index}}\n{{end}}" +
-		"   {{$option}}" +
-		"{{end}}" +
-		"\n\n{{end}}" +
-
-		"{{if .Copyright}}" +
-		color.HiBlackString("{{.Copyright}}") +
-		"{{end}}\n"
-
-	cli.CommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}}\n\n" +
-
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-
-		"{{if .Category}}" +
-		color.YellowString("Type: \n") +
-		"   {{.Category}}\n\n{{end}}" +
-
-		"{{if .Description}}" +
-		color.YellowString("Description: \n") +
-		"   {{.Description}}\n\n{{end}}" +
-
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags: \n") +
-		"{{range .VisibleFlags}}   {{.}}\n\n{{end}}{{end}}" +
-
-		"{{if .Subcommands}}" +
-		color.YellowString("Subcommands: \n") +
-		"{{range .Subcommands}}   {{.Name}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n{{end}}{{end}}" +
-
-		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
-}
-
-func DefaultAutoComplete(ctx *cli.Context) {
-	if ctx.Command.Name == "help" {
-		var args []string
-		args = append(args, os.Args[0])
-		if len(os.Args) > 2 {
-			args = append(args, os.Args[2:]...)
-		}
-
-		ctx.App.Run(args)
-		return
-	}
-
-	commands := make([]cli.Command, 0)
-	flags := make([]cli.Flag, 0)
-
-	if ctx.Command.Name == "" {
-		commands = ctx.App.Commands
-		flags = ctx.App.Flags
-	} else {
-		if len(ctx.Command.Subcommands) != 0 {
-			commands = ctx.Command.Subcommands
-		}
-
-		if len(ctx.Command.Flags) != 0 {
-			flags = ctx.Command.Flags
-		}
-	}
-
-	for _, command := range commands {
-		if command.Hidden {
-			continue
-		}
-
-		for _, name := range command.Names() {
-			fmt.Fprintln(ctx.App.Writer, name)
-		}
-	}
-
-	for _, flag := range flags {
-	nextFlag:
-		for _, name := range strings.Split(flag.GetName(), ",") {
-			name = strings.TrimSpace(name)
-
-			if name == cli.BashCompletionFlag.GetName() {
-				continue
-			}
-
-			for _, arg := range os.Args {
-				if arg == "--"+name || arg == "-"+name {
-					continue nextFlag
-				}
-			}
-
-			switch len(name) {
-			case 0:
-			case 1:
-				fmt.Fprintln(ctx.App.Writer, "-"+name)
-			default:
-				fmt.Fprintln(ctx.App.Writer, "--"+name)
-			}
-		}
-	}
+	fmt.Fprintf(akamai.App.ErrWriter, fg.Sprintf(ws+title+ws+"\n"))
+	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
+	fmt.Fprintln(akamai.App.ErrWriter)
 }

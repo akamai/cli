@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
@@ -61,8 +62,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
 	}
 
-	status := getSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
-	status.Start()
+	akamai.StartSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -72,8 +72,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	}
 
 	if repoDir == "" {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
@@ -87,24 +86,21 @@ func updatePackage(cmd string, forceBinary bool) error {
 	})
 
 	if err != nil && err.Error() != "already up-to-date" {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		return cli.NewExitError("Unable to fetch updates", 1)
 	}
 
 	workdir, _ := repo.Worktree()
 	ref, err := repo.Reference("refs/remotes/"+git.DefaultRemoteName+"/master", true)
 	if err != nil {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		return cli.NewExitError("Unable to update command", 1)
 	}
 
 	head, _ := repo.Head()
 	if head.Hash() == ref.Hash() {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.CyanString("OK") + "]\n"
-		status.Stop()
-		fmt.Fprintln(app.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
+		akamai.StopSpinnerWarnOk()
+		fmt.Fprintln(akamai.App.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
 	}
 
@@ -114,12 +110,11 @@ func updatePackage(cmd string, forceBinary bool) error {
 	})
 
 	if err != nil {
-		status.FinalMSG = fmt.Sprintf("Attempting to update \"%s\" command...", cmd) + "... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		return cli.NewExitError("Unable to update command", 1)
 	}
 
-	status.Stop()
+	akamai.StopSpinnerOk()
 
 	if !installPackageDependencies(repoDir, forceBinary) {
 		return cli.NewExitError("Unable to update command", 1)
