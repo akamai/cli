@@ -65,14 +65,15 @@ func checkPath() (bool, error) {
 	inPath := false
 	writablePaths := []string{}
 
+	var bannerShown bool
 	if getConfigValue("cli", "install-in-path") == "no" {
 		inPath = true
-		checkUpdate(!inPath)
+		bannerShown = checkUpdate(!inPath)
 	}
 
 	if len(paths) == 0 {
 		inPath = true
-		checkUpdate(!inPath)
+		bannerShown = checkUpdate(!inPath)
 	}
 
 	for _, path := range paths {
@@ -89,12 +90,14 @@ func checkPath() (bool, error) {
 		}
 
 		if path == dirPath {
-			checkUpdate(false)
+			bannerShown = checkUpdate(false)
 		}
 	}
 
 	if !inPath && len(writablePaths) > 0 {
-		showBanner()
+		if !bannerShown {
+			showBanner()
+		}
 		fmt.Fprint(akamai.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
 		fmt.Scanln(&answer)
@@ -102,6 +105,7 @@ func checkPath() (bool, error) {
 			setConfigValue("cli", "install-in-path", "no")
 			saveConfig()
 			checkUpdate(true)
+			return true, nil
 		}
 
 		choosePath(writablePaths, answer, selfPath)
