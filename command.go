@@ -17,7 +17,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,7 +61,6 @@ func packageListDiff(oldcmds []commandPackage) {
 		}
 	}
 
-	var unchanged = make(map[string]bool)
 	var added = make(map[string]bool)
 	var removed = make(map[string]bool)
 
@@ -71,7 +69,6 @@ func packageListDiff(oldcmds []commandPackage) {
 		for _, oldCmd := range old {
 			if newCmd.Name == oldCmd.Name {
 				found = true
-				unchanged[newCmd.Name] = true
 				break
 			}
 		}
@@ -95,50 +92,7 @@ func packageListDiff(oldcmds []commandPackage) {
 		}
 	}
 
-	bold := color.New(color.FgWhite, color.Bold)
-
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
-	for _, cmd := range getCommands() {
-		for _, command := range cmd.Commands {
-			if _, ok := unchanged[command.Name]; ok {
-				fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  %s", command.Name))
-			} else if _, ok := added[command.Name]; ok {
-				fmt.Fprint(akamai.App.Writer, color.GreenString("  %s", command.Name))
-			} else if _, ok := removed[command.Name]; ok {
-				fmt.Fprint(akamai.App.Writer, color.RedString("  %s", command.Name))
-			}
-			if len(command.Aliases) > 0 {
-				var aliases string
-
-				if len(command.Aliases) == 1 {
-					aliases = "alias"
-				} else {
-					aliases = "aliases"
-				}
-
-				fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
-				for i, alias := range command.Aliases {
-					if _, ok := unchanged[command.Name]; ok {
-						bold.Print(alias)
-					} else if _, ok := added[command.Name]; ok {
-						fmt.Fprint(akamai.App.Writer, color.GreenString(alias))
-					} else if _, ok := removed[command.Name]; ok {
-						fmt.Fprint(akamai.App.Writer, color.RedString(alias))
-					}
-
-					if i < len(command.Aliases)-1 {
-						fmt.Fprint(akamai.App.Writer, ", ")
-					}
-				}
-				fmt.Fprint(akamai.App.Writer, ")")
-			}
-
-			fmt.Fprintln(akamai.App.Writer)
-
-			fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
-		}
-	}
-	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	listInstalledCommands(added, removed)
 }
 
 func getBuiltinCommands() []commandPackage {
@@ -151,7 +105,7 @@ func getBuiltinCommands() []commandPackage {
 					Arguments:   "[command] [sub-command]",
 				},
 			},
-			action: akamai.CmdHelp,
+			action: cmdHelp,
 		},
 		{
 			Commands: []Command{

@@ -27,38 +27,7 @@ import (
 func cmdList(c *cli.Context) error {
 	bold := color.New(color.FgWhite, color.Bold)
 
-	commands := make(map[string]bool)
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("\nInstalled Commands:\n\n"))
-	for _, cmd := range getCommands() {
-		for _, command := range cmd.Commands {
-			commands[command.Name] = true
-			fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  %s", command.Name))
-			if len(command.Aliases) > 0 {
-				var aliases string
-
-				if len(command.Aliases) == 1 {
-					aliases = "alias"
-				} else {
-					aliases = "aliases"
-				}
-
-				fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
-				for i, alias := range command.Aliases {
-					bold.Print(alias)
-					if i < len(command.Aliases)-1 {
-						fmt.Fprint(akamai.App.Writer, ", ")
-					}
-				}
-				fmt.Fprint(akamai.App.Writer, ")")
-			}
-
-			fmt.Fprintln(akamai.App.Writer)
-
-			fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
-		}
-	}
-
-	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	commands := listInstalledCommands(nil, nil)
 
 	if c.IsSet("remote") {
 		packageList, err := fetchPackageList()
@@ -117,4 +86,47 @@ func cmdList(c *cli.Context) error {
 	}
 
 	return nil
+}
+func listInstalledCommands(added map[string]bool, removed map[string]bool) map[string]bool {
+	bold := color.New(color.FgWhite, color.Bold)
+
+	commands := make(map[string]bool)
+	fmt.Fprintln(akamai.App.Writer, color.YellowString("\nInstalled Commands:\n"))
+	for _, cmd := range getCommands() {
+		for _, command := range cmd.Commands {
+			commands[command.Name] = true
+			if _, ok := added[command.Name]; ok {
+				fmt.Fprint(akamai.App.Writer, color.GreenString("  %s", command.Name))
+			} else if _, ok := removed[command.Name]; ok {
+				fmt.Fprint(akamai.App.Writer, color.RedString("  %s", command.Name))
+			} else {
+				fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  %s", command.Name))
+			}
+
+			if len(command.Aliases) > 0 {
+				var aliases string
+
+				if len(command.Aliases) == 1 {
+					aliases = "alias"
+				} else {
+					aliases = "aliases"
+				}
+
+				fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
+				for i, alias := range command.Aliases {
+					bold.Print(alias)
+					if i < len(command.Aliases)-1 {
+						fmt.Fprint(akamai.App.Writer, ", ")
+					}
+				}
+				fmt.Fprint(akamai.App.Writer, ")")
+			}
+
+			fmt.Fprintln(akamai.App.Writer)
+
+			fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
+		}
+	}
+	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
+	return commands
 }
