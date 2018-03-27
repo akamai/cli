@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 )
 
@@ -45,11 +44,10 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	goPath, err := homedir.Dir()
+	goPath, err := getAkamaiCliPath()
 	if err != nil {
-		return false, cli.NewExitError(color.RedString("Unable to determine home directory"), 1)
+		return false, cli.NewExitError(color.RedString("Unable to determine CLI home directory"), 1)
 	}
-	goPath = filepath.Join(goPath, ".akamai-cli")
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath)
 
 	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
