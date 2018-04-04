@@ -5,6 +5,8 @@
 </h1>
 
 # Akamai CLI
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_shield)
+
 
 Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the command line.
 
@@ -234,3 +236,7 @@ The `bin` URL may contain the following placeholders:
   - Possible values are: `386`, `amd64`
 - `{{.BinSuffix}}` — The binary suffix for the current OS
   - Possible values are: `.exe` for windows
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_large)
