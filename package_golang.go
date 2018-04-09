@@ -57,7 +57,7 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 			cmd.Dir = dir
 			err = cmd.Run()
 			if err != nil {
-				return false, cli.NewExitError(err.Error(), 1)
+				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
 			}
 		} else {
 			return false, cli.NewExitError("Unable to find package manager.", 1)
@@ -70,7 +70,7 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	cmd.Dir = dir
 	err = cmd.Run()
 	if err != nil {
-		return false, cli.NewExitError(err.Error(), 1)
+		return false, cli.NewExitError("Unable to build binary: "+err.Error(), 1)
 	}
 
 	return true, nil

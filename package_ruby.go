@@ -50,7 +50,7 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 			cmd.Dir = dir
 			err = cmd.Run()
 			if err != nil {
-				return false, err
+				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
 			}
 			return true, nil
 		}

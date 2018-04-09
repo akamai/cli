@@ -180,7 +180,7 @@ func checkStats(bannerShown bool) bool {
 		}
 		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnotics and usage data.\n", anonymous)
-		fmt.Fprintln(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n")
+		fmt.Fprintf(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n\n")
 		fmt.Fprintf(akamai.App.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
