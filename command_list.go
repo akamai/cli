@@ -51,38 +51,18 @@ func cmdList(c *cli.Context) error {
 			return nil
 		}
 
-		for _, cmd := range packageList.Packages {
-			for _, command := range cmd.Commands {
+		for _, remotePackage := range packageList.Packages {
+			for _, command := range remotePackage.Commands {
 				if _, ok := commands[command.Name]; ok == true {
 					continue
 				}
 				bold.Printf("  %s", command.Name)
-				if len(command.Aliases) > 0 {
-					var aliases string
-
-					if len(command.Aliases) == 1 {
-						aliases = "alias"
-					} else {
-						aliases = "aliases"
-					}
-
-					fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
-					for i, alias := range command.Aliases {
-						bold.Print(alias)
-						if i < len(command.Aliases)-1 {
-							fmt.Fprint(akamai.App.Writer, ", ")
-						}
-					}
-					fmt.Fprint(akamai.App.Writer, ")")
-				}
-
-				fmt.Fprintln(akamai.App.Writer)
-
+				fmt.Fprintln(akamai.App.Writer, fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
 				fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
 			}
 		}
 
-		fmt.Fprintf(akamai.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [command]", self()))
+		fmt.Fprintf(akamai.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", self()))
 	}
 
 	return nil

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 
@@ -96,6 +97,7 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	var hits int
 	for key, pkg := range packageList.Packages {
 		hits = 0
+		validCmds := make([]Command, 0)
 		for _, keyword := range keywords {
 			keyword = strings.ToLower(keyword)
 			if strings.Contains(strings.ToLower(pkg.Name), keyword) {
@@ -106,7 +108,6 @@ func searchPackages(keywords []string, packageList *packageList) error {
 				hits += 50
 			}
 
-			validCmds := make([]Command, 0)
 			for _, cmd := range pkg.Commands {
 				cmdMatches := false
 				if strings.Contains(strings.ToLower(cmd.Name), keyword) {
@@ -130,15 +131,14 @@ func searchPackages(keywords []string, packageList *packageList) error {
 					validCmds = append(validCmds, cmd)
 				}
 			}
-
-			packageList.Packages[key].Commands = validCmds
 		}
+		packageList.Packages[key].Commands = validCmds
 
 		if hits > 0 {
 			if _, ok := results[hits]; !ok {
 				results[hits] = make(map[string]packageListPackage)
 			}
-			results[hits][pkg.Name] = pkg
+			results[hits][pkg.Name] = packageList.Packages[key]
 		}
 	}
 
@@ -155,13 +155,13 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	sort.Strings(resultPkgs)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("Results Found: %d\n\n", len(resultPkgs)))
+	fmt.Fprintf(akamai.App.Writer, color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
-				fmt.Fprintln(akamai.App.Writer, color.GreenString("Package: %s (%s) (rank: %d)\n", pkg.Title, pkg.Name, hits))
+				fmt.Fprintf(akamai.App.Writer, color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
 				for _, cmd := range results[hits][pkgName].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
@@ -170,11 +170,16 @@ func searchPackages(keywords []string, packageList *packageList) error {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
 
-					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("    Command: %s %s\n", cmd.Name, aliases))
-					fmt.Fprintf(akamai.App.Writer, "        %s\n\n", cmd.Description)
+					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
+					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Version:")+" %s\n", cmd.Version)
+					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
 		}
+	}
+
+	if len(resultHits) > 0 {
+		fmt.Fprintf(akamai.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", self()))
 	}
 
 	return nil
