@@ -69,7 +69,10 @@ func cmdSearch(c *cli.Context) error {
 }
 
 func fetchPackageList() (*packageList, error) {
-	repo := "https://developer.akamai.com/cli/package-list"
+	repo := ""
+	if repo = os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); repo == "" {
+		repo = "https://developer.akamai.com/cli/package-list.json"
+	}
 	resp, err := http.Get(repo)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
