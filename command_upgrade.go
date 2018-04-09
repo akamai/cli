@@ -28,7 +28,7 @@ import (
 func cmdUpgrade(c *cli.Context) error {
 	akamai.StartSpinner("Checking for upgrades...", "Checking for upgrades...... ["+color.GreenString("OK")+"]\n")
 
-	if latestVersion := checkForUpgrade(true); latestVersion != "" {
+	if latestVersion := checkUpgradeVersion(true); latestVersion != "" {
 		akamai.StopSpinnerOk()
 		fmt.Fprintf(akamai.App.Writer, "Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+VERSION))
 		os.Args = []string{os.Args[0], "--version"}

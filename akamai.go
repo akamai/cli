@@ -37,15 +37,7 @@ func main() {
 	createApp()
 
 	firstRun()
-	if latestVersion := checkForUpgrade(false); latestVersion != "" {
-		if upgradeCli(latestVersion) {
-			trackEvent("upgrade.auto.success", "to: "+latestVersion+" from:"+VERSION)
-			return
-		} else {
-			trackEvent("upgrade.auto.failed", "to: "+latestVersion+" from:"+VERSION)
-		}
-	}
-
+	checkUpgrade()
 	checkPing()
 	akamai.App.Run(os.Args)
 }
@@ -84,6 +76,17 @@ func createApp() {
 		}
 
 		return nil
+	}
+}
+
+func checkUpgrade() {
+	if latestVersion := checkUpgradeVersion(false); latestVersion != "" {
+		if upgradeCli(latestVersion) {
+			trackEvent("upgrade.auto.success", "to: "+latestVersion+" from:"+VERSION)
+			return
+		} else {
+			trackEvent("upgrade.auto.failed", "to: "+latestVersion+" from:"+VERSION)
+		}
 	}
 }
 

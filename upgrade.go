@@ -38,7 +38,7 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-func checkForUpgrade(force bool) string {
+func checkUpgradeVersion(force bool) string {
 	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 		return ""
 	}
