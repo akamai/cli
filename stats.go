@@ -20,7 +20,7 @@ import (
 	"strings"
 	time "time"
 
-	"github.com/tuvistavie/securerandom"
+	"github.com/google/uuid"
 )
 
 // Akamai CLI (optionally) tracks upgrades, package installs, and updates anonymously
@@ -29,12 +29,12 @@ import (
 
 func setupUUID() error {
 	if getConfigValue("cli", "client-id") == "" {
-		uuid, err := securerandom.Uuid()
+		uuid, err := uuid.NewRandom()
 		if err != nil {
 			return err
 		}
 
-		setConfigValue("cli", "client-id", uuid)
+		setConfigValue("cli", "client-id", uuid.String())
 		saveConfig()
 	}
 
