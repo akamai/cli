@@ -39,7 +39,7 @@ type packageListPackage struct {
 	Version      string    `json:"version"`
 	URL          string    `json:"url"`
 	Issues       string    `json:"issues"`
-	Commands     []Command `json:"commands"`
+	Commands     []command `json:"commands"`
 	Requirements struct {
 		Go     string `json:"go"`
 		Php    string `json:"php"`
@@ -68,7 +68,7 @@ func cmdSearch(c *cli.Context) error {
 }
 
 func fetchPackageList() (*packageList, error) {
-	repo := ""
+	var repo string
 	if repo = os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); repo == "" {
 		repo = "https://developer.akamai.com/cli/package-list.json"
 	}
@@ -95,7 +95,7 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	var hits int
 	for key, pkg := range packageList.Packages {
 		hits = 0
-		validCmds := make([]Command, 0)
+		validCmds := make([]command, 0)
 		for _, keyword := range keywords {
 			keyword = strings.ToLower(keyword)
 			if strings.Contains(strings.ToLower(pkg.Name), keyword) {
@@ -121,7 +121,7 @@ func searchPackages(keywords []string, packageList *packageList) error {
 				}
 
 				if strings.Contains(strings.ToLower(cmd.Description), keyword) {
-					hits += 1
+					hits++
 					cmdMatches = true
 				}
 

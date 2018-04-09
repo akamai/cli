@@ -18,6 +18,7 @@ package main
 
 import "golang.org/x/sys/unix"
 
+// Read/Write/Execute Constants
 const (
 	ACCESS_R_OK = unix.R_OK
 	ACCESS_W_OK = unix.W_OK

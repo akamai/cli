@@ -30,7 +30,7 @@ import (
 )
 
 type commandPackage struct {
-	Commands []Command `json:"commands"`
+	Commands []command `json:"commands"`
 
 	Requirements struct {
 		Go     string `json:"go"`
@@ -52,12 +52,12 @@ func readPackage(dir string) (commandPackage, error) {
 	}
 
 	var packageData commandPackage
-	cliJson, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
+	cliJSON, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
 		return commandPackage{}, err
 	}
 
-	err = json.Unmarshal(cliJson, &packageData)
+	err = json.Unmarshal(cliJSON, &packageData)
 	if err != nil {
 		return commandPackage{}, err
 	}
@@ -140,7 +140,7 @@ func determineCommandLanguage(cmdPackage commandPackage) string {
 	return ""
 }
 
-func downloadBin(dir string, cmd Command) bool {
+func downloadBin(dir string, cmd command) bool {
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS

@@ -27,7 +27,7 @@ import (
 //
 // This is done by generating an anonymous UUID that events are tied to
 
-func setupUuid() error {
+func setupUUID() error {
 	if getConfigValue("cli", "client-id") == "" {
 		uuid, err := securerandom.Uuid()
 		if err != nil {

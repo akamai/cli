@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-type Command struct {
+type command struct {
 	Name         string   `json:"name"`
 	Aliases      []string `json:"aliases"`
 	Version      string   `json:"version"`
@@ -45,14 +45,14 @@ type Command struct {
 func packageListDiff(oldcmds []commandPackage) {
 	cmds := getCommands()
 
-	var old []Command
+	var old []command
 	for _, oldcmd := range oldcmds {
 		for _, cmd := range oldcmd.Commands {
 			old = append(old, cmd)
 		}
 	}
 
-	var newCmds []Command
+	var newCmds []command
 	for _, newcmd := range cmds {
 		for _, cmd := range newcmd.Commands {
 			newCmds = append(newCmds, cmd)
@@ -96,7 +96,7 @@ func packageListDiff(oldcmds []commandPackage) {
 func getBuiltinCommands() []commandPackage {
 	commands := []commandPackage{
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "config",
 					Arguments:   "<action> <setting> [value]",
@@ -128,7 +128,7 @@ func getBuiltinCommands() []commandPackage {
 			},
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "help",
 					Description: "Displays help information",
@@ -138,7 +138,7 @@ func getBuiltinCommands() []commandPackage {
 			action: cmdHelp,
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "install",
 					Arguments:   "<package name or repository URL>...",
@@ -156,7 +156,7 @@ func getBuiltinCommands() []commandPackage {
 			action: cmdInstall,
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "list",
 					Description: "Displays available commands",
@@ -171,7 +171,7 @@ func getBuiltinCommands() []commandPackage {
 			action: cmdList,
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "search",
 					Arguments:   "<keyword>...",
@@ -182,7 +182,7 @@ func getBuiltinCommands() []commandPackage {
 			action: cmdSearch,
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "uninstall",
 					Arguments:   "<command>...",
@@ -192,7 +192,7 @@ func getBuiltinCommands() []commandPackage {
 			action: cmdUninstall,
 		},
 		{
-			Commands: []Command{
+			Commands: []command{
 				{
 					Name:        "update",
 					Arguments:   "[<command>...]",

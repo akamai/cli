@@ -39,7 +39,7 @@ func cmdSubcommand(c *cli.Context) error {
 	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
-		if err := migratePythonPackage(cmd, packageDir); err != nil {
+		if err = migratePythonPackage(cmd, packageDir); err != nil {
 			return err
 		}
 

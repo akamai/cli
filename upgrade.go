@@ -119,7 +119,7 @@ func getLatestReleaseVersion() string {
 func upgradeCli(latestVersion string) bool {
 	akamai.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
-	cmd := Command{
+	cmd := command{
 		Version: latestVersion,
 		Bin:     "https://github.com/akamai/cli/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}",
 		Arch:    runtime.GOARCH,
@@ -218,7 +218,7 @@ func upgradeCli(latestVersion string) bool {
 
 func getUpgradeCommand() *commandPackage {
 	return &commandPackage{
-		Commands: []Command{
+		Commands: []command{
 			{
 				Name:        "upgrade",
 				Description: "Upgrade Akamai CLI to the latest version",

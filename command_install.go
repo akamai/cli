@@ -35,7 +35,7 @@ func cmdInstall(c *cli.Context) error {
 	oldCmds := getCommands()
 
 	for _, repo := range c.Args() {
-		repo := githubize(repo)
+		repo = githubize(repo)
 		err := installPackage(repo, c.Bool("force"))
 		if err != nil {
 			// Only track public github repos
@@ -61,13 +61,13 @@ func installPackage(repo string, forceBinary bool) error {
 		return err
 	}
 
-	_ = os.MkdirAll(srcPath, 0775)
+	_ = os.MkdirAll(srcPath, 0700)
 
 	akamai.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
-	if _, err := os.Stat(packageDir); err == nil {
+	if _, err = os.Stat(packageDir); err == nil {
 		akamai.StopSpinnerFail()
 
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
@@ -155,25 +155,25 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 					}
 				}
 
-				os.MkdirAll(filepath.Join(dir, "bin"), 0775)
+				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
 			}
 
 			akamai.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			if downloadBin(filepath.Join(dir, "bin"), cmd) {
 				akamai.StopSpinnerOk()
 				return true
-			} else {
-				akamai.StopSpinnerFail()
-				fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
-				return false
 			}
-		} else {
-			if first {
-				first = false
-				akamai.StopSpinnerFail()
-				fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
-				return false
-			}
+
+			akamai.StopSpinnerFail()
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
+			return false
+		}
+
+		if first {
+			first = false
+			akamai.StopSpinnerFail()
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
+			return false
 		}
 	}
 

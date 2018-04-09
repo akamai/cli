@@ -44,7 +44,7 @@ func getAkamaiCliPath() (string, error) {
 	}
 
 	cliPath := filepath.Join(cliHome, ".akamai-cli")
-	err := os.MkdirAll(cliPath, 0755)
+	err := os.MkdirAll(cliPath, 0700)
 	if err != nil {
 		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
 	}
@@ -66,7 +66,7 @@ func getAkamaiCliCachePath() (string, error) {
 	cliHome, _ := getAkamaiCliPath()
 
 	cachePath := filepath.Join(cliHome, "cache")
-	err := os.MkdirAll(cachePath, 0775)
+	err := os.MkdirAll(cachePath, 0700)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func findExec(cmd string) ([]string, error) {
 	var path string
 	path, err := exec.LookPath(cmdName)
 	if err != nil {
-		path, err = exec.LookPath(cmdNameTitle)
+		path, _ = exec.LookPath(cmdNameTitle)
 	}
 
 	if path != "" {
@@ -141,8 +141,10 @@ func findExec(cmd string) ([]string, error) {
 		}
 
 		language := determineCommandLanguage(cmdPackage)
-		bin := ""
-		var cmd []string
+		var (
+			cmd []string
+			bin string
+		)
 		switch {
 		// Compiled Languages
 		case language == "go" || language == "c#" || language == "csharp":

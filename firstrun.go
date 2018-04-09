@@ -191,7 +191,7 @@ func checkStats(bannerShown bool) bool {
 
 		setConfigValue("cli", "enable-cli-statistics", "true")
 		setConfigValue("cli", "last-ping", "never")
-		setupUuid()
+		setupUUID()
 		saveConfig()
 		trackEvent("first-run", "true")
 	}

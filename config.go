@@ -51,7 +51,7 @@ func openConfig() (*ini.File, error) {
 		return config[path], nil
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err = os.Stat(path); os.IsNotExist(err) {
 		iniFile := ini.Empty()
 		config[path] = iniFile
 		return config[path], nil
@@ -92,7 +92,7 @@ func migrateConfig() {
 		return
 	}
 
-	if _, err := os.Stat(configPath); err == nil {
+	if _, err = os.Stat(configPath); err == nil {
 		// Do we need to migrate from an older version?
 		if getConfigValue("cli", "config-version") == configVersion {
 			return
@@ -113,11 +113,11 @@ func migrateConfig() {
 	var data []byte
 	upgradeFile := filepath.Join(cliPath, ".upgrade-check")
 	if _, err := os.Stat(upgradeFile); err == nil {
-		data, err = ioutil.ReadFile(upgradeFile)
+		data, _ = ioutil.ReadFile(upgradeFile)
 	} else {
 		upgradeFile = filepath.Join(cliPath, ".update-check")
 		if _, err := os.Stat(upgradeFile); err == nil {
-			data, err = ioutil.ReadFile(upgradeFile)
+			data, _ = ioutil.ReadFile(upgradeFile)
 		} else {
 			return
 		}
@@ -176,20 +176,6 @@ func unsetConfigValue(sectionName string, key string) {
 
 	section := config.Section(sectionName)
 	section.DeleteKey(key)
-}
-
-func addConfigComment(sectionName string, key string, comment string) {
-	config, err := openConfig()
-	if err != nil {
-		return
-	}
-
-	section := config.Section(sectionName)
-	configKey, err := section.GetKey(key)
-	if err != nil {
-		return
-	}
-	configKey.Comment = comment
 }
 
 func exportConfigEnv() {

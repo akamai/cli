@@ -48,7 +48,7 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	}
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath)
 
-	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
+	if _, err = os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
 		bin, err := exec.LookPath("glide")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
