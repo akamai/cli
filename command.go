@@ -18,6 +18,7 @@ package main
 
 import (
 	"os"
+	"sort"
 	"strings"
 
 	akamai "github.com/akamai/cli-common-golang"
@@ -99,31 +100,6 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
-					Name:        "help",
-					Description: "Displays help information",
-					Arguments:   "[command] [sub-command]",
-				},
-			},
-			action: cmdHelp,
-		},
-		{
-			Commands: []Command{
-				{
-					Name:        "list",
-					Description: "Displays available commands",
-					Flags: []cli.Flag{
-						cli.BoolFlag{
-							Name:  "remote",
-							Usage: "Display all available packages",
-						},
-					},
-				},
-			},
-			action: cmdList,
-		},
-		{
-			Commands: []Command{
-				{
 					Name:        "config",
 					Arguments:   "<action> <setting> [value]",
 					Description: "Manage configuration",
@@ -156,6 +132,16 @@ func getBuiltinCommands() []commandPackage {
 		{
 			Commands: []Command{
 				{
+					Name:        "help",
+					Description: "Displays help information",
+					Arguments:   "[command] [sub-command]",
+				},
+			},
+			action: cmdHelp,
+		},
+		{
+			Commands: []Command{
+				{
 					Name:        "install",
 					Arguments:   "<package name or repository URL>...",
 					Description: "Fetch and install packages from a Git repository.",
@@ -170,6 +156,21 @@ func getBuiltinCommands() []commandPackage {
 				},
 			},
 			action: cmdInstall,
+		},
+		{
+			Commands: []Command{
+				{
+					Name:        "list",
+					Description: "Displays available commands",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "remote",
+							Usage: "Display all available packages",
+						},
+					},
+				},
+			},
+			action: cmdList,
 		},
 		{
 			Commands: []Command{
@@ -219,24 +220,36 @@ func getBuiltinCommands() []commandPackage {
 }
 
 func getCommands() []commandPackage {
-	var commands []commandPackage
-	var commandMap map[string]bool = make(map[string]bool)
-
-	for _, cmd := range getBuiltinCommands() {
-		commandMap[cmd.Commands[0].Name] = true
-		commands = append(commands, cmd)
+	var (
+		commandMap   = make(map[string]commandPackage)
+		commandOrder = make([]string, 0)
+		commands     = make([]commandPackage, 0)
+	)
+	for _, pkg := range getBuiltinCommands() {
+		for _, command := range pkg.Commands {
+			commandMap[command.Name] = pkg
+			commandOrder = append(commandOrder, command.Name)
+		}
 	}
 
 	packagePaths := getPackagePaths()
 	if len(packagePaths) == 0 {
-		return commands
+
 	}
 
 	for _, dir := range packagePaths {
-		cmdPackage, err := readPackage(dir)
+		pkg, err := readPackage(dir)
 		if err == nil {
-			commands = append(commands, cmdPackage)
+			for _, command := range pkg.Commands {
+				commandMap[command.Name] = pkg
+				commandOrder = append(commandOrder, command.Name)
+			}
 		}
+	}
+
+	sort.Strings(commandOrder)
+	for _, key := range commandOrder {
+		commands = append(commands, commandMap[key])
 	}
 
 	return commands
