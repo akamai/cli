@@ -1,8 +1,8 @@
-hash: 416628bc97dfe5aa0391a5c34eff369e50bcade97b1beb1f253eb0d45c4d58bb
-updated: 2018-04-08T22:08:13.857426697-07:00
+hash: 4120d345dc1fda101099f9189e11587e23f7f02d6f93f4a5f3b7cbf4e1dd0851
+updated: 2018-04-08T23:11:51.390169109-07:00
 imports:
 - name: github.com/akamai/AkamaiOPEN-edgegrid-golang
-  version: ad4ccb93655438d71a42f1aec7e58f9d2444b858
+  version: 196fbdab2db66d0e231cc363efb63454f55fed1c
   subpackages:
   - edgegrid
 - name: github.com/akamai/cli-common-golang
@@ -50,21 +50,17 @@ imports:
   subpackages:
   - diffmatchpatch
 - name: github.com/sirupsen/logrus
-  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
+  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/src-d/gcfg
   version: f187355171c936ac84a82793659ebb4936bc1c23
   subpackages:
   - scanner
   - token
   - types
-- name: github.com/src-d/go-git
-  version: 247cf690745dfd67ccd9f0c07878e6dd85e6c9ed
 - name: github.com/urfave/cli
   version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
-- name: github.com/yookoala/realpath
-  version: d19ef9c409d9817c1e685775e53d361b03eabbc8
 - name: golang.org/x/crypto
   version: b2aa35443fbc700ab74c586ae79b81c171851023
   subpackages:
@@ -83,12 +79,13 @@ imports:
   - ssh
   - ssh/agent
   - ssh/knownhosts
+  - ssh/terminal
 - name: golang.org/x/net
   version: 61147c48b25b599e5b561d2e9c4f3e1ef489ca41
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 9d4e42a20653790449273b3c85e67d6d8bae6e2e
+  version: 3b87a42e500a6dc65dae1a55d0b641295971163e
   subpackages:
   - unix
   - windows
