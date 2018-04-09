@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	VERSION = "0.6.0"
+	// VERSION Application Version
+	VERSION = "1.0.0"
 )
 
 func main() {
