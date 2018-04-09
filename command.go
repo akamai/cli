@@ -18,7 +18,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	akamai "github.com/akamai/cli-common-golang"
@@ -229,11 +228,11 @@ func getCommands() []commandPackage {
 	}
 
 	packagePaths := getPackagePaths()
-	if packagePaths == "" {
+	if len(packagePaths) == 0 {
 		return commands
 	}
 
-	for _, dir := range filepath.SplitList(packagePaths) {
+	for _, dir := range packagePaths {
 		cmdPackage, err := readPackage(dir)
 		if err == nil {
 			commands = append(commands, cmdPackage)

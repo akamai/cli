@@ -71,17 +71,16 @@ func readPackage(dir string) (commandPackage, error) {
 	return packageData, nil
 }
 
-func getPackagePaths() string {
-	path := ""
+func getPackagePaths() []string {
 	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
 		if len(paths) > 0 {
-			path += strings.Join(paths, string(os.PathListSeparator))
+			return paths
 		}
 	}
 
-	return path
+	return []string{}
 }
 
 func getPackageBinPaths() string {
