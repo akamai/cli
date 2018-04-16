@@ -15,17 +15,49 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	time "time"
 
+	akamai "github.com/akamai/cli-common-golang"
+	"github.com/fatih/color"
 	"github.com/google/uuid"
 )
 
 // Akamai CLI (optionally) tracks upgrades, package installs, and updates anonymously
 //
 // This is done by generating an anonymous UUID that events are tied to
+
+func firstRunCheckStats(bannerShown bool) bool {
+	if getConfigValue("cli", "client-id") == "" && getConfigValue("cli", "enable-cli-statistics") != "false" {
+		if !bannerShown {
+			bannerShown = true
+			showBanner()
+		}
+		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
+		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
+		fmt.Fprintf(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n\n")
+		fmt.Fprintf(akamai.App.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+
+		answer := ""
+		fmt.Scanln(&answer)
+		if answer != "" && strings.ToLower(answer) != "y" {
+			setConfigValue("cli", "enable-cli-statistics", "false")
+			saveConfig()
+			return bannerShown
+		}
+
+		setConfigValue("cli", "enable-cli-statistics", "true")
+		setConfigValue("cli", "last-ping", "never")
+		setupUUID()
+		saveConfig()
+		trackEvent("first-run", "true")
+	}
+
+	return bannerShown
+}
 
 func setupUUID() error {
 	if getConfigValue("cli", "client-id") == "" {

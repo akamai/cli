@@ -16,7 +16,7 @@
 
 package main
 
-func checkForUpgrade(force bool) string {
+func checkUpgradeVersion(force bool) string {
 	return ""
 }
 

@@ -17,6 +17,6 @@
 package main
 
 func firstRun() error {
-	checkStats(false)
+	firstRunCheckStats(false)
 	return nil
 }

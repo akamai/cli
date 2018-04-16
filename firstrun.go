@@ -35,18 +35,18 @@ func firstRun() error {
 		return nil
 	}
 
-	bannerShown, err := checkPath()
+	bannerShown, err := firstRunCheckInPath()
 	if err != nil {
 		return err
 	}
 
-	bannerShown = checkUpdate(bannerShown)
-	checkStats(bannerShown)
+	bannerShown = firstRunCheckUpgrade(bannerShown)
+	firstRunCheckStats(bannerShown)
 
 	return nil
 }
 
-func checkPath() (bool, error) {
+func firstRunCheckInPath() (bool, error) {
 	selfPath, err := osext.Executable()
 	if err != nil {
 		return false, err
@@ -66,12 +66,12 @@ func checkPath() (bool, error) {
 	var bannerShown bool
 	if getConfigValue("cli", "install-in-path") == "no" {
 		inPath = true
-		bannerShown = checkUpdate(!inPath)
+		bannerShown = firstRunCheckUpgrade(!inPath)
 	}
 
 	if len(paths) == 0 {
 		inPath = true
-		bannerShown = checkUpdate(!inPath)
+		bannerShown = firstRunCheckUpgrade(!inPath)
 	}
 
 	for _, path := range paths {
@@ -88,7 +88,7 @@ func checkPath() (bool, error) {
 		}
 
 		if path == dirPath {
-			bannerShown = checkUpdate(false)
+			bannerShown = firstRunCheckUpgrade(false)
 		}
 	}
 
@@ -102,7 +102,7 @@ func checkPath() (bool, error) {
 		if answer != "" && strings.ToLower(answer) != "y" {
 			setConfigValue("cli", "install-in-path", "no")
 			saveConfig()
-			checkUpdate(true)
+			firstRunCheckUpgrade(true)
 			return true, nil
 		}
 
@@ -147,7 +147,7 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 	akamai.StopSpinnerOk()
 }
 
-func checkUpdate(bannerShown bool) bool {
+func firstRunCheckUpgrade(bannerShown bool) bool {
 	if getConfigValue("cli", "last-upgrade-check") == "" {
 		if !bannerShown {
 			bannerShown = true
@@ -165,35 +165,6 @@ func checkUpdate(bannerShown bool) bool {
 
 		setConfigValue("cli", "last-upgrade-check", "never")
 		saveConfig()
-	}
-
-	return bannerShown
-}
-
-func checkStats(bannerShown bool) bool {
-	if getConfigValue("cli", "client-id") == "" && getConfigValue("cli", "enable-cli-statistics") != "false" {
-		if !bannerShown {
-			bannerShown = true
-			showBanner()
-		}
-		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
-		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		fmt.Fprintf(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n\n")
-		fmt.Fprintf(akamai.App.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
-
-		answer := ""
-		fmt.Scanln(&answer)
-		if answer != "" && strings.ToLower(answer) != "y" {
-			setConfigValue("cli", "enable-cli-statistics", "false")
-			saveConfig()
-			return bannerShown
-		}
-
-		setConfigValue("cli", "enable-cli-statistics", "true")
-		setConfigValue("cli", "last-ping", "never")
-		setupUUID()
-		saveConfig()
-		trackEvent("first-run", "true")
 	}
 
 	return bannerShown
