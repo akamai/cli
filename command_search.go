@@ -105,9 +105,13 @@ func searchPackages(keywords []string, packageList *packageList) error {
 			if strings.Contains(strings.ToLower(pkg.Title), keyword) {
 				hits += 50
 			}
+		}
 
-			for _, cmd := range pkg.Commands {
-				cmdMatches := false
+		for _, cmd := range pkg.Commands {
+			cmdMatches := false
+			for _, keyword := range keywords {
+				keyword = strings.ToLower(keyword)
+
 				if strings.Contains(strings.ToLower(cmd.Name), keyword) {
 					hits += 30
 					cmdMatches = true
@@ -124,10 +128,10 @@ func searchPackages(keywords []string, packageList *packageList) error {
 					hits++
 					cmdMatches = true
 				}
+			}
 
-				if cmdMatches {
-					validCmds = append(validCmds, cmd)
-				}
+			if cmdMatches {
+				validCmds = append(validCmds, cmd)
 			}
 		}
 		packageList.Packages[key].Commands = validCmds
