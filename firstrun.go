@@ -88,6 +88,7 @@ func firstRunCheckInPath() (bool, error) {
 		}
 
 		if path == dirPath {
+			inPath = true
 			bannerShown = firstRunCheckUpgrade(false)
 		}
 	}
@@ -95,6 +96,7 @@ func firstRunCheckInPath() (bool, error) {
 	if !inPath && len(writablePaths) > 0 {
 		if !bannerShown {
 			showBanner()
+			bannerShown = true
 		}
 		fmt.Fprint(akamai.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
@@ -109,7 +111,7 @@ func firstRunCheckInPath() (bool, error) {
 		choosePath(writablePaths, answer, selfPath)
 	}
 
-	return !inPath, nil
+	return bannerShown, nil
 }
 
 func choosePath(writablePaths []string, answer string, selfPath string) {
