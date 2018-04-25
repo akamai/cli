@@ -48,10 +48,18 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	}
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath)
 
-	if _, err = os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
-		bin, err := exec.LookPath("glide")
+	if err = installGolangDepsGlide(dir); err != nil {
+		return false, err
+	}
+
+	if err = installGolangDepsDep(dir); err != nil {
+		return false, err
+	}
+
+	if _, err = os.Stat(filepath.Join(dir, "Gopkg.lock")); err == nil {
+		bin, err := exec.LookPath("dep")
 		if err == nil {
-			cmd := exec.Command(bin, "install")
+			cmd := exec.Command(bin, "ensure")
 			cmd.Dir = dir
 			err = cmd.Run()
 			if err != nil {
@@ -72,4 +80,40 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func installGolangDepsGlide(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
+		bin, err := exec.LookPath("glide")
+		if err == nil {
+			cmd := exec.Command(bin, "install")
+			cmd.Dir = dir
+			err = cmd.Run()
+			if err != nil {
+				return cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+			}
+		} else {
+			return cli.NewExitError("Unable to find package manager.", 1)
+		}
+	}
+
+	return nil
+}
+
+func installGolangDepsDep(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "Gopkg.lock")); err == nil {
+		bin, err := exec.LookPath("dep")
+		if err == nil {
+			cmd := exec.Command(bin, "ensure")
+			cmd.Dir = dir
+			err = cmd.Run()
+			if err != nil {
+				return cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+			}
+		} else {
+			return cli.NewExitError("Unable to find package manager.", 1)
+		}
+	}
+
+	return nil
 }
