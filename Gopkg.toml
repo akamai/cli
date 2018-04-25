@@ -1,0 +1,47 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/akamai/cli-common-golang"
+
+[[constraint]]
+  name = "github.com/fatih/color"
+  version = "1.6.0"
+
+[[constraint]]
+  name = "github.com/go-ini/ini"
+  version = "1.35.0"
+
+[[constraint]]
+  name = "github.com/google/uuid"
+  version = "0.2.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/inconshreveable/go-update"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/kardianos/osext"
+
+[[constraint]]
+  name = "github.com/mattn/go-isatty"
+  version = "0.0.3"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+
+[[constraint]]
+  name = "github.com/urfave/cli"
+  version = "1.20.0"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/sys"
+
+[[constraint]]
+  name = "gopkg.in/src-d/go-git.v4"
+  version = "4.3.1"
+
+[prune]
+  go-tests = true
+  unused-packages = true
