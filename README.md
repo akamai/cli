@@ -18,9 +18,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 ## Available Packages
 
-- [Akamai CLI for Property Manager](https://github.com/akamai/cli-property)
-- [Akamai CLI for Purge](https://github.com/akamai/cli-purge)
-- [Akamai CLI for Visitor Prioritization](https://github.com/akamai/cli-visitor-prioritization)
+A list of available packages can be found [here](https://developer.akamai.com/cli).
 
 ## Installation
 
@@ -56,15 +54,41 @@ This will install all necessary dependencies, compile, and install the binary â€
 
 ### Using Docker
 
-If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance by running:
+If you use (or want to use) [docker](http://docker.com), we have created a container with Akamai CLI, and all public packages (at the time of creation) pre-installed. You can execute a command using:
 
 ```sh
-$ docker run -ti akamaiopen/cli
+$ docker run -ti -v $HOME/.edgerc:/root/.edgerc akamaiopen/cli [arguments]
 ```
 
-The container contains Akamai CLI, as well as the `purge` and `property` subcommands pre-installed.  
+> **Note:** This will mount your local `$HOME/.edgerc` into the container. To change the local path, update the `-v` argument.  
 
-> **Note**: When setting up your `.edgerc`, the `purge` subcommand defaults to the `ccu` credentials section, while the `property` subcommand uses the `papi` section. These can be changed using the `--section` flag.
+If you want to transparently use docker when calling the `akamai` command, you can add the following to your `.bashrc`, `.bash_profile`, or `.zshrc`:
+
+```bash
+function akamai { 
+    if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then 
+        docker exec -it akamai-cli akamai $@;
+    elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then 
+        return 0; 
+    else 
+        echo "Creating new docker container"
+        docker create -it -v $HOME/.edgerc:/root/.edgerc --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
+    fi; 
+}
+```
+
+You can then run `akamai [arguments]` and it will automatically create or re-use a "persistent" container.
+
+
+#### Persistance
+
+Docker containers are ephemeral and will only run for as long as the command (PID 1) inside them stays running. To allow you to re-use the same container we use `akamai --daemon` to ensure it continues running indefinitely inside the container.
+
+You can safely run `docker stop akamai-cli` followed by `docker start akamai-cli` to stop and start the container created by the function above at any time. 
+
+**However, should Docker lose state, or the container image get deleted, you will lose all changes made inside the container.**
+
+If you wish to persist your Akamai CLI config and packages, you can mount a local directory inside the container by adding the `-v /full/path/to/directory:/cli` to the `docker run` or the `docker create` command in the function above.
 
 ### Compiling from Source
 

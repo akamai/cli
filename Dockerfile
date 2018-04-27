@@ -1,28 +1,42 @@
+# Add the following to your .bashrc, .bash_profile, or .zshrc, to make `akamai` work transparently on the host machine:
+# function akamai {
+#     if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then
+#         docker exec -it akamai-cli akamai $@;
+#     elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then
+#         return 0;
+#     else
+#         echo "Creating new docker container"
+#         docker create -it -v $HOME/.edgerc:/root/.edgerc --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
+#     fi;
+# }
+# or, as a one-liner:
+# function akamai { if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then docker exec -it akamai-cli akamai $@; elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then return 0; else echo "Creating new docker container" docker create -it -v $HOME/.edgerc:/root/.edgerc --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@; fi; }
 FROM ubuntu
-MAINTAINER Kirsten Hunter (khunter@akamai.com), Davey Shafik (dshafik@akamai.com)
-RUN apt-get update
-RUN apt-get install -y git curl patch gawk g++ gcc make libc6-dev patch libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev sqlite3 autoconf libgdbm-dev libncurses5-dev automake libtool bison pkg-config libffi-dev software-properties-common
-RUN add-apt-repository -y ppa:longsleep/golang-backports
-RUN apt-get update 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q libssl-dev python-all wget vim python-pip php7.0 ruby-dev ruby perl golang-go 
-RUN pip install httpie-edgegrid 
-ADD . /opt/src/github.com/akamai/cli
-WORKDIR /opt
-RUN curl -sL https://deb.nodesource.com/setup_7.x | sh -
-RUN apt-get install nodejs
-RUN mkdir bin
-RUN export PATH=${PATH}:/opt/bin
-RUN export GOPATH=/opt
-ENV GOPATH=/opt
-ENV PATH=${PATH}:/opt/bin
-RUN curl https://glide.sh/get | sh
-WORKDIR /opt/src/github.com/akamai/cli
-RUN glide install
-RUN go build -o akamai . && mv akamai /opt/bin/akamai
-RUN echo "export PATH=${PATH}:/opt/bin" >> /root/.bashrc
-RUN echo "export GOPATH=/opt" >> /root/.bashrc
-RUN echo "PS1='Akamai CLI Sandbox >> '" >> /root/.bashrc
-WORKDIR /opt
-RUN akamai install property
-RUN akamai install purge
-ENTRYPOINT ["/bin/bash"]
+RUN mkdir /cli && \
+    apt-get update && \
+    apt-get install -y git python-all python3-all wget jq python-pip python3-pip libssl-dev curl && \
+    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    apt-get install -y nodejs && \
+    pip install httpie httpie-edgegrid && \
+    export AKAMAI_CLI_HOME=/cli && \
+    wget `http GET https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g` && \
+    mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
+    http GET https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force && \
+    apt-get -qy autoremove && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN echo "[cli]" > /cli/.akamai-cli/config && \
+    echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
+    echo "config-version        = 1" >> /cli/.akamai-cli/config && \
+    echo "enable-cli-statistics = false" >> /cli/.akamai-cli/config && \
+    echo "last-ping             = 2018-04-27T18:16:12Z" >> /cli/.akamai-cli/config && \
+    echo "client-id             =" >> /cli/.akamai-cli/config && \
+    echo "install-in-path       =" >> /cli/.akamai-cli/config && \
+    echo "last-upgrade-check    = 2018-04-27T22:19:59Z" >> /cli/.akamai-cli/config
+
+ENV AKAMAI_CLI_HOME=/cli
+VOLUME /root/.edgerc
+VOLUME /cli
+ENTRYPOINT ["/usr/local/bin/akamai"]
+CMD ["--daemon"]

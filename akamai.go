@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	akamai "github.com/akamai/cli-common-golang"
 	"github.com/kardianos/osext"
@@ -58,6 +59,12 @@ func createApp() {
 			Name:  "proxy",
 			Usage: "Set a proxy to use",
 		},
+		cli.BoolFlag{
+			Name:  "daemon",
+			Usage: "Keep Akamai CLI running in the background, particularly useful for Docker containers",
+			Hidden: true,
+			EnvVar: "AKAMAI_CLI_DAEMON",
+		},
 	}
 
 	akamai.App.Action = func(c *cli.Context) {
@@ -75,6 +82,11 @@ func createApp() {
 			}
 		}
 
+		if c.IsSet("daemon") {
+			for {
+				time.Sleep(time.Hour * 24)
+			}
+		}
 		return nil
 	}
 }
