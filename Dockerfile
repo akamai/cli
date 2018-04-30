@@ -11,19 +11,14 @@
 # }
 # or, as a one-liner:
 # function akamai { if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then docker exec -it akamai-cli akamai $@; elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then return 0; else echo "Creating new docker container" docker create -it -v $HOME/.edgerc:/root/.edgerc --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@; fi; }
-FROM ubuntu
+FROM alpine 
 RUN mkdir /cli && \
-    apt-get update && \
-    apt-get install -y git python-all python3-all wget jq python-pip python3-pip libssl-dev curl && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
-    apt-get install -y nodejs && \
+    apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev && \
     export AKAMAI_CLI_HOME=/cli && \
     wget `curl https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g` && \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
-    curl https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force && \
-    apt-get -qy autoremove && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    mkdir -p /cli/.akamai-cli && \
+    curl https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
 
 RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
