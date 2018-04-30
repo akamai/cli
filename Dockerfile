@@ -17,11 +17,10 @@ RUN mkdir /cli && \
     apt-get install -y git python-all python3-all wget jq python-pip python3-pip libssl-dev curl && \
     curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
     apt-get install -y nodejs && \
-    pip install httpie httpie-edgegrid && \
     export AKAMAI_CLI_HOME=/cli && \
-    wget `http GET https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g` && \
+    wget `curl https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g` && \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
-    http GET https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force && \
+    curl https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force && \
     apt-get -qy autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
