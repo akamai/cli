@@ -27,7 +27,7 @@ import (
 
 const (
 	// VERSION Application Version
-	VERSION = "1.0.1"
+	VERSION = "1.0.2"
 )
 
 func main() {
@@ -94,10 +94,10 @@ func createApp() {
 func checkUpgrade() {
 	if latestVersion := checkUpgradeVersion(false); latestVersion != "" {
 		if upgradeCli(latestVersion) {
-			trackEvent("upgrade.auto.success", "to: "+latestVersion+" from:"+VERSION)
+			trackEvent("upgrade.auto", "success", "to: "+latestVersion+" from: "+VERSION)
 			return
 		}
-		trackEvent("upgrade.auto.failed", "to: "+latestVersion+" from:"+VERSION)
+		trackEvent("upgrade.auto", "failed", "to: "+latestVersion+" from: "+VERSION)
 	}
 }
 

@@ -16,8 +16,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	time "time"
 
@@ -53,7 +55,7 @@ func firstRunCheckStats(bannerShown bool) bool {
 		setConfigValue("cli", "last-ping", "never")
 		setupUUID()
 		saveConfig()
-		trackEvent("first-run", "true")
+		trackEvent("first-run","stats-enabled", getConfigValue("cli", "client-id"))
 	}
 
 	return bannerShown
@@ -73,7 +75,7 @@ func setupUUID() error {
 	return nil
 }
 
-func trackEvent(action string, value string) {
+func trackEvent(category string, action string, value string) {
 	if getConfigValue("cli", "enable-cli-statistics") == "false" {
 		return
 	}
@@ -84,18 +86,32 @@ func trackEvent(action string, value string) {
 	form.Add("aip", "1")                                // Anonymize IP
 	form.Add("cid", getConfigValue("cli", "client-id")) // Unique Cilent ID
 	form.Add("t", "event")                              // Type
-	form.Add("ec", "akamai-cli")                        // Category
+	form.Add("ec", category)                            // Category
 	form.Add("ea", action)                              // Action
 	form.Add("el", value)                               // Label
 
 	hc := http.Client{}
-	req, err := http.NewRequest("POST", "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
+	debug := os.Getenv("AKAMAI_CLI_DEBUG_ANALYTICS")
+	var req *http.Request
+	var err error
+
+	if debug != "" {
+		req, err = http.NewRequest("POST", "https://www.google-analytics.com/debug/collect", strings.NewReader(form.Encode()))
+	} else {
+		req, err = http.NewRequest("POST", "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
+	}
+
 	if err != nil {
 		return
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	hc.Do(req)
+
+	res, err := hc.Do(req)
+	if debug != "" {
+		body, _ := ioutil.ReadAll(res.Body)
+		fmt.Fprintln(akamai.App.Writer, string(body))
+	}
 }
 
 func checkPing() {
@@ -108,12 +124,9 @@ func checkPing() {
 	doPing := false
 	if data == "" || data == "never" {
 		doPing = true
-	}
-
-	if !doPing {
+	} else {
 		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
 		lastPing, err := time.Parse(time.RFC3339, configValue)
-
 		if err != nil {
 			return
 		}
@@ -125,7 +138,7 @@ func checkPing() {
 	}
 
 	if doPing {
-		trackEvent("ping", "pong")
+		trackEvent("ping", "daily",  "pong")
 		setConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
 		saveConfig()
 	}

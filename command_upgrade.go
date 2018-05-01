@@ -32,9 +32,9 @@ func cmdUpgrade(c *cli.Context) error {
 		os.Args = []string{os.Args[0], "--version"}
 		success := upgradeCli(latestVersion)
 		if success {
-			trackEvent("upgrade.success", "to: "+latestVersion+" from:"+VERSION)
+			trackEvent("upgrade.user", "success", "to: "+latestVersion+" from:"+VERSION)
 		} else {
-			trackEvent("upgrade.failed", "to: "+latestVersion+" from:"+VERSION)
+			trackEvent("upgrade.user", "failed", "to: "+latestVersion+" from:"+VERSION)
 		}
 	} else {
 		akamai.StopSpinnerWarnOk()

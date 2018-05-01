@@ -39,20 +39,24 @@ func cmdInstall(c *cli.Context) error {
 		err := installPackage(repo, c.Bool("force"))
 		if err != nil {
 			// Only track public github repos
-			if !strings.HasPrefix(repo, "https://github.com/") {
-				trackEvent("install.failed", repo)
+			if isPublicRepo(repo) {
+				trackEvent("package.install", "failed", repo)
 			}
 			return err
 		}
 
-		if strings.HasPrefix(repo, "https://github.com/") {
-			trackEvent("install.success", repo)
+		if isPublicRepo(repo) {
+			trackEvent("package.install", "success", repo)
 		}
 	}
 
 	packageListDiff(oldCmds)
 
 	return nil
+}
+
+func isPublicRepo(repo string) bool {
+	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
 func installPackage(repo string, forceBinary bool) error {
