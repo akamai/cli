@@ -80,6 +80,7 @@ func installPackage(repo string, forceBinary bool) error {
 	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
 		URL:      repo,
 		Progress: nil,
+		Depth: 1,
 	})
 
 	if err != nil {
