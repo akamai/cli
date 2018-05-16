@@ -39,7 +39,7 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "last-ping             = 2018-04-27T18:16:12Z" >> /cli/.akamai-cli/config && \
     echo "client-id             =" >> /cli/.akamai-cli/config && \
     echo "install-in-path       =" >> /cli/.akamai-cli/config && \
-    echo "last-upgrade-check    = 2018-04-27T22:19:59Z" >> /cli/.akamai-cli/config
+    echo "last-upgrade-check    = ignore" >> /cli/.akamai-cli/config
 
 ENV AKAMAI_CLI_HOME=/cli
 VOLUME /root/.edgerc
