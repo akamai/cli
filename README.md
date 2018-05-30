@@ -207,7 +207,7 @@ Currently Akamai CLI supports automatically installing package dependencies usin
 - PHP: composer
 - Python: pip (using requirements.txt)
 - Ruby: bundler
-- Golang: dep
+- Golang: [dep](https://golang.github.io/dep/)
 - JavaScript: npm and yarn
 
 For other languages or package managers, all dependencies must be included in the package repository (i.e. by vendoring).
