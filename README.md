@@ -92,18 +92,19 @@ If you wish to persist your Akamai CLI config and packages, you can mount a loca
 
 ### Compiling from Source
 
-If you want to compile it from source, you will need Go 1.7 or later, and the [Glide](https://glide.sh) package manager installed:
+If you want to compile it from source, you will need Go 1.9 or later.
 
 1. Fetch the package:  
-  `go get github.com/akamai/cli`
-2. Change to the package directory:  
-  `cd $GOPATH/src/github.com/akamai/cli`
-3. Install dependencies using Glide:  
-  `glide install`
-4. Compile the binary:  
+  `go get -d github.com/akamai/cli`
+1. Change to the package directory:  
+  - Linux/macOS/*nix: `cd $GOPATH/src/github.com/akamai/cli`
+  - Windows: `cd %GOPATH%/src/github.com/akamai/cli`
+1. Compile the binary:  
   - Linux/macOS/*nix: `go build -o akamai`
   - Windows: `go build -o akamai.exe`
-5. Move the binary (`akamai` or `akamai.exe`) in to your `PATH`
+1. Optionally move the binary (`akamai` or `akamai.exe`) into your `PATH`.
+  - Move to `$GOPATH/bin` or `%GOPATH%/bin` or some other bin folder and ensure that `$GOPATH/bin` or `%GOPATH%/bin` is in your `PATH`.
+  - Run the Akamai Command immediately (e.g., Mac: `./akamai`, Windows: `akamai.exe`) and it will add it to your path automagically.
 
 ### Credentials
 
