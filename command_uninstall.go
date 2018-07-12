@@ -37,6 +37,18 @@ func cmdUninstall(c *cli.Context) error {
 }
 
 func uninstallPackage(cmd string) error {
+	Outer:
+	for _, packages := range getCommands() {
+		for _, command := range packages.Commands {
+			for _, alias := range command.Aliases {
+				if alias == cmd {
+					fmt.Fprintln(akamai.App.Writer, fmt.Sprintf("Provided name \"%s\" appears to be an alias for installed package \"%s\".", alias, command.Name))
+					cmd = command.Name
+					break Outer
+				}
+			}
+		}
+	}
 	exec, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, self()), 1)
