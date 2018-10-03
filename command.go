@@ -238,8 +238,10 @@ func getCommands() []commandPackage {
 	for _, dir := range packagePaths {
 		pkg, err := readPackage(dir)
 		if err == nil {
-			for _, command := range pkg.Commands {
-				commandMap[command.Name] = pkg
+			for key, command := range pkg.Commands {
+				commandPkg := pkg
+				commandPkg.Commands = commandPkg.Commands[key : key+1]
+				commandMap[command.Name] = commandPkg
 				commandOrder = append(commandOrder, command.Name)
 			}
 		}
