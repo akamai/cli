@@ -101,8 +101,9 @@ func listInstalledCommands(added map[string]bool, removed map[string]bool) map[s
 			}
 
 			fmt.Fprintln(akamai.App.Writer)
-
-			fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
+			if len(command.Description) > 0 {
+				fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
+			}
 		}
 	}
 	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", self()))
