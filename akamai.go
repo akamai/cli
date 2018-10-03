@@ -27,7 +27,7 @@ import (
 
 const (
 	// VERSION Application Version
-	VERSION = "1.0.2"
+	VERSION = "1.0.3"
 )
 
 func main() {
@@ -60,8 +60,8 @@ func createApp() {
 			Usage: "Set a proxy to use",
 		},
 		cli.BoolFlag{
-			Name:  "daemon",
-			Usage: "Keep Akamai CLI running in the background, particularly useful for Docker containers",
+			Name:   "daemon",
+			Usage:  "Keep Akamai CLI running in the background, particularly useful for Docker containers",
 			Hidden: true,
 			EnvVar: "AKAMAI_CLI_DAEMON",
 		},
