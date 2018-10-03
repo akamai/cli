@@ -70,13 +70,21 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 	}
 
-	execName := "akamai-" + strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(filepath.Base(dir), "akamai-"), "cli-"))
+	for _, command := range cmdPackage.Commands {
+		execName := "akamai-" + strings.ToLower(command.Name)
 
-	cmd := exec.Command(bin, "build", "-o", execName, ".")
-	cmd.Dir = dir
-	err = cmd.Run()
-	if err != nil {
-		return false, cli.NewExitError("Unable to build binary: "+err.Error(), 1)
+		var cmd *exec.Cmd
+		if len(cmdPackage.Commands) > 1 {
+			cmd = exec.Command(bin, "build", "-o", execName, "./"+command.Name)
+		} else {
+			cmd = exec.Command(bin, "build", "-o", execName, ".")
+		}
+
+		cmd.Dir = dir
+		err = cmd.Run()
+		if err != nil {
+			return false, cli.NewExitError("Unable to build binary: "+err.Error(), 1)
+		}
 	}
 
 	return true, nil
