@@ -16,7 +16,7 @@ ARG SOURCE_BRANCH=master
 ENV SOURCE_BRANCH="$SOURCE_BRANCH" GOROOT=/usr/lib/go GOPATH=/gopath GOBIN=/gopath/bin AKAMAI_CLI_HOME=/cli
 RUN mkdir /cli && \
     if [[ $SOURCE_BRANCH == "master" ]]; then \
-        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev go && \
+        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev go npm && \
         export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
         mkdir -p $GOBIN && \
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
@@ -25,7 +25,7 @@ RUN mkdir /cli && \
         dep ensure && \
         go build -o akamai-master-linuxamd64; \
     else \
-        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev && \
+        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev npm && \
         wget `curl https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g`; \
     fi && \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
