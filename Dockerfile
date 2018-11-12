@@ -17,7 +17,8 @@ ARG AKAMAI_CLI_PACKAGE_REPO=https://developer.akamai.com/cli/package-list.json
 ENV SOURCE_BRANCH="$SOURCE_BRANCH" GOROOT=/usr/lib/go GOPATH=/gopath GOBIN=/gopath/bin AKAMAI_CLI_HOME=/cli AKAMAI_CLI_PACKAGE_REPO="$AKAMAI_CLI_PACKAGE_REPO"
 RUN mkdir -p /cli/.akamai-cli && \
     if [[ $SOURCE_BRANCH == "master" ]]; then \
-        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev jq openssl openssl-dev curl nodejs build-base libffi libffi-dev go npm && \
+        apk add --no-cache python2 python3 openssl nodejs libffi go && \
+        apk add --no-cache -t .build-deps git python2-dev py2-pip python3-dev jq openssl-dev curl build-base libffi-dev npm && \
         export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
         mkdir -p $GOBIN && \
         curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
@@ -26,10 +27,12 @@ RUN mkdir -p /cli/.akamai-cli && \
         dep ensure && \
         go build -o /usr/local/bin/akamai; \
     else \
-        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev npm && \
+        apk add --no-cache python2 python3 openssl nodejs libffi go && \
+        apk add --no-cache -t .build-deps git python2-dev py2-pip python3-dev jq openssl-dev curl build-base libffi-dev npm && \
         curl -s -o /usr/local/bin/akamai `curl https://api.github.com/repos/akamai/cli/releases/latest | jq -r .assets[].browser_download_url | grep linuxamd64 | grep -v sig`; \
     fi && \
-    curl -s "$AKAMAI_CLI_PACKAGE_REPO" | jq -r .packages[].name | xargs akamai install --force
+    curl -s "$AKAMAI_CLI_PACKAGE_REPO" | jq -r .packages[].name | xargs akamai install --force && \
+    apk del .build-deps
 
 RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
