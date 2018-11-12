@@ -19,14 +19,14 @@ RUN mkdir -p /cli/.akamai-cli && \
         apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev jq openssl openssl-dev curl nodejs build-base libffi libffi-dev go npm && \
         export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
         mkdir -p $GOBIN && \
-        curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
+        curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
         go get github.com/akamai/cli && \
         cd $GOPATH/src/github.com/akamai/cli && \
         dep ensure && \
         go build -o /usr/local/bin/akamai; \
     else \
         apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev npm && \
-        curl -o /usr/local/bin/akamai `curl https://api.github.com/repos/akamai/cli/releases/latest | jq -r .assets[].browser_download_url | grep linuxamd64 | grep -v sig`; \
+        curl -s -o /usr/local/bin/akamai `curl https://api.github.com/repos/akamai/cli/releases/latest | jq -r .assets[].browser_download_url | grep linuxamd64 | grep -v sig`; \
     fi && \
     curl https://developer.akamai.com/cli/package-list.json | jq -r .packages[].name | xargs akamai install --force
 
