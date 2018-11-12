@@ -50,5 +50,6 @@ func cmdSubcommand(c *cli.Context) error {
 	}
 
 	executable = append(executable, os.Args[2:]...)
+	trackEvent("exec", "command", c.Command.Name)
 	return passthruCommand(executable)
 }

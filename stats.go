@@ -33,19 +33,21 @@ import (
 // This is done by generating an anonymous UUID that events are tied to
 
 func firstRunCheckStats(bannerShown bool) bool {
-	if getConfigValue("cli", "client-id") == "" && getConfigValue("cli", "enable-cli-statistics") != "false" {
+	if getConfigValue("cli", "client-id") == "" {
 		if !bannerShown {
 			bannerShown = true
 			showBanner()
 		}
 		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		fmt.Fprintf(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.\n\n")
-		fmt.Fprintf(akamai.App.Writer, "Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		fmt.Fprintln(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.")
+		fmt.Fprintln(akamai.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
+		fmt.Fprintf(akamai.App.Writer, "\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
+			trackEvent("first-run", "stats-opt-out", "true")
 			setConfigValue("cli", "enable-cli-statistics", "false")
 			saveConfig()
 			return bannerShown
@@ -55,7 +57,7 @@ func firstRunCheckStats(bannerShown bool) bool {
 		setConfigValue("cli", "last-ping", "never")
 		setupUUID()
 		saveConfig()
-		trackEvent("first-run","stats-enabled", getConfigValue("cli", "client-id"))
+		trackEvent("first-run", "stats-enabled", getConfigValue("cli", "client-id"))
 	}
 
 	return bannerShown
@@ -138,7 +140,7 @@ func checkPing() {
 	}
 
 	if doPing {
-		trackEvent("ping", "daily",  "pong")
+		trackEvent("ping", "daily", "pong")
 		setConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
 		saveConfig()
 	}
