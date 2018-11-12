@@ -14,23 +14,21 @@
 FROM alpine 
 ARG SOURCE_BRANCH=master
 ENV SOURCE_BRANCH="$SOURCE_BRANCH" GOROOT=/usr/lib/go GOPATH=/gopath GOBIN=/gopath/bin AKAMAI_CLI_HOME=/cli
-RUN mkdir /cli && \
+RUN mkdir -p /cli/.akamai-cli && \
     if [[ $SOURCE_BRANCH == "master" ]]; then \
-        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev go npm && \
+        apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev jq openssl openssl-dev curl nodejs build-base libffi libffi-dev go npm && \
         export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
         mkdir -p $GOBIN && \
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
         go get github.com/akamai/cli && \
         cd $GOPATH/src/github.com/akamai/cli && \
         dep ensure && \
-        go build -o akamai-master-linuxamd64; \
+        go build -o /usr/local/bin/akamai; \
     else \
         apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev npm && \
-        wget `curl https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g`; \
+        curl -o /usr/local/bin/akamai `curl https://api.github.com/repos/akamai/cli/releases/latest | jq -r .assets[].browser_download_url | grep linuxamd64 | grep -v sig`; \
     fi && \
-    mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
-    mkdir -p /cli/.akamai-cli && \
-    curl https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
+    curl https://developer.akamai.com/cli/package-list.json | jq -r .packages[].name | xargs akamai install --force
 
 RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
@@ -41,7 +39,6 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "install-in-path       =" >> /cli/.akamai-cli/config && \
     echo "last-upgrade-check    = ignore" >> /cli/.akamai-cli/config
 
-ENV AKAMAI_CLI_HOME=/cli
 VOLUME /root/.edgerc
 VOLUME /cli
 ENTRYPOINT ["/usr/local/bin/akamai"]
