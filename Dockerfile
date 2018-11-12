@@ -35,7 +35,7 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
     echo "config-version        = 1" >> /cli/.akamai-cli/config && \
     echo "enable-cli-statistics = false" >> /cli/.akamai-cli/config && \
-    echo "last-ping             = 2018-04-27T18:16:12Z" >> /cli/.akamai-cli/config && \
+    echo "last-ping             = $(date --utc +%FT%TZ)" >> /cli/.akamai-cli/config && \
     echo "client-id             =" >> /cli/.akamai-cli/config && \
     echo "install-in-path       =" >> /cli/.akamai-cli/config && \
     echo "last-upgrade-check    = ignore" >> /cli/.akamai-cli/config
