@@ -31,6 +31,8 @@ RUN mkdir -p /cli/.akamai-cli && \
         apk add --no-cache -t .build-deps git python2-dev py2-pip python3-dev jq openssl-dev curl build-base libffi-dev npm && \
         curl -s -o /usr/local/bin/akamai `curl https://api.github.com/repos/akamai/cli/releases/latest | jq -r .assets[].browser_download_url | grep linuxamd64 | grep -v sig`; \
     fi && \
+    pip2 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir --upgrade pip && \
     curl -s "$AKAMAI_CLI_PACKAGE_REPO" | jq -r .packages[].name | xargs akamai install --force && \
     apk del .build-deps
 
