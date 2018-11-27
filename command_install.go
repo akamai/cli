@@ -80,7 +80,7 @@ func installPackage(repo string, forceBinary bool) error {
 	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
 		URL:      repo,
 		Progress: nil,
-		Depth: 1,
+		Depth:    1,
 	})
 
 	if err != nil {
@@ -145,7 +145,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		if cmd.Bin != "" {
 			if first {
 				first = false
-				akamai.StopSpinnerWarnOk()
+				akamai.StopSpinnerWarn()
 				fmt.Fprintln(akamai.App.Writer, color.CyanString(err.Error()))
 				if !forceBinary {
 					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
