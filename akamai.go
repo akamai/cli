@@ -32,6 +32,7 @@ const (
 
 func main() {
 	os.Setenv("AKAMAI_CLI", "1")
+	os.Setenv("AKAMAI_CLI_VERSION", VERSION)
 
 	getAkamaiCliCachePath()
 	exportConfigEnv()
