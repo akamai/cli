@@ -15,70 +15,90 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
 func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("php")
 	if err != nil {
-		return false, cli.NewExitError("Unable to locate PHP runtime", 1)
+		return false, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "PHP")
 	}
+
+	log.Tracef("PHP binary found: %s", bin)
 
 	if cmdPackage.Requirements.Php != "" && cmdPackage.Requirements.Php != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
+		log.Tracef("%s -v: %s", bin, output)
 		r, _ := regexp.Compile("PHP (.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
+
 		if len(matches) == 0 {
-			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command. Unable to determine installed version.", cmdPackage.Requirements.Php), 1)
+			return false, NewExitErrorf(1, ERR_RUNTIME_NO_VERSION_FOUND, "PHP", cmdPackage.Requirements.Php)
 		}
 
 		if versionCompare(cmdPackage.Requirements.Php, matches[1]) == -1 {
-			return false, cli.NewExitError(fmt.Sprintf("PHP %s is required to install this command.", cmdPackage.Requirements.Php), 1)
+			log.Tracef("PHP Version found: %s", matches[1])
+			return false, NewExitErrorf(1, ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "PHP", cmdPackage.Requirements.Php)
 		}
 	}
 
+	if err := installPHPDepsComposer(bin, dir); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func installPHPDepsComposer(phpBin string, dir string) error {
 	if _, err := os.Stat(filepath.Join(dir, "composer.json")); err == nil {
-		if _, err := os.Stat(filepath.Join(dir, "composer.phar")); err == nil {
-			cmd := exec.Command(bin, filepath.Join(dir, "composer.phar"), "install")
+		log.Info("composer.json found, running composer package manager")
+
+		phar := filepath.Join(dir, "composer.phar")
+		if _, err := os.Stat(phar); err == nil {
+			cmd := exec.Command(phpBin, phar, "install")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				log.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, err.(*exec.ExitError).Stderr)
+				return cli.NewExitError(ERR_PACKAGE_MANAGER_EXEC, 1)
 			}
-			return true, nil
+			return nil
 		}
 
 		bin, err := exec.LookPath("composer")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				log.Debugf("Unable to execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "composer")
 			}
-			return true, nil
+			return nil
 		}
 
 		bin, err = exec.LookPath("composer.phar")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				logMultilinef(log.Debugf, "Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "composer")
 			}
-			return true, nil
+			return nil
 		}
 
-		return false, cli.NewExitError("Unable to find package manager.", 1)
+		log.Debugf(ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
+		return NewExitErrorf(1, ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
 	}
 
-	return false, nil
+	return nil
 }

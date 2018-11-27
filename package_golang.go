@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,22 +22,32 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
 func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 	bin, err := exec.LookPath("go")
 	if err != nil {
-		return false, cli.NewExitError("Unable to locate Go runtime", 1)
+		return false, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Go")
 	}
+
+	log.Tracef("Go binary found: %s", bin)
 
 	if cmdPackage.Requirements.Go != "" && cmdPackage.Requirements.Go != "*" {
 		cmd := exec.Command(bin, "version")
 		output, _ := cmd.Output()
+		log.Tracef("%s version: %s", bin, output)
 		r, _ := regexp.Compile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
+
+		if len(matches) == 0 {
+			return false, NewExitErrorf(1, ERR_RUNTIME_NO_VERSION_FOUND, "Go", cmdPackage.Requirements.Go)
+		}
+
 		if versionCompare(cmdPackage.Requirements.Go, matches[1]) == -1 {
-			return false, cli.NewExitError(fmt.Sprintf("Go %s is required to install this command.", cmdPackage.Requirements.Go), 1)
+			log.Tracef("Go Version found: %s", matches[1])
+			return false, NewExitErrorf(1, ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Go", cmdPackage.Requirements.Go, matches[1])
 		}
 	}
 
@@ -56,20 +65,6 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		return false, err
 	}
 
-	if _, err = os.Stat(filepath.Join(dir, "Gopkg.lock")); err == nil {
-		bin, err := exec.LookPath("dep")
-		if err == nil {
-			cmd := exec.Command(bin, "ensure")
-			cmd.Dir = dir
-			err = cmd.Run()
-			if err != nil {
-				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
-			}
-		} else {
-			return false, cli.NewExitError("Unable to find package manager.", 1)
-		}
-	}
-
 	for _, command := range cmdPackage.Commands {
 		execName := "akamai-" + strings.ToLower(command.Name)
 
@@ -81,9 +76,10 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 		}
 
 		cmd.Dir = dir
-		err = cmd.Run()
+		_, err = cmd.Output()
 		if err != nil {
-			return false, cli.NewExitError("Unable to build binary: "+err.Error(), 1)
+			logMultilinef(log.Debugf, "Unable to build binary (%s): \n%s", execName, err.(*exec.ExitError).Stderr)
+			return false, NewExitErrorf(1, ERR_PACKAGE_COMPILE_FAILURE, command.Name)
 		}
 	}
 
@@ -92,16 +88,19 @@ func installGolang(dir string, cmdPackage commandPackage) (bool, error) {
 
 func installGolangDepsGlide(dir string) error {
 	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
+		log.Info("glide.lock found, running glide package manager")
 		bin, err := exec.LookPath("glide")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				logMultilinef(log.Debugf, "Unable execute package manager (glide install): \n %s", err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "glide")
 			}
 		} else {
-			return cli.NewExitError("Unable to find package manager.", 1)
+			log.Debugf(ERR_PACKAGE_MANAGER_NOT_FOUND, "glide")
+			return NewExitErrorf(1, ERR_PACKAGE_MANAGER_NOT_FOUND, "glide")
 		}
 	}
 
@@ -110,16 +109,19 @@ func installGolangDepsGlide(dir string) error {
 
 func installGolangDepsDep(dir string) error {
 	if _, err := os.Stat(filepath.Join(dir, "Gopkg.lock")); err == nil {
+		log.Info("Gopkg.lock found, running dep package manager")
 		bin, err := exec.LookPath("dep")
 		if err == nil {
 			cmd := exec.Command(bin, "ensure")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				logMultilinef(log.Debugf, "Unable execute package manager (dep ensure): \n %s", err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "dep")
 			}
 		} else {
-			return cli.NewExitError("Unable to find package manager.", 1)
+			log.Debugf(ERR_PACKAGE_MANAGER_NOT_FOUND, "dep")
+			return NewExitErrorf(1, ERR_PACKAGE_MANAGER_NOT_FOUND, "dep")
 		}
 	}
 

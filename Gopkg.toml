@@ -1,6 +1,6 @@
 [[constraint]]
-  branch = "master"
   name = "github.com/akamai/cli-common-golang"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/fatih/color"

@@ -38,6 +38,8 @@ func main() {
 	exportConfigEnv()
 	createApp()
 
+	setupLogging()
+
 	firstRun()
 	checkUpgrade()
 	checkPing()

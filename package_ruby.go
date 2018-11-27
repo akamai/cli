@@ -15,13 +15,13 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
 	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -31,28 +31,50 @@ func installRuby(dir string, cmdPackage commandPackage) (bool, error) {
 		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
 	}
 
+	log.Tracef("Ruby binary found: %s", bin)
+
 	if cmdPackage.Requirements.Ruby != "" && cmdPackage.Requirements.Ruby != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
+		log.Tracef("%s -v: %s", bin, output)
 		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
+
+		if len(matches) == 0 {
+			return false, NewExitErrorf(1, ERR_RUNTIME_NO_VERSION_FOUND, "Ruby", cmdPackage.Requirements.Ruby)
+		}
+
 		if versionCompare(cmdPackage.Requirements.Ruby, matches[1]) == -1 {
-			return false, cli.NewExitError(fmt.Sprintf("Ruby %s is required to install this command.", cmdPackage.Requirements.Ruby), 1)
+			log.Tracef("Ruby Version found: %s", matches[1])
+			return false, NewExitErrorf(1, ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Ruby", cmdPackage.Requirements.Node, matches[1])
 		}
 	}
 
+	if err := installRubyDepsBundler(dir); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func installRubyDepsBundler(dir string) error {
 	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
+		log.Info("Gemfile found, running yarn package manager")
 		bin, err := exec.LookPath("bundle")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
-			err = cmd.Run()
+			_, err = cmd.Output()
 			if err != nil {
-				return false, cli.NewExitError("Unable to run package manager: "+err.Error(), 1)
+				logMultilinef(log.Debugf, "Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "bundler")
 			}
-			return true, nil
+			return nil
+		} else {
+			log.Debugf(ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
+			return NewExitErrorf(1, ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
 		}
 	}
 
-	return false, cli.NewExitError("Unable to find package manager.", 1)
+	return nil
 }
