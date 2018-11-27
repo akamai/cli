@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
@@ -184,8 +185,15 @@ func passthruCommand(executable []string) error {
 	subCmd.Stderr = os.Stderr
 	subCmd.Stdout = os.Stdout
 	err := subCmd.Run()
+
+	exitCode := 1
+	if exitError, ok := err.(*exec.ExitError); ok {
+		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+			exitCode = waitStatus.ExitStatus()
+		}
+	}
 	if err != nil {
-		return cli.NewExitError("", 1)
+		return cli.NewExitError("", exitCode)
 	}
 	return nil
 }
