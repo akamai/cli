@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	configVersion string = "1"
+	configVersion string = "1.1"
 )
 
 var config map[string]*ini.File = make(map[string]*ini.File)
@@ -92,55 +92,64 @@ func migrateConfig() {
 		return
 	}
 
-	if _, err = os.Stat(configPath); err == nil {
-		// Do we need to migrate from an older version?
-		if getConfigValue("cli", "config-version") == configVersion {
-			return
-		}
-	}
-
-	// Create v1
 	_, err = openConfig()
 	if err != nil {
 		return
 	}
 
-	setConfigValue("cli", "config-version", configVersion)
-	saveConfig()
-
-	cliPath, _ := getAkamaiCliPath()
-
-	var data []byte
-	upgradeFile := filepath.Join(cliPath, ".upgrade-check")
-	if _, err := os.Stat(upgradeFile); err == nil {
-		data, _ = ioutil.ReadFile(upgradeFile)
-	} else {
-		upgradeFile = filepath.Join(cliPath, ".update-check")
-		if _, err := os.Stat(upgradeFile); err == nil {
-			data, _ = ioutil.ReadFile(upgradeFile)
-		} else {
+	var currentVersion string
+	if _, err = os.Stat(configPath); err == nil {
+		// Do we need to migrate from an older version?
+		currentVersion = getConfigValue("cli", "config-version")
+		if currentVersion == configVersion {
 			return
 		}
 	}
 
-	if len(data) != 0 {
-		date := string(data)
-		if date == "never" || date == "ignore" {
-			setConfigValue("cli", "last-upgrade-check", date)
+	switch currentVersion {
+	case "":
+		// Create v1
+		cliPath, _ := getAkamaiCliPath()
+
+		var data []byte
+		upgradeFile := filepath.Join(cliPath, ".upgrade-check")
+		if _, err := os.Stat(upgradeFile); err == nil {
+			data, _ = ioutil.ReadFile(upgradeFile)
 		} else {
-			if m := strings.LastIndex(date, "m="); m != -1 {
-				date = date[0 : m-1]
-			}
-			lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
-			if err == nil {
-				setConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
+			upgradeFile = filepath.Join(cliPath, ".update-check")
+			if _, err := os.Stat(upgradeFile); err == nil {
+				data, _ = ioutil.ReadFile(upgradeFile)
 			}
 		}
 
-		os.Remove(upgradeFile)
+		if len(data) != 0 {
+			date := string(data)
+			if date == "never" || date == "ignore" {
+				setConfigValue("cli", "last-upgrade-check", date)
+			} else {
+				if m := strings.LastIndex(date, "m="); m != -1 {
+					date = date[0 : m-1]
+				}
+				lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
+				if err == nil {
+					setConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
+				}
+			}
+
+			os.Remove(upgradeFile)
+		}
+
+		setConfigValue("cli", "config-version", "1")
+	case "1":
+		// Upgrade to v1.1
+		if getConfigValue("cli", "enable-cli-statistics") == "true" {
+			setConfigValue("cli", "stats-version", "1.0")
+		}
+		setConfigValue("cli", "config-version", "1.1")
 	}
 
 	saveConfig()
+	migrateConfig()
 }
 
 func getConfigValue(sectionName string, keyName string) string {

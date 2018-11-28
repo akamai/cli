@@ -32,17 +32,20 @@ import (
 //
 // This is done by generating an anonymous UUID that events are tied to
 
+const statsVersion string = "1.1"
+
 func firstRunCheckStats(bannerShown bool) bool {
-	if getConfigValue("cli", "client-id") == "" {
+	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
+
+	if getConfigValue("cli", "enable-cli-statistics") == "" {
 		if !bannerShown {
 			bannerShown = true
 			showBanner()
 		}
-		anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		fmt.Fprintln(akamai.App.Writer, "Examples of data being send include upgrade statistics, and packages installed and updated.")
-		fmt.Fprintln(akamai.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
-		fmt.Fprintf(akamai.App.Writer, "\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		fmt.Fprintln(akamai.App.Writer, "Examples of data being sent include upgrade statistics, and packages installed and updated.")
+		fmt.Fprintf(akamai.App.Writer, "Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.", anonymous)
+		fmt.Fprintf(akamai.App.Writer, "\n\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
 		fmt.Scanln(&answer)
@@ -53,12 +56,56 @@ func firstRunCheckStats(bannerShown bool) bool {
 			return bannerShown
 		}
 
-		setConfigValue("cli", "enable-cli-statistics", "true")
+		setConfigValue("cli", "enable-cli-statistics", statsVersion)
 		setConfigValue("cli", "last-ping", "never")
 		setupUUID()
 		saveConfig()
-		trackEvent("first-run", "stats-enabled", getConfigValue("cli", "client-id"))
+		trackEvent("first-run", "stats-enabled", statsVersion)
+	} else if getConfigValue("cli", "enable-cli-statistics") != "false" {
+		migrateStats(bannerShown)
 	}
+
+	return bannerShown
+}
+
+func migrateStats(bannerShown bool) bool {
+	currentVersion := getConfigValue("cli", "stats-version")
+	if currentVersion == statsVersion {
+		return bannerShown
+	}
+
+	if !bannerShown {
+		bannerShown = true
+		showBanner()
+	}
+
+	var newStats []string
+	switch currentVersion {
+	case "1.0":
+		newStats = []string{"command name executed (no arguments)"}
+	}
+
+	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
+	fmt.Fprintf(akamai.App.Writer, "Akamai CLI has changed the %s data it collects. It now additionally collects the following: \n\n", anonymous)
+	for _, value := range newStats {
+		fmt.Fprintf(akamai.App.Writer, " - %s\n", value)
+	}
+	fmt.Fprintf(akamai.App.Writer, "\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
+	fmt.Fprintln(akamai.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
+	fmt.Fprintf(akamai.App.Writer, "\nContinue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+
+	answer := ""
+	fmt.Scanln(&answer)
+	if answer != "" && strings.ToLower(answer) != "y" {
+		trackEvent("first-run", "stats-update-opt-out", statsVersion)
+		setConfigValue("cli", "enable-cli-statistics", "false")
+		saveConfig()
+		return bannerShown
+	}
+
+	setConfigValue("cli", "stats-version", statsVersion)
+	saveConfig()
+	trackEvent("first-run", "stats-update-opt-in", statsVersion)
 
 	return bannerShown
 }
@@ -82,15 +129,20 @@ func trackEvent(category string, action string, value string) {
 		return
 	}
 
+	clientId := "anonymous"
+	if val := getConfigValue("cli", "client-id"); val != "" {
+		clientId = val
+	}
+
 	form := url.Values{}
 	form.Add("tid", "UA-34796267-23")
-	form.Add("v", "1")                                  // Version 1
-	form.Add("aip", "1")                                // Anonymize IP
-	form.Add("cid", getConfigValue("cli", "client-id")) // Unique Cilent ID
-	form.Add("t", "event")                              // Type
-	form.Add("ec", category)                            // Category
-	form.Add("ea", action)                              // Action
-	form.Add("el", value)                               // Label
+	form.Add("v", "1")        // Version 1
+	form.Add("aip", "1")      // Anonymize IP
+	form.Add("cid", clientId) // Client ID
+	form.Add("t", "event")    // Type
+	form.Add("ec", category)  // Category
+	form.Add("ea", action)    // Action
+	form.Add("el", value)     // Label
 
 	hc := http.Client{}
 	debug := os.Getenv("AKAMAI_CLI_DEBUG_ANALYTICS")
