@@ -82,7 +82,7 @@ func migrateStats(bannerShown bool) bool {
 	var newStats []string
 	switch currentVersion {
 	case "1.0":
-		newStats = []string{"command name executed (no arguments)"}
+		newStats = []string{"command name executed (no arguments)", "command version executed"}
 	}
 
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")

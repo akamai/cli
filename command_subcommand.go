@@ -16,17 +16,18 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
 
 func cmdSubcommand(c *cli.Context) error {
-	cmd := c.Command.Name
+	commandName := strings.ToLower(c.Command.Name)
 
-	executable, err := findExec(cmd)
+	executable, err := findExec(commandName)
 	if err != nil {
-		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", cmd), 1)
+		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", commandName), 1)
 	}
 
 	var packageDir string
@@ -39,7 +40,7 @@ func cmdSubcommand(c *cli.Context) error {
 	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
-		if err = migratePythonPackage(cmd, packageDir); err != nil {
+		if err = migratePythonPackage(commandName, packageDir); err != nil {
 			return err
 		}
 
@@ -49,7 +50,21 @@ func cmdSubcommand(c *cli.Context) error {
 		}
 	}
 
+	var currentCmd command
+	for _, cmd := range cmdPackage.Commands {
+		if strings.ToLower(cmd.Name) == commandName {
+			currentCmd = cmd
+			break
+		}
+
+		for _, alias := range cmd.Aliases {
+			if strings.ToLower(alias) == commandName {
+				currentCmd = cmd
+			}
+		}
+	}
+
 	executable = append(executable, os.Args[2:]...)
-	trackEvent("exec", "command", c.Command.Name)
+	trackEvent("exec", commandName, currentCmd.Version)
 	return passthruCommand(executable)
 }
