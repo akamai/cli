@@ -60,20 +60,21 @@ If you use (or want to use) [docker](http://docker.com), we have created a conta
 $ docker run -ti -v $HOME/.edgerc:/root/.edgerc akamaiopen/cli [arguments]
 ```
 
-> **Note:** This will mount your local `$HOME/.edgerc` into the container. To change the local path, update the `-v` argument.  
+> **Note:** This will mount your local `$HOME/.edgerc`, and `$HOME/.akamai-cli-docker` into the container. To change the local path, update the `-v` arguments.
 
 If you want to transparently use docker when calling the `akamai` command, you can add the following to your `.bashrc`, `.bash_profile`, or `.zshrc`:
 
 ```bash
-function akamai { 
-    if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then 
+function akamai {
+    if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then
         docker exec -it akamai-cli akamai $@;
-    elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then 
-        return 0; 
-    else 
+    elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then
+        return 0;
+    else
         echo "Creating new docker container"
-        docker create -it -v $HOME/.edgerc:/root/.edgerc --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
-    fi; 
+        mkdir -p $HOME/.akamai-cli-docker
+        docker create -it -v $HOME/.edgerc:/root/.edgerc -v $HOME/.akamai-cli-docker:/cli --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
+    fi;
 }
 ```
 
@@ -86,9 +87,7 @@ Docker containers are ephemeral and will only run for as long as the command (PI
 
 You can safely run `docker stop akamai-cli` followed by `docker start akamai-cli` to stop and start the container created by the function above at any time. 
 
-**However, should Docker lose state, or the container image get deleted, you will lose all changes made inside the container.**
-
-If you wish to persist your Akamai CLI config and packages, you can mount a local directory inside the container by adding the `-v /full/path/to/directory:/cli` to the `docker run` or the `docker create` command in the function above.
+The script above will persist your Akamai CLI installation (including configuration and packages) in the `$HOME/.akamai-cli-docker` directory.
 
 ### Compiling from Source
 
