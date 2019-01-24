@@ -48,7 +48,7 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 
 		if versionCompare(cmdPackage.Requirements.Python, matches[1]) == -1 {
 			log.Tracef("Python Version found: %s", matches[1])
-			return false, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python", cmdPackage.Requirements.Python)
+			return false, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python")
 		}
 	}
 

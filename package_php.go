@@ -45,7 +45,7 @@ func installPHP(dir string, cmdPackage commandPackage) (bool, error) {
 
 		if versionCompare(cmdPackage.Requirements.Php, matches[1]) == -1 {
 			log.Tracef("PHP Version found: %s", matches[1])
-			return false, NewExitErrorf(1, ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "PHP", cmdPackage.Requirements.Php)
+			return false, NewExitErrorf(1, ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "PHP", cmdPackage.Requirements.Php, matches[1])
 		}
 	}
 
