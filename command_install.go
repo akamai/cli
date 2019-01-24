@@ -152,7 +152,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 						return false
 					}
 
-					fmt.Fprint(akamai.App.ErrWriter, "Binary command(s) found, would you like to try download and install it? (Y/n): ")
+					fmt.Fprint(akamai.App.ErrWriter, "Binary command(s) found, would you like to download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
 					if answer != "" && strings.ToLower(answer) != "y" {
@@ -161,17 +161,15 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				}
 
 				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
+
+				akamai.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
 
-			akamai.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
-			if downloadBin(filepath.Join(dir, "bin"), cmd) {
-				akamai.StopSpinnerOk()
-				return true
+			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
+				akamai.StopSpinnerFail()
+				fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
+				return false
 			}
-
-			akamai.StopSpinnerFail()
-			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
-			return false
 		}
 
 		if first {
@@ -182,5 +180,6 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		}
 	}
 
+	akamai.StopSpinnerOk()
 	return true
 }
