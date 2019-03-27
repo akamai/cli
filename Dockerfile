@@ -43,7 +43,6 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "last-upgrade-check    = ignore" >> /cli/.akamai-cli/config
 
 ENV AKAMAI_CLI_HOME=/cli
-VOLUME /root/.edgerc
 VOLUME /cli
 ENTRYPOINT ["/usr/local/bin/akamai"]
 CMD ["--daemon"]
