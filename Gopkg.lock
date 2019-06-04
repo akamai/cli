@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:55388fd080150b9a072912f97b1f5891eb0b50df43401f8b75fb4273d3fec9fc"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
   digest = "1:ef504d5b3fdccd0e95730234fe1d327b37cb78aaada7941104c612b7c2cad1e5"
   name = "github.com/akamai/AkamaiOPEN-edgegrid-golang"
   packages = ["edgegrid"]
@@ -231,21 +239,6 @@
   revision = "62eef0e2fa9b2c385f7b2778e763486da6880d37"
 
 [[projects]]
-  digest = "1:8029e9743749d4be5bc9f7d42ea1659471767860f0cdc34d37c3111bd308a295"
-  name = "golang.org/x/text"
-  packages = [
-    "internal/gen",
-    "internal/triegen",
-    "internal/ucd",
-    "transform",
-    "unicode/cldr",
-    "unicode/norm",
-  ]
-  pruneopts = "UT"
-  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
-  version = "v0.3.0"
-
-[[projects]]
   digest = "1:866df945fc92cd221d2b384dca7de5f3131a6113b9f72a7a8019ae5046abe828"
   name = "gopkg.in/src-d/go-billy.v4"
   packages = [
@@ -260,12 +253,13 @@
   version = "v4.3.0"
 
 [[projects]]
-  digest = "1:1ea7acba0f88007ecacda272a1414bffb529c2da8dbdac647139d2d1590d8354"
+  digest = "1:7fcf8681ff737e3fa6b387448717283c2053058c5d7344c22a9a025b0dc5be4a"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",
     "config",
     "internal/revision",
+    "internal/url",
     "plumbing",
     "plumbing/cache",
     "plumbing/filemode",
@@ -305,8 +299,8 @@
     "utils/merkletrie/noder",
   ]
   pruneopts = "UT"
-  revision = "3dbfb89e0f5bce0008724e547b999fe3af9f60db"
-  version = "v4.8.1"
+  revision = "aa6f288c256ff8baf8a7745546a9752323dc0d89"
+  version = "v4.11.0"
 
 [[projects]]
   digest = "1:78d374b493e747afa9fbb2119687e3740a7fb8d0ebabddfef0a012593aaecbb3"
@@ -320,6 +314,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/Masterminds/semver",
     "github.com/akamai/cli-common-golang",
     "github.com/fatih/color",
     "github.com/go-ini/ini",
@@ -332,6 +327,8 @@
     "github.com/urfave/cli",
     "golang.org/x/sys/unix",
     "gopkg.in/src-d/go-git.v4",
+    "gopkg.in/src-d/go-git.v4/config",
+    "gopkg.in/src-d/go-git.v4/plumbing",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
