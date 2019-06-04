@@ -20,10 +20,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/Masterminds/semver"
 	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
@@ -220,47 +220,23 @@ func githubize(repo string) string {
 }
 
 func versionCompare(left string, right string) int {
-	leftParts := strings.Split(left, ".")
-	leftMajor, _ := strconv.Atoi(leftParts[0])
-	leftMinor := 0
-	leftMicro := 0
-
-	if left == right {
-		return 0
+	leftVersion, err := semver.NewVersion(left)
+	if err != nil {
+		return -2
 	}
 
-	if len(leftParts) > 1 {
-		leftMinor, _ = strconv.Atoi(leftParts[1])
-	}
-	if len(leftParts) > 2 {
-		leftMicro, _ = strconv.Atoi(leftParts[2])
+	rightVersion, err := semver.NewVersion(right)
+	if err != nil {
+		return 2
 	}
 
-	rightParts := strings.Split(right, ".")
-	rightMajor, _ := strconv.Atoi(rightParts[0])
-	rightMinor := 0
-	rightMicro := 0
-
-	if len(rightParts) > 1 {
-		rightMinor, _ = strconv.Atoi(rightParts[1])
-	}
-	if len(rightParts) > 2 {
-		rightMicro, _ = strconv.Atoi(rightParts[2])
-	}
-
-	if leftMajor > rightMajor {
+	if leftVersion.LessThan(rightVersion) {
+		return 1
+	} else if leftVersion.GreaterThan(rightVersion) {
 		return -1
 	}
 
-	if leftMajor == rightMajor && leftMinor > rightMinor {
-		return -1
-	}
-
-	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro > rightMicro {
-		return -1
-	}
-
-	return 1
+	return 0
 }
 
 func showBanner() {
