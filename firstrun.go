@@ -83,8 +83,10 @@ func firstRunCheckInPath() (bool, error) {
 			path = strings.ToLower(path)
 		}
 
-		if err := checkAccess(path, ACCESS_W_OK); err == nil {
-			writablePaths = append(writablePaths, path)
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			if err := checkAccess(path, ACCESS_W_OK); err == nil {
+				writablePaths = append(writablePaths, path)
+			}
 		}
 
 		if path == dirPath {
@@ -140,7 +142,8 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 		"Installing to "+newPath+"...",
 		"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 	)
-	err = os.Rename(selfPath, newPath)
+	err = moveFile(selfPath, newPath)
+
 	os.Args[0] = newPath
 	if err != nil {
 		akamai.StopSpinnerFail()
