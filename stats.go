@@ -57,6 +57,7 @@ func firstRunCheckStats(bannerShown bool) bool {
 		}
 
 		setConfigValue("cli", "enable-cli-statistics", statsVersion)
+		setConfigValue("cli", "stats-version", statsVersion)
 		setConfigValue("cli", "last-ping", "never")
 		setupUUID()
 		saveConfig()
