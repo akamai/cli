@@ -16,7 +16,7 @@ FROM alpine
 ARG SOURCE_BRANCH=master
 ENV SOURCE_BRANCH="$SOURCE_BRANCH" GOROOT=/usr/lib/go GOPATH=/gopath GOBIN=/gopath/bin AKAMAI_CLI_HOME=/cli PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/gopath/bin
 RUN mkdir /cli && \
-    apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev  curl nodejs build-base libffi libffi-dev go npm && \
+    apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev curl nodejs build-base libffi libffi-dev go npm && \
     pip2 install --upgrade pip && \
     pip3 install --upgrade pip && \
     mkdir -p $GOBIN && \
@@ -31,7 +31,7 @@ RUN mkdir /cli && \
     fi && \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
     mkdir -p /cli/.akamai-cli && \
-    curl https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
+    curl -A 'curl' https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
 
 RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
