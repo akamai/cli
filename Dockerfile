@@ -31,7 +31,7 @@ RUN mkdir /cli && \
     fi && \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
     mkdir -p /cli/.akamai-cli && \
-    curl -A 'curl' https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
+    curl -A '' https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force
 
 RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "cache-path            = /cli/.akamai-cli/cache" >> /cli/.akamai-cli/config && \
