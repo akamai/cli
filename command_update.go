@@ -24,8 +24,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
-	git_config "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func cmdUpdate(c *cli.Context) error {
@@ -88,54 +86,44 @@ func updatePackage(cmd string, forceBinary bool) error {
 		return cli.NewExitError(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
 
-	log.Tracef("Fetching from remote: %s", git.DefaultRemoteName)
-	err = repo.Fetch(&git.FetchOptions{
-		RemoteName: git.DefaultRemoteName,
-		Tags:       git.AllTags,
-		Force:      true,
-		RefSpecs:   []git_config.RefSpec{"+refs/heads/*:refs/remotes/origin/*"},
-		Depth:      2,
-	})
+	w, err := repo.Worktree()
+	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
+	refBeforePull, errBeforePull := repo.Head()
+	log.Tracef("Fetching from remote: %s", git.DefaultRemoteName)
+	log.Tracef("Using ref: %s", refName)
+
+	if errBeforePull != nil {
+		log.Tracef("Fetch error: %s", errBeforePull.Error())
+		akamai.StopSpinnerFail()
+		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
+	}
+
+	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
 	if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
 		log.Tracef("Fetch error: %s", err.Error())
 		akamai.StopSpinnerFail()
 		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
-	} else if err != nil {
-		log.Trace("Repo already up-to-date")
 	}
 
-	workdir, _ := repo.Worktree()
-	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
-	log.Tracef("Using ref: %s", refName)
-	ref, err := repo.Reference(plumbing.ReferenceName(refName), true)
-	if err != nil {
-		log.Tracef("Error resolving reference: %s", err.Error())
-		akamai.StopSpinnerFail()
-		return cli.NewExitError("Unable to update command", 1)
-	}
+	ref, err := repo.Head()
 
-	log.Trace("Resolving HEAD")
-	head, _ := repo.Head()
-	if head.Hash() == ref.Hash() {
-		log.Tracef("HEAD is the same as the remote: %s (old) vs %s (new)", head.Hash().String(), ref.Hash().String())
+	if refBeforePull.Hash() != ref.Hash() {
+		commit, err := repo.CommitObject(ref.Hash())
+		log.Tracef("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
+		log.Tracef("Latest commit: %s", commit)
+
+		if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
+			log.Tracef("Fetch error: %s", err.Error())
+			akamai.StopSpinnerFail()
+			return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+		}
+
+	} else {
+		log.Tracef("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		akamai.StopSpinnerWarnOk()
 		fmt.Fprintln(akamai.App.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
-	} else {
-		log.Tracef("HEAD differs: %s (old) vs %s (new)", head.Hash().String(), ref.Hash().String())
-	}
-
-	log.Tracef("Checking out ref: %s", ref.Name().String())
-	err = workdir.Checkout(&git.CheckoutOptions{
-		Branch: ref.Name(),
-		Force:  true,
-	})
-
-	if err != nil {
-		log.Tracef("Unable to checkout ref: %s", err.Error())
-		akamai.StopSpinnerFail()
-		return cli.NewExitError("Unable to update command", 1)
 	}
 
 	log.Tracef("Repo updated successfully")
