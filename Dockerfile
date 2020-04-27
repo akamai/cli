@@ -19,6 +19,7 @@ RUN mkdir /cli && \
     apk add --no-cache git python2 python2-dev py2-pip python3 python3-dev wget jq openssl openssl-dev curl nodejs build-base libffi libffi-dev go npm && \
     pip2 install --upgrade pip && \
     pip3 install --upgrade pip && \
+    npm config set unsafe-perm true && \
     mkdir -p $GOBIN && \
     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh; \
     if [[ $SOURCE_BRANCH == "master" ]]; then \
