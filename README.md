@@ -176,6 +176,20 @@ Calling `akamai update` with no arguments will update _all_ packages installed u
 
 Manually upgrade Akamai CLI to the latest version.
 
+#### Using proxy server
+
+```
+akamai [command] [action] [arguments...] --proxy http://user:password@proxy.io.com:8080
+```
+
+Alternatively you can use following commands. Both cases are equal.
+
+```
+export http_proxy="http://user:password@proxy.io.com:8080"
+export https_proxy="http://user:password@proxy.io.com:8080"
+akamai [command] [action] [arguments...]
+```
+
 ### Installed Commands
 
 To call an installed command, use `akamai <command> [args]`, e.g.

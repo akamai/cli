@@ -60,7 +60,7 @@ func createApp() {
 		},
 		cli.StringFlag{
 			Name:  "proxy",
-			Usage: "Set a proxy to use",
+			Usage: "Provide your proxy (http://user:password@proxy.io.com:8080)",
 		},
 		cli.BoolFlag{
 			Name:   "daemon",
@@ -79,10 +79,8 @@ func createApp() {
 			proxy := c.String("proxy")
 			os.Setenv("HTTP_PROXY", proxy)
 			os.Setenv("http_proxy", proxy)
-			if strings.HasPrefix(proxy, "https") {
-				os.Setenv("HTTPS_PROXY", proxy)
-				os.Setenv("https_proxy", proxy)
-			}
+			os.Setenv("HTTPS_PROXY", proxy)
+			os.Setenv("https_proxy", proxy)
 		}
 
 		if c.IsSet("daemon") {
