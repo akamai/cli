@@ -107,11 +107,11 @@
             {
                 "title": "Edge DNS",
                 "name": "dns",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "url": "https://github.com/akamai/cli-dns",
                 "issues": "https://github.com/akamai/cli-dns/issues",
-                "commands": [{"name":"dns","version":"0.2.0","description":"Manage DNS zones with Edge DNS","bin":"https://github.com/akamai/cli-dns/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
-                "requirements": {"go":"1.8.0"}
+                "commands": [{"name":"dns","version":"0.3.0","description":"Manage DNS zones with Edge DNS","bin":"https://github.com/akamai/cli-dns/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
+                "requirements": {"go":"1.12.0"}
             },
 
 
