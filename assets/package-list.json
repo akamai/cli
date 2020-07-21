@@ -201,12 +201,12 @@
 
 
             {
-                "title": "Property Manager 2.0",
+                "title": "Property Manager",
                 "name": "property-manager",
-                "version": "0.5.1",
+                "version": "0.7.2",
                 "url": "https://github.com/akamai/cli-property-manager",
                 "issues": "https://github.com/akamai/cli-property-manager/issues",
-                "commands": [{"name":"snippets","aliases":["pm","property-manager"],"version":"0.5.1","description":"Property Manager CLI for DevOps"},{"name":"pipeline","aliases":["pl","pipeline","pd","proddeploy"],"version":"0.5.1","description":"Akamai Pipeline for DevOps"}],
+                "commands": [{"name":"snippets","aliases":["pm","property-manager"],"version":"0.7.2","description":"Property Manager CLI for DevOps"},{"name":"pipeline","aliases":["pl","pipeline","pd","proddeploy"],"version":"0.7.2","description":"Akamai Pipeline for DevOps"}],
                 "requirements": {"node":"8.9.1"}
             },
 
