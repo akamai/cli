@@ -58,7 +58,7 @@
                 "version": "v0.1.0",
                 "url": "https://github.com/akamai/cli-cac",
                 "issues": "https://github.com/akamai/cli-cac/issues",
-                "commands": [{"name":"cac","aliases":["cac"],"version":"1.0.6","description":"Interface for Client Access Control (CAC) in the Akamai CLI tool"}],
+                "commands": [{"name":"cac","aliases":["cac"],"version":"v0.1.0","description":"Interface for Client Access Control (CAC) in the Akamai CLI tool"}],
                 "requirements": {"python":"3.0.0"}
             },
 
