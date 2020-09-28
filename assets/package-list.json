@@ -194,6 +194,22 @@
 
 
             {
+                "title": "Onboard",
+                "name": "onboard",
+                "version": "1.0.1",
+                "url": "https://github.com/akamai/cli-onboard",
+                "issues": "https://github.com/akamai/cli-onboard/issues",
+                "commands": [{"name":"onboard","aliases":["onboard"],"version":"1.0.1","description":"Onboard Akamai Property"}],
+                "requirements": {"python":"3.0.0"}
+            },
+
+
+
+
+
+
+            
+            {
                 "title": "Property Manager 1.0",
                 "name": "property",
                 "version": "1.0.3",
