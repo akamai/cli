@@ -91,12 +91,12 @@
         
         
             {
-                "title": "Diagnostics",
-                "name": "diagnostics",
+                "title": "Diagnostic Tools",
+                "name": "diagnostic-tools",
                 "version": "0.1.0",
                 "url": "https://github.com/akamai/cli-diagnostic-tools",
                 "issues": "https://github.com/akamai/cli-diagnostic-tools/issues",
-                "commands": [{"name":"diagnostics","version":"0.1.0","description":"The Diagnostic Tools allows you to diagnose many common problems Akamai customers experience when delivering content to their end users."}],
+                "commands": [{"name":"diagnostics","aliases":["diagnostics", "diag", "diagnostic-tools"],"version":"0.1.0","description":"The Diagnostic Tools allows you to diagnose many common problems Akamai customers experience when delivering content to their end users."}],
                 "requirements": {"go":"1.13.0"}
             },
 
