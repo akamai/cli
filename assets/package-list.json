@@ -86,6 +86,19 @@
                 "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.0.0","description":"Manage cloudlet configurations"}],
                 "requirements": {"python":"3.0.0"}
             },
+        
+        
+        
+        
+            {
+                "title": "Diagnostics",
+                "name": "diagnostics",
+                "version": "0.1.0",
+                "url": "https://github.com/akamai/cli-diagnostic-tools",
+                "issues": "https://github.com/akamai/cli-diagnostic-tools/issues",
+                "commands": [{"name":"diagnostics","version":"0.1.0","description":"The Diagnostic Tools allows you to diagnose many common problems Akamai customers experience when delivering content to their end users."}],
+                "requirements": {"go":"1.13.0"}
+            },
 
 
 
