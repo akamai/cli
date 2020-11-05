@@ -52,6 +52,15 @@
 
 
 
+            {
+                "title": "Client Access Control (CAC)",
+                "name": "cac",
+                "version": "v0.1.0",
+                "url": "https://github.com/akamai/cli-cac",
+                "issues": "https://github.com/akamai/cli-cac/issues",
+                "commands": [{"name":"cac","aliases":["cac"],"version":"v0.1.0","description":"Interface for Client Access Control (CAC) in the Akamai CLI tool"}],
+                "requirements": {"python":"3.0.0"}
+            },
 
 
 
@@ -76,6 +85,19 @@
                 "issues": "https://github.com/akamai/cli-cloudlets/issues",
                 "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.0.0","description":"Manage cloudlet configurations"}],
                 "requirements": {"python":"3.0.0"}
+            },
+        
+        
+        
+        
+            {
+                "title": "Diagnostic Tools",
+                "name": "diagnostic-tools",
+                "version": "0.1.0",
+                "url": "https://github.com/akamai/cli-diagnostic-tools",
+                "issues": "https://github.com/akamai/cli-diagnostic-tools/issues",
+                "commands": [{"name":"diagnostics","aliases":["diagnostics", "diag", "diagnostic-tools"],"version":"0.1.0","description":"The Diagnostic Tools allows you to diagnose many common problems Akamai customers experience when delivering content to their end users."}],
+                "requirements": {"go":"1.13.0"}
             },
 
 
@@ -184,6 +206,22 @@
 
 
 
+            {
+                "title": "Onboard",
+                "name": "onboard",
+                "version": "1.0.1",
+                "url": "https://github.com/akamai/cli-onboard",
+                "issues": "https://github.com/akamai/cli-onboard/issues",
+                "commands": [{"name":"onboard","aliases":["onboard"],"version":"1.0.1","description":"Onboard Akamai Property"}],
+                "requirements": {"python":"3.0.0"}
+            },
+
+
+
+
+
+
+            
             {
                 "title": "Property Manager 1.0",
                 "name": "property",
