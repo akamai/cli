@@ -45,5 +45,7 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
 ENV AKAMAI_CLI_HOME=/cli
 VOLUME /root/.edgerc
 VOLUME /cli
+RUN test -d /data || mkdir /data
+WORKDIR /data
 ENTRYPOINT ["/usr/local/bin/akamai"]
 CMD ["--daemon"]
