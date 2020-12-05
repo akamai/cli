@@ -20,6 +20,13 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 A list of available packages can be found [here](https://developer.akamai.com/cli).
 
+### Community extensions
+- [Akamai CLI for Netstorage] (https://github.com/partamonov/akamai-cli-netstorage)
+- [Akamai CLI for Siteshield] (https://github.com/partamonov/akamai-cli-siteshield)
+- [Akamai CLI for Firewall Rules Notifications] (https://github.com/partamonov/akamai-cli-frn)
+- [Akamai CLI for Network Lists] (https://github.com/RafPe/akamai-cli-netlist)
+
+
 ## Installation
 
 Akamai CLI itself has no dependencies, but may rely on packages that can be written using any language and may require additional runtimes.
