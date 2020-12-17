@@ -100,7 +100,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	}
 
 	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
-	if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
+	if err != nil && err.Error() != "already up-to-date" {
 		log.Tracef("Fetch error: %s", err.Error())
 		akamai.StopSpinnerFail()
 		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
@@ -113,7 +113,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 		log.Tracef("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		log.Tracef("Latest commit: %s", commit)
 
-		if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
+		if err != nil && err.Error() != "already up-to-date" {
 			log.Tracef("Fetch error: %s", err.Error())
 			akamai.StopSpinnerFail()
 			return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
