@@ -1,5 +1,19 @@
 //+build !noautoupgrade
 
+// Copyright 2018. Akamai Technologies, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -15,13 +29,14 @@ import (
 	"text/template"
 	"time"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
 )
 
-func checkForUpgrade(force bool) string {
+func checkUpgradeVersion(force bool) string {
 	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 		return ""
 	}
@@ -38,7 +53,7 @@ func checkForUpgrade(force bool) string {
 	}
 
 	if !checkForUpgrade {
-		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data),"\""), "\"")
+		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
 		lastUpgrade, err := time.Parse(time.RFC3339, configValue)
 
 		if err != nil {
@@ -52,7 +67,7 @@ func checkForUpgrade(force bool) string {
 	}
 
 	if checkForUpgrade {
-		setConfigValue("cli","last-upgrade-check", time.Now().Format(time.RFC3339))
+		setConfigValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
 		err := saveConfig()
 		if err != nil {
 			return ""
@@ -61,7 +76,8 @@ func checkForUpgrade(force bool) string {
 		latestVersion := getLatestReleaseVersion()
 		if versionCompare(VERSION, latestVersion) == 1 {
 			if !force {
-				fmt.Printf(
+				fmt.Fprintf(
+					akamai.App.Writer,
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(VERSION),
@@ -101,9 +117,9 @@ func getLatestReleaseVersion() string {
 }
 
 func upgradeCli(latestVersion string) bool {
-	status := getSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
+	akamai.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
-	cmd := Command{
+	cmd := command{
 		Version: latestVersion,
 		Bin:     "https://github.com/akamai/cli/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}",
 		Arch:    runtime.GOARCH,
@@ -125,65 +141,59 @@ func upgradeCli(latestVersion string) bool {
 	}
 
 	url := buf.String()
-	status.Start()
+
 	resp, err := http.Get(url)
 	defer resp.Body.Close()
 	if err != nil || resp.StatusCode != 200 {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		color.Red("Unable to download release, please try again.")
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download release, please try again."))
 		return false
 	}
 
 	shaResp, err := http.Get(url + ".sig")
 	defer shaResp.Body.Close()
 	if err != nil || shaResp.StatusCode != 200 {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		color.Red("Unable to retrieve signature for verification, please try again.")
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	selfPath, err := osext.Executable()
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
-		color.Red("Unable to determine install location")
+		akamai.StopSpinnerFail()
+		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to determine install location"))
 		return false
 	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {
-		status.FinalMSG = status.Prefix + "...... [" + color.RedString("FAIL") + "]\n"
-		status.Stop()
+		akamai.StopSpinnerFail()
 		if rerr := update.RollbackError(err); rerr != nil {
-			color.Red("Unable to install or rollback, please re-install.")
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to install or rollback, please re-install."))
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			color.Red(err.Error())
-			color.Red("Checksums do not match, please try again.")
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
+			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Checksums do not match, please try again."))
 		}
 		return false
 	}
 
-	status.Stop()
+	akamai.StopSpinnerOk()
 
 	if err == nil {
 		os.Args[0] = selfPath
@@ -199,7 +209,7 @@ func upgradeCli(latestVersion string) bool {
 
 func getUpgradeCommand() *commandPackage {
 	return &commandPackage{
-		Commands: []Command{
+		Commands: []command{
 			{
 				Name:        "upgrade",
 				Description: "Upgrade Akamai CLI to the latest version",

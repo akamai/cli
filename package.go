@@ -1,3 +1,17 @@
+// Copyright 2018. Akamai Technologies, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -12,11 +26,12 @@ import (
 	"strings"
 	"text/template"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
 type commandPackage struct {
-	Commands []Command `json:"commands"`
+	Commands []command `json:"commands"`
 
 	Requirements struct {
 		Go     string `json:"go"`
@@ -38,12 +53,12 @@ func readPackage(dir string) (commandPackage, error) {
 	}
 
 	var packageData commandPackage
-	cliJson, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
+	cliJSON, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
 		return commandPackage{}, err
 	}
 
-	err = json.Unmarshal(cliJson, &packageData)
+	err = json.Unmarshal(cliJSON, &packageData)
 	if err != nil {
 		return commandPackage{}, err
 	}
@@ -55,17 +70,16 @@ func readPackage(dir string) (commandPackage, error) {
 	return packageData, nil
 }
 
-func getPackagePaths() string {
-	path := ""
+func getPackagePaths() []string {
 	akamaiCliPath, err := getAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
 		if len(paths) > 0 {
-			path += strings.Join(paths, string(os.PathListSeparator))
+			return paths
 		}
 	}
 
-	return path
+	return []string{}
 }
 
 func getPackageBinPaths() string {
@@ -85,13 +99,12 @@ func getPackageBinPaths() string {
 	return path
 }
 
-
 func findPackageDir(dir string) string {
-	if stat, err :=  os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
+	if stat, err := os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
 		dir = filepath.Dir(dir)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		if os.IsNotExist(err) {
 			if filepath.Dir(dir) == "" {
 				return ""
@@ -103,7 +116,6 @@ func findPackageDir(dir string) string {
 
 	return dir
 }
-
 
 func determineCommandLanguage(cmdPackage commandPackage) string {
 	if cmdPackage.Requirements.Php != "" {
@@ -129,7 +141,7 @@ func determineCommandLanguage(cmdPackage commandPackage) string {
 	return ""
 }
 
-func downloadBin(dir string, cmd Command) bool {
+func downloadBin(dir string, cmd command) bool {
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS
@@ -144,10 +156,12 @@ func downloadBin(dir string, cmd Command) bool {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
+		log.Tracef("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
 		return false
 	}
 
 	url := buf.String()
+	log.Tracef("Fetching binary from %s", url)
 
 	bin, err := os.Create(filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix))
 	bin.Chmod(0775)

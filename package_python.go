@@ -1,3 +1,17 @@
+// Copyright 2018. Akamai Technologies, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -9,7 +23,9 @@ import (
 	"runtime"
 	"strings"
 
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -19,40 +35,33 @@ func installPython(dir string, cmdPackage commandPackage) (bool, error) {
 		return false, err
 	}
 
-
 	if cmdPackage.Requirements.Python != "" && cmdPackage.Requirements.Python != "*" {
 		cmd := exec.Command(bins.python, "--version")
 		output, _ := cmd.CombinedOutput()
+		log.Tracef("%s --version: %s", bins.python, output)
 		r, _ := regexp.Compile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))
+
+		if len(matches) == 0 {
+			return false, NewExitErrorf(1, ERR_RUNTIME_NO_VERSION_FOUND, "Python", cmdPackage.Requirements.Python)
+		}
+
 		if versionCompare(cmdPackage.Requirements.Python, matches[1]) == -1 {
-			return false, cli.NewExitError(fmt.Sprintf("Python %s is required to install this command.", cmdPackage.Requirements.Python), 1)
+			log.Tracef("Python Version found: %s", matches[1])
+			return false, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python")
 		}
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err == nil {
-		if bins.pip == "" {
-			return false, cli.NewExitError("Unable to find package manager.", 1)
-		}
-
-		if err == nil {
-			os.Setenv("PYTHONUSERBASE", dir)
-			cmd := exec.Command(bins.pip, "install", "--user","--ignore-installed", "-r", "requirements.txt")
-			cmd.Dir = dir
-			err = cmd.Run()
-			if err != nil {
-				return false, err
-			}
-			return true, nil
-		}
+	if err := installPythonDepsPip(bins, dir); err != nil {
+		return false, err
 	}
 
 	return true, nil
 }
 
-type pythonBins struct{
+type pythonBins struct {
 	python string
-	pip string
+	pip    string
 }
 
 func findPythonBins(version string) (pythonBins, error) {
@@ -65,7 +74,7 @@ func findPythonBins(version string) (pythonBins, error) {
 			if err != nil {
 				bins.python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, cli.NewExitError("Unable to locate Python 3 runtime", 1)
+					return bins, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python 3")
 				}
 			}
 		} else {
@@ -76,7 +85,7 @@ func findPythonBins(version string) (pythonBins, error) {
 					// Even though the command specified Python 2.x, try using python3 as a last resort
 					bins.python, err = exec.LookPath("python3")
 					if err != nil {
-						return bins, cli.NewExitError("Unable to locate Python runtime", 1)
+						return bins, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python")
 					}
 				}
 			}
@@ -88,7 +97,7 @@ func findPythonBins(version string) (pythonBins, error) {
 			if err != nil {
 				bins.python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, cli.NewExitError("Unable to locate Python runtime", 1)
+					return bins, NewExitErrorf(1, ERR_RUNTIME_NOT_FOUND, "Python")
 				}
 			}
 		}
@@ -128,7 +137,35 @@ func findPythonBins(version string) (pythonBins, error) {
 		}
 	}
 
+	log.Tracef("Python binary found: %s", bins.python)
+	log.Tracef("Pip binary found: %s", bins.pip)
 	return bins, nil
+}
+
+func installPythonDepsPip(bins pythonBins, dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err == nil {
+		log.Info("requirements.txt found, running pip package manager")
+
+		if bins.pip == "" {
+			log.Debugf(ERR_PACKAGE_MANAGER_NOT_FOUND, "pip")
+			return NewExitErrorf(1, ERR_PACKAGE_MANAGER_NOT_FOUND, "pip")
+		}
+
+		if err == nil {
+			os.Setenv("PYTHONUSERBASE", dir)
+			args := []string{bins.pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
+			cmd := exec.Command(args[0], args[1:]...)
+			cmd.Dir = dir
+			_, err = cmd.Output()
+			if err != nil {
+				logMultilinef(log.Debugf, "Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), err.(*exec.ExitError).Stderr)
+				return NewExitErrorf(1, ERR_PACKAGE_MANAGER_EXEC, "pip")
+			}
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func migratePythonPackage(cmd string, dir string) error {
@@ -142,12 +179,12 @@ func migratePythonPackage(cmd string, dir string) error {
 	}
 
 	if err == nil {
-		color.Cyan("You must reinstall this package to continue.")
-		fmt.Print("Would you like to reinstall it? (Y/n): ")
+		fmt.Fprintln(akamai.App.Writer, color.CyanString(ERR_PACKAGE_NEEDS_REINSTALL))
+		fmt.Fprint(akamai.App.Writer, "Would you like to reinstall it? (Y/n): ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
-			return cli.NewExitError(color.RedString("You must reinstall this package to continue"), -1)
+			return cli.NewExitError(color.RedString(ERR_PACKAGE_NEEDS_REINSTALL), -1)
 		}
 
 		if err := uninstallPackage(cmd); err != nil {

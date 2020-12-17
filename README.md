@@ -5,6 +5,8 @@
 </h1>
 
 # Akamai CLI
+[![Go Report Card](https://goreportcard.com/badge/github.com/akamai/cli)](https://goreportcard.com/report/github.com/akamai/cli) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_shield)
+
 
 Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the command line.
 
@@ -16,9 +18,7 @@ Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the
 
 ## Available Packages
 
-- [Akamai CLI for Property Manager](https://github.com/akamai/cli-property)
-- [Akamai CLI for Purge](https://github.com/akamai/cli-purge)
-- [Akamai CLI for Visitor Prioritization](https://github.com/akamai/cli-visitor-prioritization)
+A list of available packages can be found [here](https://developer.akamai.com/cli).
 
 ## Installation
 
@@ -54,15 +54,40 @@ This will install all necessary dependencies, compile, and install the binary �
 
 ### Using Docker
 
-If you use (or want to use) [docker](http://docker.com), you can get a fully installed CLI instance by running:
+If you use (or want to use) [docker](http://docker.com), we have created a container with Akamai CLI, and all public packages (at the time of creation) pre-installed. You can execute a command using:
 
 ```sh
-$ docker run -ti akamaiopen/cli
+$ docker run -ti -v $HOME/.edgerc:/root/.edgerc akamaiopen/cli [arguments]
 ```
 
-The container contains Akamai CLI, as well as the `purge` and `property` subcommands pre-installed.  
+> **Note:** This will mount your local `$HOME/.edgerc`, and `$HOME/.akamai-cli-docker` into the container. To change the local path, update the `-v` arguments.
 
-> **Note**: When setting up your `.edgerc`, the `purge` subcommand defaults to the `ccu` credentials section, while the `property` subcommand uses the `papi` section. These can be changed using the `--section` flag.
+If you want to transparently use docker when calling the `akamai` command, you can add the following to your `.bashrc`, `.bash_profile`, or `.zshrc`:
+
+```bash
+function akamai {
+    if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then
+        docker exec -it akamai-cli akamai $@;
+    elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then
+        return 0;
+    else
+        echo "Creating new docker container"
+        mkdir -p $HOME/.akamai-cli-docker
+        docker create -it -v $HOME/.edgerc:/root/.edgerc -v $HOME/.akamai-cli-docker:/cli --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
+    fi;
+}
+```
+
+You can then run `akamai [arguments]` and it will automatically create or re-use a "persistent" container.
+
+
+#### Persistance
+
+Docker containers are ephemeral and will only run for as long as the command (PID 1) inside them stays running. To allow you to re-use the same container we use `akamai --daemon` to ensure it continues running indefinitely inside the container.
+
+You can safely run `docker stop akamai-cli` followed by `docker start akamai-cli` to stop and start the container created by the function above at any time. 
+
+The script above will persist your Akamai CLI installation (including configuration and packages) in the `$HOME/.akamai-cli-docker` directory.
 
 ### Compiling from Source
 
@@ -173,6 +198,23 @@ There are a few requirements:
 
 You can use _any_ language to build commands, so long as the result is executable — this includes PHP, Python, Ruby, Perl, Java, Golang, JavaScript, and C#.
 
+### Debugging
+
+You can prepend `AKAMAI_LOG=<debug-level>` to the CLI command to see extra information, where debug-level is one of the following (use trace for full logging):
+
+- panic
+- fatal
+- error
+- warn
+- info
+- debug
+- trace
+
+For example to see extra debug information while trying to update the property package use:
+```sh
+AKAMAI_LOG=trace akamai update property
+```
+
 ### Dependencies
 
 Currently Akamai CLI supports automatically installing package dependencies using the following package managers:
@@ -234,3 +276,7 @@ The `bin` URL may contain the following placeholders:
   - Possible values are: `386`, `amd64`
 - `{{.BinSuffix}}` — The binary suffix for the current OS
   - Possible values are: `.exe` for windows
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_large)

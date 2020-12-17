@@ -1,16 +1,31 @@
+// Copyright 2018. Akamai Technologies, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
+	"syscall"
 
-	"github.com/briandowns/spinner"
+	"github.com/Masterminds/semver"
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
@@ -31,7 +46,7 @@ func getAkamaiCliPath() (string, error) {
 	}
 
 	cliPath := filepath.Join(cliHome, ".akamai-cli")
-	err := os.MkdirAll(cliPath, 0755)
+	err := os.MkdirAll(cliPath, 0700)
 	if err != nil {
 		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
 	}
@@ -53,7 +68,7 @@ func getAkamaiCliCachePath() (string, error) {
 	cliHome, _ := getAkamaiCliPath()
 
 	cachePath := filepath.Join(cliHome, "cache")
-	err := os.MkdirAll(cachePath, 0775)
+	err := os.MkdirAll(cachePath, 0700)
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +97,7 @@ func findExec(cmd string) ([]string, error) {
 	var path string
 	path, err := exec.LookPath(cmdName)
 	if err != nil {
-		path, err = exec.LookPath(cmdNameTitle)
+		path, _ = exec.LookPath(cmdNameTitle)
 	}
 
 	if path != "" {
@@ -128,8 +143,10 @@ func findExec(cmd string) ([]string, error) {
 		}
 
 		language := determineCommandLanguage(cmdPackage)
-		bin := ""
-		var cmd []string
+		var (
+			cmd []string
+			bin string
+		)
 		switch {
 		// Compiled Languages
 		case language == "go" || language == "c#" || language == "csharp":
@@ -169,8 +186,15 @@ func passthruCommand(executable []string) error {
 	subCmd.Stderr = os.Stderr
 	subCmd.Stdout = os.Stdout
 	err := subCmd.Run()
+
+	exitCode := 1
+	if exitError, ok := err.(*exec.ExitError); ok {
+		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+			exitCode = waitStatus.ExitStatus()
+		}
+	}
 	if err != nil {
-		return cli.NewExitError("", 1)
+		return cli.NewExitError("", exitCode)
 	}
 	return nil
 }
@@ -197,155 +221,70 @@ func githubize(repo string) string {
 }
 
 func versionCompare(left string, right string) int {
-	leftParts := strings.Split(left, ".")
-	leftMajor, _ := strconv.Atoi(leftParts[0])
-	leftMinor := 0
-	leftMicro := 0
-
-	if left == right {
-		return 0
+	leftVersion, err := semver.NewVersion(left)
+	if err != nil {
+		return -2
 	}
 
-	if len(leftParts) > 1 {
-		leftMinor, _ = strconv.Atoi(leftParts[1])
-	}
-	if len(leftParts) > 2 {
-		leftMicro, _ = strconv.Atoi(leftParts[2])
+	rightVersion, err := semver.NewVersion(right)
+	if err != nil {
+		return 2
 	}
 
-	rightParts := strings.Split(right, ".")
-	rightMajor, _ := strconv.Atoi(rightParts[0])
-	rightMinor := 0
-	rightMicro := 0
-
-	if len(rightParts) > 1 {
-		rightMinor, _ = strconv.Atoi(rightParts[1])
-	}
-	if len(rightParts) > 2 {
-		rightMicro, _ = strconv.Atoi(rightParts[2])
-	}
-
-	if leftMajor > rightMajor {
+	if leftVersion.LessThan(rightVersion) {
+		return 1
+	} else if leftVersion.GreaterThan(rightVersion) {
 		return -1
 	}
 
-	if leftMajor == rightMajor && leftMinor > rightMinor {
-		return -1
-	}
-
-	if leftMajor == rightMajor && leftMinor == rightMinor && leftMicro > rightMicro {
-		return -1
-	}
-
-	return 1
-}
-
-func getSpinner(prefix string, finalMsg string) *spinner.Spinner {
-	status := spinner.New(spinner.CharSets[26], 500*time.Millisecond)
-	status.Prefix = prefix
-	status.FinalMSG = finalMsg
-
-	return status
+	return 0
 }
 
 func showBanner() {
-	fmt.Println()
+	fmt.Fprintln(akamai.App.ErrWriter)
 	bg := color.New(color.BgMagenta)
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
+	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
 	fg := bg.Add(color.FgWhite)
 	title := "Welcome to Akamai CLI v" + VERSION
 	ws := strings.Repeat(" ", 16)
-	fg.Printf(ws + title + ws + "\n")
-	bg.Printf(strings.Repeat(" ", 60) + "\n")
-	fmt.Println()
+	fmt.Fprintf(akamai.App.ErrWriter, fg.Sprintf(ws+title+ws+"\n"))
+	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
+	fmt.Fprintln(akamai.App.ErrWriter)
 }
 
-func setCliTemplates() {
-	cli.AppHelpTemplate = "" +
-		color.YellowString("Usage: \n") +
-		color.BlueString("	{{if .UsageText}}" +
-			"{{.UsageText}}" +
-			"{{else}}" +
-			"{{.HelpName}} " +
-			"{{if .VisibleFlags}}[global flags]{{end}}" +
-			"{{if .Commands}} command [command flags]{{end}} " +
-			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}" +
-			"\n\n{{end}}") +
+// We must copy+unlink the file because moving files is broken across filesystems
+func moveFile(src string, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
 
-		"{{if .Description}}\n\n" +
-		color.YellowString("Description:\n") +
-		"   {{.Description}}" +
-		"\n\n{{end}}" +
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
 
-		"{{if .VisibleCommands}}" +
-		color.YellowString("Built-In Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"\n{{.Name}}\n" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		color.GreenString("  {{.Name}}") +
-		"{{if .Aliases}} ({{ $length := len .Aliases }}{{if eq $length 1}}alias:{{else}}aliases:{{end}} " +
-		"{{range $index, $alias := .Aliases}}" +
-		"{{if $index}}, {{end}}" +
-		color.GreenString("{{$alias}}") +
-		"{{end}}" +
-		"){{end}}\n" +
-		"{{end}}" +
-		"{{end}}" +
-		"{{end}}\n" +
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
 
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Global Flags:\n") +
-		"{{range $index, $option := .VisibleFlags}}" +
-		"{{if $index}}\n{{end}}" +
-		"   {{$option}}" +
-		"{{end}}" +
-		"\n\n{{end}}" +
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
 
-		"{{if .Copyright}}" +
-		color.HiBlackString("{{.Copyright}}") +
-		"{{end}}\n"
+	if err != nil {
+		return err
+	}
 
-	cli.CommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}}\n\n" +
+	err = os.Chmod(dst, 0755)
+	if err != nil {
+		return err
+	}
 
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-
-		"{{if .Category}}" +
-		color.YellowString("Type: \n") +
-		"   {{.Category}}\n\n{{end}}" +
-
-		"{{if .Description}}" +
-		color.YellowString("Description: \n") +
-		"   {{.Description}}\n\n{{end}}" +
-
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags: \n") +
-		"{{range .VisibleFlags}}   {{.}}\n\n{{end}}{{end}}" +
-
-		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
-
-	cli.SubcommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}} - {{.Usage}}\n\n" +
-
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-
-		color.YellowString("Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"{{.Name}}:" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		`{{join .Names ", "}}{{"\t"}}{{.Usage}}` +
-		"{{end}}\n\n" +
-		"{{end}}" +
-
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags:\n") +
-		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
+	err = os.Remove(src)
+	return err
 }

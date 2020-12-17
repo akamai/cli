@@ -1,3 +1,5 @@
+//+build nofirstrun
+
 // Copyright 2018. Akamai Technologies, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +16,7 @@
 
 package main
 
-const (
-	ACCESS_R_OK = iota
-	ACCESS_W_OK
-	ACCESS_X_OK
-)
-
-func checkAccess(path string, perm int) error {
+func firstRun() error {
+	firstRunCheckStats(false)
 	return nil
 }
