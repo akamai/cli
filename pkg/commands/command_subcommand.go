@@ -19,7 +19,6 @@ import (
 	akamai "github.com/akamai/cli-common-golang"
 	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/stats"
-	"github.com/akamai/cli/pkg/tools"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,12 +38,12 @@ func cmdSubcommand(c *cli.Context) error {
 
 	var packageDir string
 	if len(executable) == 1 {
-		packageDir = FindPackageDir(executable[0])
+		packageDir = findPackageDir(executable[0])
 	} else if len(executable) > 1 {
-		packageDir = FindPackageDir(executable[1])
+		packageDir = findPackageDir(executable[1])
 	}
 
-	cmdPackage, _ := ReadPackage(packageDir)
+	cmdPackage, _ := readPackage(packageDir)
 
 	if cmdPackage.Requirements.Python != "" {
 		var err error
@@ -98,5 +97,5 @@ func cmdSubcommand(c *cli.Context) error {
 	os.Setenv("AKAMAI_CLI_COMMAND", commandName)
 	os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version)
 	stats.TrackEvent("exec", commandName, currentCmd.Version)
-	return tools.PassthruCommand(executable)
+	return passthruCommand(executable)
 }

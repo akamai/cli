@@ -18,7 +18,7 @@ package commands
 
 import "github.com/akamai/cli/pkg/packages"
 
-func checkUpgradeVersion(force bool) string {
+func CheckUpgradeVersion(force bool) string {
 	return ""
 }
 
@@ -26,7 +26,7 @@ func getLatestReleaseVersion() string {
 	return "0"
 }
 
-func upgradeCli(latestVersion string) bool {
+func UpgradeCli(latestVersion string) bool {
 	return false
 }
 

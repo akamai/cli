@@ -69,9 +69,9 @@ func updatePackage(cmd string, forceBinary bool) error {
 	var repoDir string
 	log.Trace("Searching for package repo")
 	if len(exec) == 1 {
-		repoDir = FindPackageDir(filepath.Dir(exec[0]))
+		repoDir = findPackageDir(filepath.Dir(exec[0]))
 	} else if len(exec) > 1 {
-		repoDir = FindPackageDir(filepath.Dir(exec[len(exec)-1]))
+		repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
 	}
 
 	if repoDir == "" {

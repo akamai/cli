@@ -48,9 +48,9 @@ func uninstallPackage(cmd string) error {
 
 	var repoDir string
 	if len(exec) == 1 {
-		repoDir = FindPackageDir(filepath.Dir(exec[0]))
+		repoDir = findPackageDir(filepath.Dir(exec[0]))
 	} else if len(exec) > 1 {
-		repoDir = FindPackageDir(filepath.Dir(exec[len(exec)-1]))
+		repoDir = findPackageDir(filepath.Dir(exec[len(exec)-1]))
 	}
 
 	if repoDir == "" {

@@ -58,6 +58,57 @@ func cmdInstall(c *cli.Context) error {
 	return nil
 }
 
+func packageListDiff(oldcmds []subcommands) {
+	cmds := getCommands()
+
+	var old []command
+	for _, oldcmd := range oldcmds {
+		for _, cmd := range oldcmd.Commands {
+			old = append(old, cmd)
+		}
+	}
+
+	var newCmds []command
+	for _, newcmd := range cmds {
+		for _, cmd := range newcmd.Commands {
+			newCmds = append(newCmds, cmd)
+		}
+	}
+
+	var added = make(map[string]bool)
+	var removed = make(map[string]bool)
+
+	for _, newCmd := range newCmds {
+		found := false
+		for _, oldCmd := range old {
+			if newCmd.Name == oldCmd.Name {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			added[newCmd.Name] = true
+		}
+	}
+
+	for _, oldCmd := range old {
+		found := false
+		for _, newCmd := range newCmds {
+			if newCmd.Name == oldCmd.Name {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			removed[oldCmd.Name] = true
+		}
+	}
+
+	listInstalledCommands(added, removed)
+}
+
 func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
@@ -110,7 +161,7 @@ func installPackage(repo string, forceBinary bool) error {
 func installPackageDependencies(dir string, forceBinary bool) bool {
 	akamai.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
-	cmdPackage, err := ReadPackage(dir)
+	cmdPackage, err := readPackage(dir)
 
 	if err != nil {
 		akamai.StopSpinnerFail()
@@ -118,7 +169,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		return false
 	}
 
-	lang := DetermineCommandLanguage(cmdPackage)
+	lang := determineCommandLanguage(cmdPackage)
 
 	var success bool
 	switch lang {
@@ -172,7 +223,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				akamai.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
 
-			if !DownloadBin(filepath.Join(dir, "bin"), cmd) {
+			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
 				akamai.StopSpinnerFail()
 				fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
 				return false

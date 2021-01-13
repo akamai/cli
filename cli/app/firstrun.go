@@ -21,6 +21,7 @@ import (
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -145,7 +146,7 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 		"Installing to "+newPath+"...",
 		"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 	)
-	err = tools.MoveFile(selfPath, newPath)
+	err = moveFile(selfPath, newPath)
 
 	os.Args[0] = newPath
 	if err != nil {
@@ -176,4 +177,41 @@ func firstRunCheckUpgrade(bannerShown bool) bool {
 	}
 
 	return bannerShown
+}
+
+// We must copy+unlink the file because moving files is broken across filesystems
+func moveFile(src string, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(dst, 0755)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(src)
+	return err
 }

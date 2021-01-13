@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 	"io/ioutil"
 	"net/http"
@@ -201,7 +200,7 @@ func UpgradeCli(latestVersion string) bool {
 	if err == nil {
 		os.Args[0] = selfPath
 	}
-	err = tools.PassthruCommand(os.Args)
+	err = passthruCommand(os.Args)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -210,8 +209,8 @@ func UpgradeCli(latestVersion string) bool {
 	return true
 }
 
-func getUpgradeCommand() *CommandPackage {
-	return &CommandPackage{
+func getUpgradeCommand() *subcommands {
+	return &subcommands{
 		Commands: []command{
 			{
 				Name:        "upgrade",

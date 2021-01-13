@@ -31,7 +31,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-type CommandPackage struct {
+type subcommands struct {
 	Commands []command `json:"commands"`
 
 	Requirements struct {
@@ -45,23 +45,23 @@ type CommandPackage struct {
 	Action interface{} `json:"-"`
 }
 
-func ReadPackage(dir string) (CommandPackage, error) {
+func readPackage(dir string) (subcommands, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-			return CommandPackage{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
+			return subcommands{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
 		}
 	}
 
-	var packageData CommandPackage
+	var packageData subcommands
 	cliJSON, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
-		return CommandPackage{}, err
+		return subcommands{}, err
 	}
 
 	err = json.Unmarshal(cliJSON, &packageData)
 	if err != nil {
-		return CommandPackage{}, err
+		return subcommands{}, err
 	}
 
 	for key := range packageData.Commands {
@@ -71,7 +71,7 @@ func ReadPackage(dir string) (CommandPackage, error) {
 	return packageData, nil
 }
 
-func GetPackagePaths() []string {
+func getPackagePaths() []string {
 	akamaiCliPath, err := tools.GetAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
 		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
@@ -83,7 +83,7 @@ func GetPackagePaths() []string {
 	return []string{}
 }
 
-func FindPackageDir(dir string) string {
+func findPackageDir(dir string) string {
 	if stat, err := os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
 		dir = filepath.Dir(dir)
 	}
@@ -94,14 +94,14 @@ func FindPackageDir(dir string) string {
 				return ""
 			}
 
-			return FindPackageDir(filepath.Dir(dir))
+			return findPackageDir(filepath.Dir(dir))
 		}
 	}
 
 	return dir
 }
 
-func DetermineCommandLanguage(cmdPackage CommandPackage) string {
+func determineCommandLanguage(cmdPackage subcommands) string {
 	if cmdPackage.Requirements.Php != "" {
 		return "php"
 	}
@@ -125,7 +125,7 @@ func DetermineCommandLanguage(cmdPackage CommandPackage) string {
 	return ""
 }
 
-func DownloadBin(dir string, cmd command) bool {
+func downloadBin(dir string, cmd command) bool {
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS

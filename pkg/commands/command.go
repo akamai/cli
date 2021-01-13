@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 
 	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
@@ -47,59 +48,8 @@ type command struct {
 	Subcommands []cli.Command `json:"-"`
 }
 
-func packageListDiff(oldcmds []CommandPackage) {
-	cmds := getCommands()
-
-	var old []command
-	for _, oldcmd := range oldcmds {
-		for _, cmd := range oldcmd.Commands {
-			old = append(old, cmd)
-		}
-	}
-
-	var newCmds []command
-	for _, newcmd := range cmds {
-		for _, cmd := range newcmd.Commands {
-			newCmds = append(newCmds, cmd)
-		}
-	}
-
-	var added = make(map[string]bool)
-	var removed = make(map[string]bool)
-
-	for _, newCmd := range newCmds {
-		found := false
-		for _, oldCmd := range old {
-			if newCmd.Name == oldCmd.Name {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			added[newCmd.Name] = true
-		}
-	}
-
-	for _, oldCmd := range old {
-		found := false
-		for _, newCmd := range newCmds {
-			if newCmd.Name == oldCmd.Name {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			removed[oldCmd.Name] = true
-		}
-	}
-
-	listInstalledCommands(added, removed)
-}
-
-func getBuiltinCommands() []CommandPackage {
-	commands := []CommandPackage{
+func getBuiltinCommands() []subcommands {
+	commands := []subcommands{
 		{
 			Commands: []command{
 				{
@@ -222,11 +172,11 @@ func getBuiltinCommands() []CommandPackage {
 	return commands
 }
 
-func getCommands() []CommandPackage {
+func getCommands() []subcommands {
 	var (
-		commandMap   = make(map[string]CommandPackage)
+		commandMap   = make(map[string]subcommands)
 		commandOrder = make([]string, 0)
-		commands     = make([]CommandPackage, 0)
+		commands     = make([]subcommands, 0)
 	)
 	for _, pkg := range getBuiltinCommands() {
 		for _, command := range pkg.Commands {
@@ -235,13 +185,13 @@ func getCommands() []CommandPackage {
 		}
 	}
 
-	packagePaths := GetPackagePaths()
+	packagePaths := getPackagePaths()
 	if len(packagePaths) == 0 {
 
 	}
 
 	for _, dir := range packagePaths {
-		pkg, err := ReadPackage(dir)
+		pkg, err := readPackage(dir)
 		if err == nil {
 			for key, command := range pkg.Commands {
 				commandPkg := pkg
@@ -307,7 +257,7 @@ var CommandLocator akamai.CommandLocator = func() ([]cli.Command, error) {
 							}
 
 							executable = append(executable, os.Args[2:]...)
-							tools.PassthruCommand(executable)
+							passthruCommand(executable)
 						}
 					},
 				},
@@ -375,13 +325,13 @@ func findExec(cmd string) ([]string, error) {
 
 		cmdFile := files[0]
 
-		packageDir := FindPackageDir(filepath.Dir(cmdFile))
-		cmdPackage, err := ReadPackage(packageDir)
+		packageDir := findPackageDir(filepath.Dir(cmdFile))
+		cmdPackage, err := readPackage(packageDir)
 		if err != nil {
 			return nil, err
 		}
 
-		language := DetermineCommandLanguage(cmdPackage)
+		language := determineCommandLanguage(cmdPackage)
 		var (
 			cmd []string
 			bin string
@@ -434,4 +384,23 @@ func getPackageBinPaths() string {
 	}
 
 	return path
+}
+
+func passthruCommand(executable []string) error {
+	subCmd := exec.Command(executable[0], executable[1:]...)
+	subCmd.Stdin = os.Stdin
+	subCmd.Stderr = os.Stderr
+	subCmd.Stdout = os.Stdout
+	err := subCmd.Run()
+
+	exitCode := 1
+	if exitError, ok := err.(*exec.ExitError); ok {
+		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+			exitCode = waitStatus.ExitStatus()
+		}
+	}
+	if err != nil {
+		return cli.NewExitError("", exitCode)
+	}
+	return nil
 }
