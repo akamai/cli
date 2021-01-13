@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	akamai "github.com/akamai/cli-common-golang"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli"
@@ -65,35 +66,34 @@ func installPackage(repo string, forceBinary bool) error {
 		return err
 	}
 
-	_ = os.MkdirAll(srcPath, 0700)
+	term := terminal.Standard()
 
-	akamai.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
+	term.Writef("Attempting to fetch command from %s...", repo)
+
+	//	akamai.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
-		akamai.StopSpinnerFail()
-
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
 	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
 		URL:      repo,
-		Progress: nil,
+		Progress: term,
 		Depth:    1,
 	})
 
 	if err != nil {
 		os.RemoveAll(packageDir)
 
-		akamai.StopSpinnerFail()
 		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
-	akamai.StopSpinnerOk()
+	term.Writef("git clone complete")
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		fmt.Fprintln(akamai.App.ErrWriter, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
+		term.Writef(color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
 	if !installPackageDependencies(packageDir, forceBinary) {

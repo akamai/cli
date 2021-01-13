@@ -17,54 +17,82 @@ package terminal
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"time"
 
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/cheggaaa/pb/v3"
 )
 
 type (
 	// Terminal defines a terminal abstration interface
 	Terminal interface {
-		Write(f string, args ...interface{})
-		WriteError(f string, args ...interface{})
+		io.Writer
+
+		Writef(f string, args ...interface{})
+		WriteError(interface{})
+		WriteErrorf(f string, args ...interface{})
 		Prompt(p string, options ...string) (string, error)
-		ProgressBegin(max ...int)
-		ProgressStep(s int)
-		ProgressEnd()
+		Progress(max int) Progress
 	}
 
+	// Progress is an interface for progress bars
+	Progress interface {
+		Writer() io.Writer
+		SetTotal(t int)
+		Add(count int)
+		End()
+	}
 	terminal struct {
-		Out *os.File
-		Err io.Writer
-		In  *os.File
+		Out   *os.File
+		Err   io.Writer
+		In    *os.File
+		start time.Time
+	}
+
+	progress struct {
+		p *pb.ProgressBar
 	}
 )
 
 // Standard returns the standard terminal
 func Standard() Terminal {
 	return terminal{
-		Out: os.Stdout,
-		Err: os.Stderr,
-		In:  os.Stdin,
+		Out:   os.Stdout,
+		Err:   os.Stderr,
+		In:    os.Stdin,
+		start: time.Now(),
 	}
 }
 
 // New returns a new terminal with the specifed streams
 func New(out, in *os.File, err io.Writer) Terminal {
 	return terminal{
-		Out: out,
-		Err: err,
-		In:  in,
+		Out:   out,
+		Err:   err,
+		In:    in,
+		start: time.Now(),
 	}
 }
 
-func (t terminal) Write(f string, args ...interface{}) {
-	t.Out.Write([]byte(fmt.Sprintf(f, args...)))
+func (t terminal) Writef(f string, args ...interface{}) {
+	t.Write([]byte(fmt.Sprintf(f, args...)))
+	fmt.Fprintln(t.Out)
 }
 
-func (t terminal) WriteError(f string, args ...interface{}) {
+func (t terminal) Write(v []byte) (n int, err error) {
+	msg := fmt.Sprintf("[%s] %s", time.Now().Sub(t.start).Truncate(time.Second), v)
+	return t.Out.Write([]byte(msg))
+}
+
+func (t terminal) WriteErrorf(f string, args ...interface{}) {
 	t.Err.Write([]byte(fmt.Sprintf(f, args...)))
+}
+
+func (t terminal) WriteError(v interface{}) {
+	t.Err.Write([]byte(fmt.Sprint(v)))
 }
 
 func (t terminal) Prompt(p string, options ...string) (string, error) {
@@ -94,14 +122,29 @@ func (t terminal) Prompt(p string, options ...string) (string, error) {
 	return answers.Q, nil
 }
 
-func (t terminal) ProgressBegin(max ...int) {
+func (t terminal) Progress(max int) Progress {
+	p := &progress{
+		p: pb.StartNew(max),
+	}
 
+	p.p.Set(pb.Bytes, true)
+	p.p.SetWriter(t.Out)
+
+	return p
 }
 
-func (t terminal) ProgressStep(s int) {
-
+func (p progress) Writer() io.Writer {
+	return p.p.NewProxyWriter(ioutil.Discard)
 }
 
-func (t terminal) ProgressEnd() {
+func (p progress) SetTotal(t int) {
+	p.p.SetTotal(int64(t))
+}
 
+func (p progress) Add(s int) {
+	p.p.Add(s)
+}
+
+func (p progress) End() {
+	p.p.Finish()
 }

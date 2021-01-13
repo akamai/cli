@@ -32,7 +32,7 @@ func TestWrite(t *testing.T) {
 
 	term := New(out, os.Stdin, os.Stderr)
 
-	term.Write(t.Name())
+	term.Writef(t.Name())
 
 	out.Seek(0, 0)
 
@@ -54,7 +54,7 @@ func TestWriteErr(t *testing.T) {
 
 	term := New(os.Stdin, os.Stdin, out)
 
-	term.WriteError(t.Name())
+	term.WriteErrorf(t.Name())
 
 	out.Seek(0, 0)
 
