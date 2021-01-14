@@ -16,6 +16,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"
 	"io/ioutil"
 	"os"
@@ -23,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/go-ini/ini"
 )
 
@@ -80,7 +80,7 @@ func SaveConfig() error {
 
 	err = config.SaveTo(path)
 	if err != nil {
-		fmt.Fprintln(akamai.App.Writer, err.Error())
+		fmt.Fprintln(app.App.Writer, err.Error())
 		return err
 	}
 

@@ -16,12 +16,12 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
 	"os"
 	"path/filepath"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -44,7 +44,7 @@ func uninstallPackage(cmd string) error {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
 
-	akamai.StartSpinner(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd), fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd)+"... ["+color.GreenString("OK")+"]\n")
+	s := io.StartSpinner(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd), fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd)+"... ["+color.GreenString("OK")+"]\n")
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -54,16 +54,16 @@ func uninstallPackage(cmd string) error {
 	}
 
 	if repoDir == "" {
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("unable to uninstall, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	if err := os.RemoveAll(repoDir); err != nil {
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("unable to remove directory: %s", repoDir), 1)
 	}
 
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 
 	return nil
 }

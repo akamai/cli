@@ -16,6 +16,7 @@ package commands
 
 import (
 	"errors"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
 	"os"
@@ -25,7 +26,6 @@ import (
 	"strings"
 	"syscall"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -210,7 +210,7 @@ func getCommands() []subcommands {
 	return commands
 }
 
-var CommandLocator akamai.CommandLocator = func() ([]cli.Command, error) {
+func CommandLocator() ([]cli.Command, error) {
 	commands := make([]cli.Command, 0)
 	builtinCmds := make(map[string]bool)
 	for _, cmd := range getBuiltinCommands() {
@@ -228,7 +228,7 @@ var CommandLocator akamai.CommandLocator = func() ([]cli.Command, error) {
 				Flags:        cmd.Commands[0].Flags,
 				Subcommands:  cmd.Commands[0].Subcommands,
 				HideHelp:     true,
-				BashComplete: akamai.DefaultAutoComplete,
+				BashComplete: app.DefaultAutoComplete,
 			},
 		)
 	}

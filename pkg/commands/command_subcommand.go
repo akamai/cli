@@ -16,7 +16,7 @@ package commands
 
 import (
 	"fmt"
-	akamai "github.com/akamai/cli-common-golang"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/stats"
 	"os"
@@ -56,8 +56,8 @@ func cmdSubcommand(c *cli.Context) error {
 		}
 
 		if err == nil {
-			fmt.Fprintln(akamai.App.Writer, color.CyanString(errors.ERR_PACKAGE_NEEDS_REINSTALL))
-			fmt.Fprint(akamai.App.Writer, "Would you like to reinstall it? (Y/n): ")
+			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ERR_PACKAGE_NEEDS_REINSTALL))
+			fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
 			answer := ""
 			fmt.Scanln(&answer)
 			if answer != "" && strings.ToLower(answer) != "y" {

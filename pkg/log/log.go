@@ -17,10 +17,10 @@ package log
 import (
 	"bufio"
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"os"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,7 +32,7 @@ func Setup() {
 		EnvironmentOverrideColors: true,
 	})
 
-	log.SetOutput(akamai.App.ErrWriter)
+	log.SetOutput(app.App.Writer)
 
 	log.SetLevel(log.PanicLevel)
 	if logLevel := os.Getenv("AKAMAI_LOG"); logLevel != "" {
@@ -40,7 +40,7 @@ func Setup() {
 		if err == nil {
 			log.SetLevel(level)
 		} else {
-			fmt.Fprintln(akamai.App.Writer, "[WARN] Unknown AKAMAI_LOG value. Allowed values: panic, fatal, error, warn, info, debug, trace")
+			fmt.Fprintln(app.App.Writer, "[WARN] Unknown AKAMAI_LOG value. Allowed values: panic, fatal, error, warn, info, debug, trace")
 		}
 	}
 }

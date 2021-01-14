@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/version"
 	"io/ioutil"
 	"net/http"
@@ -31,7 +33,6 @@ import (
 	"text/template"
 	"time"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
@@ -79,7 +80,7 @@ func CheckUpgradeVersion(force bool) string {
 		if version.Compare(version.Version, latestVersion) == 1 {
 			if !force {
 				fmt.Fprintf(
-					akamai.App.Writer,
+					app.App.Writer,
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(version.Version),
@@ -119,7 +120,7 @@ func getLatestReleaseVersion() string {
 }
 
 func UpgradeCli(latestVersion string) bool {
-	akamai.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
+	s := io.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
 	cmd := command{
 		Version: latestVersion,
@@ -147,55 +148,55 @@ func UpgradeCli(latestVersion string) bool {
 	resp, err := http.Get(url)
 	defer resp.Body.Close()
 	if err != nil || resp.StatusCode != 200 {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download release, please try again."))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString("Unable to download release, please try again."))
 		return false
 	}
 
 	shaResp, err := http.Get(url + ".sig")
 	defer shaResp.Body.Close()
 	if err != nil || shaResp.StatusCode != 200 {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to retrieve signature for verification, please try again."))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	selfPath, err := osext.Executable()
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to determine install location"))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString("Unable to determine install location"))
 		return false
 	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		if rerr := update.RollbackError(err); rerr != nil {
-			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to install or rollback, please re-install."))
+			fmt.Fprintln(app.App.Writer, color.RedString("Unable to install or rollback, please re-install."))
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
-			fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Checksums do not match, please try again."))
+			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
+			fmt.Fprintln(app.App.Writer, color.RedString("Checksums do not match, please try again."))
 		}
 		return false
 	}
 
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 
 	if err == nil {
 		os.Args[0] = selfPath

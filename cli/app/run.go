@@ -2,19 +2,16 @@ package app
 
 import (
 	"fmt"
-	akamai "github.com/akamai/cli-common-golang"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/kardianos/osext"
-	"github.com/urfave/cli"
+	"github.com/fatih/color"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 )
 
 func Run() int {
@@ -35,67 +32,26 @@ func Run() int {
 	config.SetConfigValue("cli", "cache-path", cachePath)
 	config.SaveConfig()
 	config.ExportConfigEnv()
-	createApp()
 
+	// TODO return value should be used once App singleton is removed
+	_ = app.CreateApp()
+	cmds, err := commands.CommandLocator()
+	if err != nil {
+		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
+		return 2
+	}
+	app.App.Commands = cmds
 	log.Setup()
 
 	if err := firstRun(); err != nil {
-		return 2
+		return 3
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	if err := akamai.App.Run(os.Args); err != nil {
-		return 3
+	if err := app.App.Run(os.Args); err != nil {
+		return 4
 	}
 	return 0
-}
-
-func createApp() {
-	akamai.CreateApp("", "Akamai CLI", "", version.Version, "", commands.CommandLocator)
-
-	akamai.App.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:  "bash",
-			Usage: "Output bash auto-complete",
-		},
-		cli.BoolFlag{
-			Name:  "zsh",
-			Usage: "Output zsh auto-complete",
-		},
-		cli.StringFlag{
-			Name:  "proxy",
-			Usage: "Set a proxy to use",
-		},
-		cli.BoolFlag{
-			Name:   "daemon",
-			Usage:  "Keep Akamai CLI running in the background, particularly useful for Docker containers",
-			Hidden: true,
-			EnvVar: "AKAMAI_CLI_DAEMON",
-		},
-	}
-
-	akamai.App.Action = func(c *cli.Context) {
-		defaultAction(c)
-	}
-
-	akamai.App.Before = func(c *cli.Context) error {
-		if c.IsSet("proxy") {
-			proxy := c.String("proxy")
-			os.Setenv("HTTP_PROXY", proxy)
-			os.Setenv("http_proxy", proxy)
-			if strings.HasPrefix(proxy, "https") {
-				os.Setenv("HTTPS_PROXY", proxy)
-				os.Setenv("https_proxy", proxy)
-			}
-		}
-
-		if c.IsSet("daemon") {
-			for {
-				time.Sleep(time.Hour * 24)
-			}
-		}
-		return nil
-	}
 }
 
 func checkUpgrade() {
@@ -106,45 +62,4 @@ func checkUpgrade() {
 		}
 		stats.TrackEvent("upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
 	}
-}
-
-func defaultAction(c *cli.Context) {
-	cmd, err := osext.Executable()
-	if err != nil {
-		cmd = tools.Self()
-	}
-
-	zshScript := `set -k
-# To enable zsh auto-completion, run: eval "$(` + cmd + ` --zsh)"
-# We recommend adding this to your .zshrc file
-autoload -U compinit && compinit
-autoload -U bashcompinit && bashcompinit`
-
-	bashComments := `# To enable bash auto-completion, run: eval "$(` + cmd + ` --bash)"
-# We recommend adding this to your .bashrc or .bash_profile file`
-
-	bashScript := `_akamai_cli_bash_autocomplete() {
-    local cur opts base
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-auto-complete )
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-
-complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
-
-	if c.Bool("bash") {
-		fmt.Fprintln(akamai.App.Writer, bashComments)
-		fmt.Fprintln(akamai.App.Writer, bashScript)
-		return
-	}
-
-	if c.Bool("zsh") {
-		fmt.Fprintln(akamai.App.Writer, zshScript)
-		fmt.Fprintln(akamai.App.Writer, bashScript)
-		return
-	}
-
-	cli.ShowAppHelpAndExit(c, 0)
 }

@@ -18,17 +18,17 @@ package app
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
@@ -101,10 +101,10 @@ func firstRunCheckInPath() (bool, error) {
 
 	if !inPath && len(writablePaths) > 0 {
 		if !bannerShown {
-			tools.ShowBanner()
+			io.ShowBanner()
 			bannerShown = true
 		}
-		fmt.Fprint(akamai.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
+		fmt.Fprint(app.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
 		fmt.Scanln(&answer)
 		if answer != "" && strings.ToLower(answer) != "y" {
@@ -121,20 +121,20 @@ func firstRunCheckInPath() (bool, error) {
 }
 
 func choosePath(writablePaths []string, answer string, selfPath string) {
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
+	fmt.Fprintln(app.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
 	for i, path := range writablePaths {
-		fmt.Fprintf(akamai.App.Writer, "(%d) %s\n", i+1, path)
+		fmt.Fprintf(app.App.Writer, "(%d) %s\n", i+1, path)
 	}
-	fmt.Fprint(akamai.App.Writer, "Enter a number: ")
+	fmt.Fprint(app.App.Writer, "Enter a number: ")
 	answer = ""
 	fmt.Scanln(&answer)
 	index, err := strconv.Atoi(answer)
 	if err != nil {
-		fmt.Fprintln(akamai.App.Writer, color.RedString("Invalid choice, try again"))
+		fmt.Fprintln(app.App.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	if answer == "" || index < 1 || index > len(writablePaths) {
-		fmt.Fprintln(akamai.App.Writer, color.RedString("Invalid choice, try again"))
+		fmt.Fprintln(app.App.Writer, color.RedString("Invalid choice, try again"))
 		choosePath(writablePaths, answer, selfPath)
 	}
 	suffix := ""
@@ -142,27 +142,27 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 		suffix = ".exe"
 	}
 	newPath := filepath.Join(writablePaths[index-1], "akamai"+suffix)
-	akamai.StartSpinner(
+	s := io.StartSpinner(
 		"Installing to "+newPath+"...",
 		"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 	)
-	err = moveFile(selfPath, newPath)
+	err = tools.MoveFile(selfPath, newPath)
 
 	os.Args[0] = newPath
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.Writer, color.RedString(err.Error()))
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
 	}
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 }
 
 func firstRunCheckUpgrade(bannerShown bool) bool {
 	if config.GetConfigValue("cli", "last-upgrade-check") == "" {
 		if !bannerShown {
 			bannerShown = true
-			tools.ShowBanner()
+			io.ShowBanner()
 		}
-		fmt.Fprint(akamai.App.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
+		fmt.Fprint(app.App.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
 
 		answer := ""
 		fmt.Scanln(&answer)
@@ -177,41 +177,4 @@ func firstRunCheckUpgrade(bannerShown bool) bool {
 	}
 
 	return bannerShown
-}
-
-// We must copy+unlink the file because moving files is broken across filesystems
-func moveFile(src string, dst string) error {
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
-	}
-
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-
-	destination, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destination.Close()
-	_, err = io.Copy(destination, source)
-
-	if err != nil {
-		return err
-	}
-
-	err = os.Chmod(dst, 0755)
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(src)
-	return err
 }

@@ -16,6 +16,8 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
@@ -23,7 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli"
@@ -121,12 +122,12 @@ func installPackage(repo string, forceBinary bool) error {
 
 	_ = os.MkdirAll(srcPath, 0700)
 
-	akamai.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
+	s := io.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
@@ -140,14 +141,14 @@ func installPackage(repo string, forceBinary bool) error {
 	if err != nil {
 		os.RemoveAll(packageDir)
 
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		fmt.Fprintln(akamai.App.ErrWriter, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
+		fmt.Fprintln(app.App.Writer, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
 	if !installPackageDependencies(packageDir, forceBinary) {
@@ -159,13 +160,13 @@ func installPackage(repo string, forceBinary bool) error {
 }
 
 func installPackageDependencies(dir string, forceBinary bool) bool {
-	akamai.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
+	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	cmdPackage, err := readPackage(dir)
 
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, err.Error())
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, err.Error())
 		return false
 	}
 
@@ -188,13 +189,13 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		}
 		success, err = packages.InstallGolang(dir, cmdPackage.Requirements.Go, commands)
 	default:
-		akamai.StopSpinnerWarnOk()
-		fmt.Fprintln(akamai.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
+		io.StopSpinnerWarnOk(s)
+		fmt.Fprintln(app.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
 	if success && err == nil {
-		akamai.StopSpinnerOk()
+		io.StopSpinnerOk(s)
 		return true
 	}
 
@@ -203,14 +204,14 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		if cmd.Bin != "" {
 			if first {
 				first = false
-				akamai.StopSpinnerWarn()
-				fmt.Fprintln(akamai.App.Writer, color.CyanString(err.Error()))
+				io.StopSpinnerWarn(s)
+				fmt.Fprintln(app.App.Writer, color.CyanString(err.Error()))
 				if !forceBinary {
 					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 						return false
 					}
 
-					fmt.Fprint(akamai.App.ErrWriter, "Binary command(s) found, would you like to download and install it? (Y/n): ")
+					fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
 					if answer != "" && strings.ToLower(answer) != "y" {
@@ -220,24 +221,24 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 
 				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
 
-				akamai.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
+				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
 
 			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
-				akamai.StopSpinnerFail()
-				fmt.Fprintln(akamai.App.ErrWriter, color.RedString("Unable to download binary: "+err.Error()))
+				io.StopSpinnerFail(s)
+				fmt.Fprintln(app.App.Writer, color.RedString("Unable to download binary: "+err.Error()))
 				return false
 			}
 		}
 
 		if first {
 			first = false
-			akamai.StopSpinnerFail()
-			fmt.Fprintln(akamai.App.ErrWriter, color.RedString(err.Error()))
+			io.StopSpinnerFail(s)
+			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
 			return false
 		}
 	}
 
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 	return true
 }

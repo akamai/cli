@@ -16,11 +16,12 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/tools"
 	"path/filepath"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -64,7 +65,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 
 	log.Tracef("Command found: %s", filepath.Join(exec...))
 
-	akamai.StartSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
+	s := io.StartSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
 
 	var repoDir string
 	log.Trace("Searching for package repo")
@@ -75,7 +76,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	}
 
 	if repoDir == "" {
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
@@ -96,14 +97,14 @@ func updatePackage(cmd string, forceBinary bool) error {
 
 	if errBeforePull != nil {
 		log.Tracef("Fetch error: %s", errBeforePull.Error())
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
 	}
 
 	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
 	if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
 		log.Tracef("Fetch error: %s", err.Error())
-		akamai.StopSpinnerFail()
+		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
@@ -116,19 +117,19 @@ func updatePackage(cmd string, forceBinary bool) error {
 
 		if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
 			log.Tracef("Fetch error: %s", err.Error())
-			akamai.StopSpinnerFail()
+			io.StopSpinnerFail(s)
 			return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 		}
 
 	} else {
 		log.Tracef("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
-		akamai.StopSpinnerWarnOk()
-		fmt.Fprintln(akamai.App.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
+		io.StopSpinnerWarnOk(s)
+		fmt.Fprintln(app.App.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
 	}
 
 	log.Tracef("Repo updated successfully")
-	akamai.StopSpinnerOk()
+	io.StopSpinnerOk(s)
 
 	if !installPackageDependencies(repoDir, forceBinary) {
 		log.Trace("Error updating dependencies")

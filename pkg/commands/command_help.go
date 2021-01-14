@@ -15,9 +15,9 @@
 package commands
 
 import (
+	"github.com/akamai/cli/pkg/app"
 	"os"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/urfave/cli"
 )
 
@@ -34,7 +34,7 @@ func cmdHelp(c *cli.Context) error {
 
 		// The arg mangling ensures that aliases are handled
 		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
-		akamai.App.Run(os.Args)
+		app.App.Run(os.Args)
 		return nil
 	}
 
