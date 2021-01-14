@@ -18,9 +18,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"os"
+
+	spnr "github.com/briandowns/spinner"
+	"github.com/fatih/color"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/cheggaaa/pb/v3"
@@ -31,30 +35,92 @@ type (
 	Terminal interface {
 		io.Writer
 
+		// Writef writes a formatted message to the output stream
 		Writef(f string, args ...interface{})
+
+		// WriteError write a message to the error stream
 		WriteError(interface{})
+
+		// WriteErrorf writes a formatted message to the error stream
 		WriteErrorf(f string, args ...interface{})
+
+		// Prompt prompts the use for an open or multiple choice anwswer
 		Prompt(p string, options ...string) (string, error)
+
+		// Confirm asks the user for a Y/n response, with a default
+		Confirm(p string, d bool) (bool, error)
+
+		// Progress creates a limited progress bar using the output stream
 		Progress(max int) Progress
+
+		// Spinner creates a spinner using the output stream
+		Spinner() Spinner
+	}
+
+	// Writer provides a minimal interface for Stdin.
+	Writer interface {
+		io.Writer
+		Fd() uintptr
+	}
+
+	// Reader provides a minimal interface for Stdout.
+	Reader interface {
+		io.Reader
+		Fd() uintptr
+	}
+
+	terminal struct {
+		Out   Writer
+		Err   io.Writer
+		In    Reader
+		start time.Time
 	}
 
 	// Progress is an interface for progress bars
 	Progress interface {
-		Writer() io.Writer
+		// io.Writer is used to update progress status using byte based progress
+		io.Writer
+
+		// SetTotal sets the limit for the progress bar
 		SetTotal(t int)
+
+		// Add increments the progress status
 		Add(count int)
+
+		// End terminates the progress bar
 		End()
 	}
-	terminal struct {
-		Out   *os.File
-		Err   io.Writer
-		In    *os.File
-		start time.Time
-	}
-
 	progress struct {
 		p *pb.ProgressBar
+		w io.Writer
 	}
+
+	// Spinner defines a simple status spinner interface
+	Spinner interface {
+		// io.Writer is to be used to update the status suffix
+		io.Writer
+
+		// Start begins the spinner with the initial status prefix
+		Start(f string, args ...interface{})
+
+		// Stop terminates the spinner with the final status message
+		Stop(status SpinnerStatus)
+	}
+
+	// SpinnerStatus defines a spinner status message
+	SpinnerStatus string
+
+	spinner struct {
+		prefix string
+		s      *spnr.Spinner
+	}
+)
+
+var (
+	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.GreenString("OK")))
+	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("OK")))
+	SpinnerStatusWarn   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("WARN")))
+	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.RedString("FAIL")))
 )
 
 // Standard returns the standard terminal
@@ -68,7 +134,7 @@ func Standard() Terminal {
 }
 
 // New returns a new terminal with the specifed streams
-func New(out, in *os.File, err io.Writer) Terminal {
+func New(out Writer, in Reader, err io.Writer) Terminal {
 	return terminal{
 		Out:   out,
 		Err:   err,
@@ -83,7 +149,7 @@ func (t terminal) Writef(f string, args ...interface{}) {
 }
 
 func (t terminal) Write(v []byte) (n int, err error) {
-	msg := fmt.Sprintf("[%s] %s", time.Now().Sub(t.start).Truncate(time.Second), v)
+	msg := string(v)
 	return t.Out.Write([]byte(msg))
 }
 
@@ -122,10 +188,24 @@ func (t terminal) Prompt(p string, options ...string) (string, error) {
 	return answers.Q, nil
 }
 
+func (t terminal) Confirm(p string, def bool) (bool, error) {
+	rval := def
+
+	q := &survey.Confirm{
+		Message: p,
+		Default: def,
+	}
+
+	err := survey.AskOne(q, &rval, survey.WithStdio(t.In, t.Out, t.Err))
+
+	return rval, err
+}
+
 func (t terminal) Progress(max int) Progress {
 	p := &progress{
 		p: pb.StartNew(max),
 	}
+	p.w = p.p.NewProxyWriter(ioutil.Discard)
 
 	p.p.Set(pb.Bytes, true)
 	p.p.SetWriter(t.Out)
@@ -133,8 +213,8 @@ func (t terminal) Progress(max int) Progress {
 	return p
 }
 
-func (p progress) Writer() io.Writer {
-	return p.p.NewProxyWriter(ioutil.Discard)
+func (p progress) Write(v []byte) (n int, err error) {
+	return p.w.Write(v)
 }
 
 func (p progress) SetTotal(t int) {
@@ -147,4 +227,39 @@ func (p progress) Add(s int) {
 
 func (p progress) End() {
 	p.p.Finish()
+}
+
+func (t terminal) Spinner() Spinner {
+	s := spnr.New(spnr.CharSets[33], 500*time.Millisecond)
+	s.Writer = t
+
+	return &spinner{
+		s: s,
+	}
+}
+
+func (s *spinner) Start(f string, args ...interface{}) {
+	s.prefix = fmt.Sprintf(f, args...)
+	s.s.Prefix = s.prefix + " "
+	s.s.Start()
+}
+
+func (s *spinner) Stop(status SpinnerStatus) {
+	s.s.Suffix = ""
+	s.s.FinalMSG = s.prefix + " " + string(status)
+	s.s.Stop()
+}
+
+func (s *spinner) Write(v []byte) (n int, err error) {
+	s.s.Suffix = " " + strings.TrimSpace(string(v))
+	return len(v), nil
+}
+
+// DiscardWriter returns a discard write that direct output to /dev/null
+func DiscardWriter() Writer {
+	f, err := os.OpenFile(os.DevNull, os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }

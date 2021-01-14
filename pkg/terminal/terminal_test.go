@@ -30,7 +30,7 @@ func TestWrite(t *testing.T) {
 
 	defer os.Remove(out.Name()) // clean up
 
-	term := New(out, os.Stdin, os.Stderr)
+	term := New(out, nil, DiscardWriter())
 
 	term.Writef(t.Name())
 
@@ -41,7 +41,7 @@ func TestWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, t.Name(), string(data), "they should be equal")
+	assert.Contains(t, string(data), t.Name(), "it should cotain the value")
 }
 
 func TestWriteErr(t *testing.T) {
@@ -80,7 +80,7 @@ func TestPrompt(t *testing.T) {
 	}
 	in.Seek(0, 0)
 
-	term := New(os.Stdout, in, os.Stderr)
+	term := New(DiscardWriter(), in, DiscardWriter())
 
 	name, err := term.Prompt("What is your name")
 	if err != nil {
@@ -104,7 +104,7 @@ func TestPromptOptions(t *testing.T) {
 	}
 	in.Seek(0, 0)
 
-	term := New(os.Stdout, in, os.Stderr)
+	term := New(DiscardWriter(), in, DiscardWriter())
 
 	color, err := term.Prompt("What is your favorite color", "yellow", "red", "blue")
 	if err != nil {
@@ -112,4 +112,28 @@ func TestPromptOptions(t *testing.T) {
 	}
 
 	assert.Equal(t, color, "yellow", "they should be equal")
+}
+
+func TestConfirm(t *testing.T) {
+	content := []byte("yes\r\n")
+	in, err := ioutil.TempFile("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer os.Remove(in.Name()) // clean up
+
+	if _, err := in.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	in.Seek(0, 0)
+
+	term := New(DiscardWriter(), in, DiscardWriter())
+
+	val, err := term.Confirm("Are you here", false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, val, true, "they should be equal")
 }
