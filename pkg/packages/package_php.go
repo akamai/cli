@@ -24,7 +24,7 @@ import (
 	"regexp"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func InstallPHP(dir string, cmdReq string) (bool, error) {

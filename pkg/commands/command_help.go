@@ -18,7 +18,7 @@ import (
 	"github.com/akamai/cli/pkg/app"
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdHelp(c *cli.Context) error {

@@ -16,7 +16,7 @@ package tools
 
 import (
 	"github.com/mitchellh/go-homedir"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"os"
 	"path/filepath"
 	"strings"

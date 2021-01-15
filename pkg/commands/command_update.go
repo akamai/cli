@@ -24,7 +24,7 @@ import (
 
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -48,7 +48,7 @@ func cmdUpdate(c *cli.Context) error {
 		return nil
 	}
 
-	for _, cmd := range c.Args() {
+	for _, cmd := range c.Args().Slice() {
 		if err := updatePackage(cmd, c.Bool("force")); err != nil {
 			return err
 		}

@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdSubcommand(c *cli.Context) error {

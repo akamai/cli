@@ -23,11 +23,11 @@ import (
 	"path/filepath"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdUninstall(c *cli.Context) error {
-	for _, cmd := range c.Args() {
+	for _, cmd := range c.Args().Slice() {
 		if err := uninstallPackage(cmd); err != nil {
 			stats.TrackEvent("package.uninstall", "failed", cmd)
 			return err
