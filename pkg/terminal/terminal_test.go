@@ -41,7 +41,7 @@ func TestWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Contains(t, string(data), t.Name(), "it should cotain the value")
+	assert.Contains(t, t.Name()+"\n", string(data), "it should cotain the value")
 }
 
 func TestWriteErr(t *testing.T) {
@@ -87,7 +87,7 @@ func TestPrompt(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, name, "Tom", "they should be equal")
+	assert.Equal(t, "Tom", name, "they should be equal")
 }
 
 func TestPromptOptions(t *testing.T) {
@@ -111,7 +111,7 @@ func TestPromptOptions(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, color, "yellow", "they should be equal")
+	assert.Equal(t, "yellow", color, "they should be equal")
 }
 
 func TestConfirm(t *testing.T) {
@@ -135,5 +135,5 @@ func TestConfirm(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, val, true, "they should be equal")
+	assert.Equal(t, true, val, "they should be equal")
 }

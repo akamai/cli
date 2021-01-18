@@ -17,7 +17,6 @@ package terminal
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/cheggaaa/pb/v3"
 )
 
 type (
@@ -50,11 +48,8 @@ type (
 		// Confirm asks the user for a Y/n response, with a default
 		Confirm(p string, d bool) (bool, error)
 
-		// Progress creates a limited progress bar using the output stream
-		Progress(max int) Progress
-
 		// Spinner creates a spinner using the output stream
-		Spinner() Spinner
+		Spinner() *Spinner
 	}
 
 	// Writer provides a minimal interface for Stdin.
@@ -76,43 +71,13 @@ type (
 		start time.Time
 	}
 
-	// Progress is an interface for progress bars
-	Progress interface {
-		// io.Writer is used to update progress status using byte based progress
-		io.Writer
-
-		// SetTotal sets the limit for the progress bar
-		SetTotal(t int)
-
-		// Add increments the progress status
-		Add(count int)
-
-		// End terminates the progress bar
-		End()
-	}
-	progress struct {
-		p *pb.ProgressBar
-		w io.Writer
-	}
-
-	// Spinner defines a simple status spinner interface
-	Spinner interface {
-		// io.Writer is to be used to update the status suffix
-		io.Writer
-
-		// Start begins the spinner with the initial status prefix
-		Start(f string, args ...interface{})
-
-		// Stop terminates the spinner with the final status message
-		Stop(status SpinnerStatus)
-	}
-
 	// SpinnerStatus defines a spinner status message
 	SpinnerStatus string
 
-	spinner struct {
+	// Spinner defines a simple status spinner
+	Spinner struct {
+		*spnr.Spinner
 		prefix string
-		s      *spnr.Spinner
 	}
 )
 
@@ -181,7 +146,6 @@ func (t terminal) Prompt(p string, options ...string) (string, error) {
 
 	err := survey.Ask([]*survey.Question{&q}, &answers, survey.WithStdio(t.In, t.Out, t.Err))
 	if err != nil {
-		fmt.Println(err.Error())
 		return "", err
 	}
 
@@ -201,57 +165,32 @@ func (t terminal) Confirm(p string, def bool) (bool, error) {
 	return rval, err
 }
 
-func (t terminal) Progress(max int) Progress {
-	p := &progress{
-		p: pb.StartNew(max),
-	}
-	p.w = p.p.NewProxyWriter(ioutil.Discard)
-
-	p.p.Set(pb.Bytes, true)
-	p.p.SetWriter(t.Out)
-
-	return p
-}
-
-func (p progress) Write(v []byte) (n int, err error) {
-	return p.w.Write(v)
-}
-
-func (p progress) SetTotal(t int) {
-	p.p.SetTotal(int64(t))
-}
-
-func (p progress) Add(s int) {
-	p.p.Add(s)
-}
-
-func (p progress) End() {
-	p.p.Finish()
-}
-
-func (t terminal) Spinner() Spinner {
+func (t terminal) Spinner() *Spinner {
 	s := spnr.New(spnr.CharSets[33], 500*time.Millisecond)
 	s.Writer = t
 
-	return &spinner{
-		s: s,
+	return &Spinner{
+		Spinner: s,
 	}
 }
 
-func (s *spinner) Start(f string, args ...interface{}) {
+// Start starts the spinner using the provided string as the prefix
+func (s *Spinner) Start(f string, args ...interface{}) {
 	s.prefix = fmt.Sprintf(f, args...)
-	s.s.Prefix = s.prefix + " "
-	s.s.Start()
+	s.Spinner.Prefix = s.prefix + " "
+	s.Spinner.Start()
 }
 
-func (s *spinner) Stop(status SpinnerStatus) {
-	s.s.Suffix = ""
-	s.s.FinalMSG = s.prefix + " " + string(status)
-	s.s.Stop()
+// Stop stops the spinner and updates the final status message
+func (s *Spinner) Stop(status SpinnerStatus) {
+	s.Spinner.Suffix = ""
+	s.Spinner.FinalMSG = s.prefix + " " + string(status)
+	s.Spinner.Stop()
 }
 
-func (s *spinner) Write(v []byte) (n int, err error) {
-	s.s.Suffix = " " + strings.TrimSpace(string(v))
+// Write implements the io.Writer interface and updates the suffix of the spinner
+func (s *Spinner) Write(v []byte) (n int, err error) {
+	s.Spinner.Suffix = " " + strings.TrimSpace(string(v))
 	return len(v), nil
 }
 
