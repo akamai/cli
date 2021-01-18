@@ -15,19 +15,20 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	akalog "github.com/akamai/cli/pkg/log"
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/errors"
+	akalog "github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/pkg/version"
 )
 
 func InstallGolang(dir string, cmdReq string, commands []string) (bool, error) {
@@ -61,12 +62,13 @@ func InstallGolang(dir string, cmdReq string, commands []string) (bool, error) {
 	}
 	os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath)
 
-	if err = installGolangDepsGlide(dir); err != nil {
-		return false, err
-	}
+	// installGolangModules ...
+	if err = installGolangModules(dir); err != nil {
+		log.Info("go.sum not found, running glide package manager[WARN: Usage of Glide is DEPRECTED]")
 
-	if err = installGolangDepsDep(dir); err != nil {
-		return false, err
+		if err = installGolangDepsGlide(dir); err != nil {
+			return false, err
+		}
 	}
 
 	for _, command := range commands {
@@ -111,12 +113,12 @@ func installGolangDepsGlide(dir string) error {
 	return nil
 }
 
-func installGolangDepsDep(dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "Gopkg.lock")); err == nil {
-		log.Info("Gopkg.lock found, running dep package manager")
-		bin, err := exec.LookPath("dep")
+func installGolangModules(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "go.sum")); err == nil {
+		log.Info("go.sum found, running go module package manager")
+		bin, err := exec.LookPath("go mod")
 		if err == nil {
-			cmd := exec.Command(bin, "ensure")
+			cmd := exec.Command(bin, "tidy")
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {

@@ -16,8 +16,9 @@ package stats
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/pkg/io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -25,7 +26,6 @@ import (
 	"strings"
 	time "time"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 )
@@ -42,12 +42,12 @@ func FirstRunCheckStats(bannerShown bool) bool {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "" {
 		if !bannerShown {
 			bannerShown = true
-			tools.ShowBanner()
+			io.ShowBanner()
 		}
-		fmt.Fprintf(akamai.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		fmt.Fprintln(akamai.App.Writer, "Examples of data being sent include upgrade statistics, and packages installed and updated.")
-		fmt.Fprintf(akamai.App.Writer, "Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.", anonymous)
-		fmt.Fprintf(akamai.App.Writer, "\n\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		fmt.Fprintf(app.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
+		fmt.Fprintln(app.App.Writer, "Examples of data being sent include upgrade statistics, and packages installed and updated.")
+		fmt.Fprintf(app.App.Writer, "Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.", anonymous)
+		fmt.Fprintf(app.App.Writer, "\n\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 		answer := ""
 		fmt.Scanln(&answer)
@@ -79,7 +79,7 @@ func migrateStats(bannerShown bool) bool {
 
 	if !bannerShown {
 		bannerShown = true
-		tools.ShowBanner()
+		io.ShowBanner()
 	}
 
 	var newStats []string
@@ -89,13 +89,13 @@ func migrateStats(bannerShown bool) bool {
 	}
 
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
-	fmt.Fprintf(akamai.App.Writer, "Akamai CLI has changed the %s data it collects. It now additionally collects the following: \n\n", anonymous)
+	fmt.Fprintf(app.App.Writer, "Akamai CLI has changed the %s data it collects. It now additionally collects the following: \n\n", anonymous)
 	for _, value := range newStats {
-		fmt.Fprintf(akamai.App.Writer, " - %s\n", value)
+		fmt.Fprintf(app.App.Writer, " - %s\n", value)
 	}
-	fmt.Fprintf(akamai.App.Writer, "\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
-	fmt.Fprintln(akamai.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
-	fmt.Fprintf(akamai.App.Writer, "\nContinue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+	fmt.Fprintf(app.App.Writer, "\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
+	fmt.Fprintln(app.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
+	fmt.Fprintf(app.App.Writer, "\nContinue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
 
 	answer := ""
 	fmt.Scanln(&answer)
@@ -167,7 +167,7 @@ func TrackEvent(category string, action string, value string) {
 	res, err := hc.Do(req)
 	if debug != "" {
 		body, _ := ioutil.ReadAll(res.Body)
-		fmt.Fprintln(akamai.App.Writer, string(body))
+		fmt.Fprintln(app.App.Writer, string(body))
 	}
 }
 

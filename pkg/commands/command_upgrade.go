@@ -16,21 +16,22 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/version"
 	"os"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
 
 func cmdUpgrade(c *cli.Context) error {
-	akamai.StartSpinner("Checking for upgrades...", "Checking for upgrades...... ["+color.GreenString("OK")+"]\n")
+	s := io.StartSpinner("Checking for upgrades...", "Checking for upgrades...... ["+color.GreenString("OK")+"]\n")
 
 	if latestVersion := CheckUpgradeVersion(true); latestVersion != "" {
-		akamai.StopSpinnerOk()
-		fmt.Fprintf(akamai.App.Writer, "Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+version.Version))
+		io.StopSpinnerOk(s)
+		fmt.Fprintf(app.App.Writer, "Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+version.Version))
 		os.Args = []string{os.Args[0], "--version"}
 		success := UpgradeCli(latestVersion)
 		if success {
@@ -39,8 +40,8 @@ func cmdUpgrade(c *cli.Context) error {
 			stats.TrackEvent("upgrade.user", "failed", "to: "+latestVersion+" from:"+version.Version)
 		}
 	} else {
-		akamai.StopSpinnerWarnOk()
-		fmt.Fprintf(akamai.App.Writer, "Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
+		io.StopSpinnerWarnOk(s)
+		fmt.Fprintf(app.App.Writer, "Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
 	}
 
 	return nil

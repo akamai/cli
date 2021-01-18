@@ -15,10 +15,6 @@
 package tools
 
 import (
-	"fmt"
-	akamai "github.com/akamai/cli-common-golang"
-	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"os"
@@ -74,16 +70,4 @@ func Githubize(repo string) string {
 	}
 
 	return "https://github.com/" + repo + ".git"
-}
-
-func ShowBanner() {
-	fmt.Fprintln(akamai.App.ErrWriter)
-	bg := color.New(color.BgMagenta)
-	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
-	fg := bg.Add(color.FgWhite)
-	title := "Welcome to Akamai CLI v" + version.Version
-	ws := strings.Repeat(" ", 16)
-	fmt.Fprintf(akamai.App.ErrWriter, fg.Sprintf(ws+title+ws+"\n"))
-	fmt.Fprintf(akamai.App.ErrWriter, bg.Sprintf(strings.Repeat(" ", 60)+"\n"))
-	fmt.Fprintln(akamai.App.ErrWriter)
 }

@@ -16,9 +16,9 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -45,7 +45,7 @@ func cmdList(c *cli.Context) error {
 		}
 
 		if !foundCommands {
-			fmt.Fprintln(akamai.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
+			fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 		} else {
 			return nil
 		}
@@ -56,12 +56,12 @@ func cmdList(c *cli.Context) error {
 					continue
 				}
 				bold.Printf("  %s", command.Name)
-				fmt.Fprintln(akamai.App.Writer, fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
-				fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
+				fmt.Fprintln(app.App.Writer, fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
+				fmt.Fprintf(app.App.Writer, "    %s\n", command.Description)
 			}
 		}
 
-		fmt.Fprintf(akamai.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		fmt.Fprintf(app.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
 	}
 
 	return nil
@@ -70,16 +70,16 @@ func listInstalledCommands(added map[string]bool, removed map[string]bool) map[s
 	bold := color.New(color.FgWhite, color.Bold)
 
 	commands := make(map[string]bool)
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("\nInstalled Commands:\n"))
+	fmt.Fprintln(app.App.Writer, color.YellowString("\nInstalled Commands:\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true
 			if _, ok := added[command.Name]; ok {
-				fmt.Fprint(akamai.App.Writer, color.GreenString("  %s", command.Name))
+				fmt.Fprint(app.App.Writer, color.GreenString("  %s", command.Name))
 			} else if _, ok := removed[command.Name]; ok {
-				fmt.Fprint(akamai.App.Writer, color.RedString("  %s", command.Name))
+				fmt.Fprint(app.App.Writer, color.RedString("  %s", command.Name))
 			} else {
-				fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  %s", command.Name))
+				fmt.Fprintf(app.App.Writer, bold.Sprintf("  %s", command.Name))
 			}
 
 			if len(command.Aliases) > 0 {
@@ -91,22 +91,22 @@ func listInstalledCommands(added map[string]bool, removed map[string]bool) map[s
 					aliases = "aliases"
 				}
 
-				fmt.Fprintf(akamai.App.Writer, " (%s: ", aliases)
+				fmt.Fprintf(app.App.Writer, " (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
-						fmt.Fprint(akamai.App.Writer, ", ")
+						fmt.Fprint(app.App.Writer, ", ")
 					}
 				}
-				fmt.Fprint(akamai.App.Writer, ")")
+				fmt.Fprint(app.App.Writer, ")")
 			}
 
-			fmt.Fprintln(akamai.App.Writer)
+			fmt.Fprintln(app.App.Writer)
 			if len(command.Description) > 0 {
-				fmt.Fprintf(akamai.App.Writer, "    %s\n", command.Description)
+				fmt.Fprintf(app.App.Writer, "    %s\n", command.Description)
 			}
 		}
 	}
-	fmt.Fprintf(akamai.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
+	fmt.Fprintf(app.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
 	return commands
 }

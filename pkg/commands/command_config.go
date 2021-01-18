@@ -16,10 +16,10 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/urfave/cli"
 )
 
@@ -35,7 +35,7 @@ func cmdConfigSet(c *cli.Context) {
 func cmdConfigGet(c *cli.Context) {
 	section, key := parseConfigPath(c)
 
-	fmt.Fprintln(akamai.App.Writer, config.GetConfigValue(section, key))
+	fmt.Fprintln(app.App.Writer, config.GetConfigValue(section, key))
 }
 
 func cmdConfigUnset(c *cli.Context) {
@@ -55,7 +55,7 @@ func cmdConfigList(c *cli.Context) {
 		sectionName := c.Args().First()
 		section := config.Section(sectionName)
 		for _, key := range section.Keys() {
-			fmt.Fprintf(akamai.App.Writer, "%s.%s = %s\n", sectionName, key.Name(), key.Value())
+			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", sectionName, key.Name(), key.Value())
 		}
 
 		return
@@ -63,7 +63,7 @@ func cmdConfigList(c *cli.Context) {
 
 	for _, section := range config.Sections() {
 		for _, key := range section.Keys() {
-			fmt.Fprintf(akamai.App.Writer, "%s.%s = %s\n", section.Name(), key.Name(), key.Value())
+			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", section.Name(), key.Name(), key.Value())
 		}
 	}
 }

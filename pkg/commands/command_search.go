@@ -17,6 +17,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,6 @@ import (
 	"sort"
 	"strings"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 )
@@ -158,13 +158,13 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	sort.Strings(resultPkgs)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	fmt.Fprintf(akamai.App.Writer, color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
+	fmt.Fprintf(app.App.Writer, color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
-				fmt.Fprintf(akamai.App.Writer, color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
+				fmt.Fprintf(app.App.Writer, color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
 				for _, cmd := range results[hits][pkgName].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
@@ -173,16 +173,16 @@ func searchPackages(keywords []string, packageList *packageList) error {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
 
-					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
-					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Version:")+" %s\n", cmd.Version)
-					fmt.Fprintf(akamai.App.Writer, bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
+					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
+					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Version:")+" %s\n", cmd.Version)
+					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
 		}
 	}
 
 	if len(resultHits) > 0 {
-		fmt.Fprintf(akamai.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		fmt.Fprintf(app.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
 	}
 
 	return nil
