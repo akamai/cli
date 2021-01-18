@@ -24,7 +24,6 @@ import (
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
@@ -177,8 +176,8 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 	cmdPackage, err := readPackage(dir)
 
 	if err != nil {
-		akamai.StopSpinnerFail()
-		fmt.Fprintln(akamai.App.ErrWriter, err.Error())
+		io.StopSpinnerFail(s)
+		fmt.Fprintln(app.App.Writer, err.Error())
 		return false
 	}
 

@@ -9,7 +9,6 @@ require (
 	github.com/akamai/AkamaiOPEN-edgegrid-golang v1.0.1 // indirect
 	github.com/akamai/cli-common-golang v0.0.0-20200508194158-7dad60634830
 	github.com/briandowns/spinner v1.12.0
-	github.com/cheggaaa/pb/v3 v3.0.5
 	github.com/fatih/color v1.10.0
 	github.com/go-ini/ini v1.62.0
 	github.com/google/uuid v1.1.4
