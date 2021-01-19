@@ -15,7 +15,6 @@
 package log
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/akamai/cli/pkg/app"
 	"os"
@@ -23,8 +22,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
-
-var logBuffer *bufio.Writer
 
 func Setup() {
 	log.SetFormatter(&log.TextFormatter{

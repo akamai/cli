@@ -42,14 +42,13 @@ func Run() int {
 		return 2
 	}
 	app.App.Commands = cmds
-	log.Setup()
+	ctx := log.SetupContext(context.Background(), app.App)
 
 	if err := firstRun(); err != nil {
 		return 3
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	ctx := context.TODO()
 	if err := app.App.RunContext(ctx, os.Args); err != nil {
 		return 4
 	}

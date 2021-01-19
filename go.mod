@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Masterminds/semver v1.5.0
+	github.com/apex/log v1.9.0
 	github.com/briandowns/spinner v1.12.0
 	github.com/fatih/color v1.10.0
 	github.com/go-ini/ini v1.62.0
@@ -15,7 +16,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/sys v0.0.0-20210110051926-789bb1bd4061
 	gopkg.in/ini.v1 v1.62.0 // indirect
