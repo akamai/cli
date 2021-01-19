@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
@@ -48,7 +49,8 @@ func Run() int {
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	if err := app.App.Run(os.Args); err != nil {
+	ctx := context.TODO()
+	if err := app.App.RunContext(ctx, os.Args); err != nil {
 		return 4
 	}
 	return 0
