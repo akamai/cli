@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
@@ -32,6 +33,7 @@ import (
 )
 
 func cmdInstall(c *cli.Context) error {
+	logger := log.WithCommand(c.Context, c.Command.Name)
 	if !c.Args().Present() {
 		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
 	}
@@ -40,7 +42,7 @@ func cmdInstall(c *cli.Context) error {
 
 	for _, repo := range c.Args().Slice() {
 		repo = tools.Githubize(repo)
-		err := installPackage(repo, c.Bool("force"))
+		err := installPackage(logger, repo, c.Bool("force"))
 		if err != nil {
 			// Only track public github repos
 			if isPublicRepo(repo) {
@@ -114,7 +116,7 @@ func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(repo string, forceBinary bool) error {
+func installPackage(logger log.Logger, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
@@ -151,7 +153,7 @@ func installPackage(repo string, forceBinary bool) error {
 		fmt.Fprintln(app.App.Writer, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
-	if !installPackageDependencies(packageDir, forceBinary) {
+	if !installPackageDependencies(logger, packageDir, forceBinary) {
 		os.RemoveAll(packageDir)
 		return cli.NewExitError("", 1)
 	}
@@ -159,7 +161,7 @@ func installPackage(repo string, forceBinary bool) error {
 	return nil
 }
 
-func installPackageDependencies(dir string, forceBinary bool) bool {
+func installPackageDependencies(logger log.Logger, dir string, forceBinary bool) bool {
 	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	cmdPackage, err := readPackage(dir)
@@ -175,19 +177,19 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 	var success bool
 	switch lang {
 	case "php":
-		success, err = packages.InstallPHP(dir, cmdPackage.Requirements.Php)
+		success, err = packages.InstallPHP(logger, dir, cmdPackage.Requirements.Php)
 	case "javascript":
-		success, err = packages.InstallJavaScript(dir, cmdPackage.Requirements.Node)
+		success, err = packages.InstallJavaScript(logger, dir, cmdPackage.Requirements.Node)
 	case "ruby":
-		success, err = packages.InstallRuby(dir, cmdPackage.Requirements.Ruby)
+		success, err = packages.InstallRuby(logger, dir, cmdPackage.Requirements.Ruby)
 	case "python":
-		success, err = packages.InstallPython(dir, cmdPackage.Requirements.Python)
+		success, err = packages.InstallPython(logger, dir, cmdPackage.Requirements.Python)
 	case "go":
 		var commands []string
 		for _, cmd := range cmdPackage.Commands {
 			commands = append(commands, cmd.Name)
 		}
-		success, err = packages.InstallGolang(dir, cmdPackage.Requirements.Go, commands)
+		success, err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
 	default:
 		io.StopSpinnerWarnOk(s)
 		fmt.Fprintln(app.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
@@ -224,7 +226,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
 
-			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
+			if !downloadBin(logger, filepath.Join(dir, "bin"), cmd) {
 				io.StopSpinnerFail(s)
 				fmt.Fprintln(app.App.Writer, color.RedString("Unable to download binary: "+err.Error()))
 				return false

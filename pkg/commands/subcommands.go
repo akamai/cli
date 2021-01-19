@@ -27,7 +27,7 @@ import (
 	"strings"
 	"text/template"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -125,7 +125,7 @@ func determineCommandLanguage(cmdPackage subcommands) string {
 	return ""
 }
 
-func downloadBin(dir string, cmd command) bool {
+func downloadBin(logger log.Logger, dir string, cmd command) bool {
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS
@@ -140,12 +140,12 @@ func downloadBin(dir string, cmd command) bool {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
-		log.Tracef("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
+		logger.Debugf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
 		return false
 	}
 
 	url := buf.String()
-	log.Tracef("Fetching binary from %s", url)
+	logger.Debugf("Fetching binary from %s", url)
 
 	bin, err := os.Create(filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix))
 	bin.Chmod(0775)

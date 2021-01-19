@@ -1,62 +1,45 @@
-// Copyright 2018. Akamai Technologies, Inc
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package log
 
 import (
-	"fmt"
-	"github.com/akamai/cli/pkg/app"
+	"context"
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/text"
+	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
-func Setup() {
-	log.SetFormatter(&log.TextFormatter{
-		DisableLevelTruncation:    true,
-		EnvironmentOverrideColors: true,
-	})
+type Logger log.Interface
 
-	log.SetOutput(app.App.Writer)
-
-	log.SetLevel(log.PanicLevel)
-	if logLevel := os.Getenv("AKAMAI_LOG"); logLevel != "" {
-		level, err := log.ParseLevel(logLevel)
+func SetupContext(ctx context.Context, app *cli.App) context.Context {
+	logger := &log.Logger{
+		Level: log.InfoLevel,
+	}
+	output := app.Writer
+	if outputEnv := os.Getenv("AKAMAI_LOG_PATH"); outputEnv != "" {
+		f, err := os.OpenFile(outputEnv, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Warn("Invalid value of AKAMAI_LOG_PATH")
+		}
+		output = f
+	}
+	if lvlEnv := os.Getenv("AKAMAI_LOG"); lvlEnv != "" {
+		logLevel, err := log.ParseLevel(strings.ToLower(lvlEnv))
 		if err == nil {
-			log.SetLevel(level)
+			logger.Level = logLevel
 		} else {
-			fmt.Fprintln(app.App.Writer, "[WARN] Unknown AKAMAI_LOG value. Allowed values: panic, fatal, error, warn, info, debug, trace")
+			log.Warn("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, info, debug")
 		}
 	}
+	logger.Handler = text.New(output)
+	return log.NewContext(ctx, logger)
 }
 
-func LogMultiline(f func(args ...interface{}), args ...string) {
-	for _, str := range args {
-		for _, str := range strings.Split(strings.Trim(str, "\n"), "\n") {
-			f(str)
-		}
-	}
+func FromContext(ctx context.Context) Logger {
+	return log.FromContext(ctx)
 }
 
-func LogMultilineln(f func(args ...interface{}), args ...string) {
-	LogMultiline(f, args...)
-}
-
-func LogMultilinef(f func(formatter string, args ...interface{}), formatter string, args ...interface{}) {
-	str := fmt.Sprintf(formatter, args...)
-	for _, str := range strings.Split(strings.Trim(str, "\n"), "\n") {
-		f(str)
-	}
+func WithCommand(ctx context.Context, command string) Logger {
+	logger := log.FromContext(ctx)
+	return logger.WithField("command", command)
 }

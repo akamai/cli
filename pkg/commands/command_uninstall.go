@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
 	"os"
@@ -27,8 +28,9 @@ import (
 )
 
 func cmdUninstall(c *cli.Context) error {
+	logger := log.WithCommand(c.Context, c.Command.Name)
 	for _, cmd := range c.Args().Slice() {
-		if err := uninstallPackage(cmd); err != nil {
+		if err := uninstallPackage(logger, cmd); err != nil {
 			stats.TrackEvent("package.uninstall", "failed", cmd)
 			return err
 		}
@@ -38,8 +40,8 @@ func cmdUninstall(c *cli.Context) error {
 	return nil
 }
 
-func uninstallPackage(cmd string) error {
-	exec, err := findExec(cmd)
+func uninstallPackage(logger log.Logger, cmd string) error {
+	exec, err := findExec(logger, cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}

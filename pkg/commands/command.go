@@ -15,8 +15,10 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
 	"os"
@@ -210,7 +212,8 @@ func getCommands() []subcommands {
 	return commands
 }
 
-func CommandLocator() ([]*cli.Command, error) {
+func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
+	logger := log.FromContext(ctx)
 	commands := make([]*cli.Command, 0)
 	builtinCmds := make(map[string]bool)
 	for _, cmd := range getBuiltinCommands() {
@@ -251,7 +254,7 @@ func CommandLocator() ([]*cli.Command, error) {
 					SkipFlagParsing: true,
 					BashComplete: func(c *cli.Context) {
 						if command.AutoComplete {
-							executable, err := findExec(c.Command.Name)
+							executable, err := findExec(logger, c.Command.Name)
 							if err != nil {
 								return
 							}
@@ -268,7 +271,7 @@ func CommandLocator() ([]*cli.Command, error) {
 	return commands, nil
 }
 
-func findExec(cmd string) ([]string, error) {
+func findExec(logger log.Logger, cmd string) ([]string, error) {
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
 	cmdName := "akamai"
@@ -349,7 +352,7 @@ func findExec(cmd string) ([]string, error) {
 			cmd = []string{bin, cmdFile}
 		case language == "python":
 			var bins packages.PythonBins
-			bins, err = packages.FindPythonBins(cmdPackage.Requirements.Python)
+			bins, err = packages.FindPythonBins(logger, cmdPackage.Requirements.Python)
 			bin = bins.Python
 
 			cmd = []string{bin, cmdFile}

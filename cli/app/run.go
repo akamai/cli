@@ -36,13 +36,13 @@ func Run() int {
 
 	// TODO return value should be used once App singleton is removed
 	_ = app.CreateApp()
-	cmds, err := commands.CommandLocator()
+	ctx := log.SetupContext(context.Background(), app.App)
+	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
 		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
 		return 2
 	}
 	app.App.Commands = cmds
-	ctx := log.SetupContext(context.Background(), app.App)
 
 	if err := firstRun(); err != nil {
 		return 3
