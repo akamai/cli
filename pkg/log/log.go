@@ -4,32 +4,33 @@ import (
 	"context"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/text"
-	"github.com/urfave/cli/v2"
+	"io"
 	"os"
 	"strings"
 )
 
 type Logger log.Interface
 
-func SetupContext(ctx context.Context, app *cli.App) context.Context {
+func SetupContext(ctx context.Context, defaultWriter io.Writer) context.Context {
 	logger := &log.Logger{
-		Level: log.InfoLevel,
+		Level:   log.InfoLevel,
+		Handler: text.New(defaultWriter),
 	}
-	output := app.Writer
-	if outputEnv := os.Getenv("AKAMAI_LOG_PATH"); outputEnv != "" {
-		f, err := os.OpenFile(outputEnv, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			log.Warn("Invalid value of AKAMAI_LOG_PATH")
-		}
-		output = f
-	}
+	output := defaultWriter
 	if lvlEnv := os.Getenv("AKAMAI_LOG"); lvlEnv != "" {
 		logLevel, err := log.ParseLevel(strings.ToLower(lvlEnv))
 		if err == nil {
 			logger.Level = logLevel
 		} else {
-			log.Warn("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, info, debug")
+			logger.Warn("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, info, debug")
 		}
+	}
+	if outputEnv := os.Getenv("AKAMAI_LOG_PATH"); outputEnv != "" {
+		f, err := os.OpenFile(outputEnv, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+		if err != nil {
+			logger.Warnf("Invalid value of AKAMAI_LOG_PATH %s", err)
+		}
+		output = f
 	}
 	logger.Handler = text.New(output)
 	return log.NewContext(ctx, logger)

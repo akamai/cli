@@ -16,6 +16,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/smartystreets/goconvey v1.6.4 // indirect
+	github.com/stretchr/testify v1.6.1
+	github.com/tj/assert v0.0.3
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/sys v0.0.0-20210110051926-789bb1bd4061
 	gopkg.in/ini.v1 v1.62.0 // indirect
