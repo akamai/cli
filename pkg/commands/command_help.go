@@ -15,10 +15,11 @@
 package commands
 
 import (
-	"github.com/akamai/cli/pkg/app"
 	"os"
 
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
 )
 
 func cmdHelp(c *cli.Context) error {
@@ -34,8 +35,8 @@ func cmdHelp(c *cli.Context) error {
 
 		// The arg mangling ensures that aliases are handled
 		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
-		app.App.Run(os.Args)
-		return nil
+		err := app.App.Run(os.Args)
+		return err
 	}
 
 	return cli.ShowAppHelp(c)

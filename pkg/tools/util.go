@@ -15,17 +15,20 @@
 package tools
 
 import (
-	"github.com/mitchellh/go-homedir"
-	"github.com/urfave/cli"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
+	"github.com/urfave/cli"
 )
 
+// Self ...
 func Self() string {
 	return filepath.Base(os.Args[0])
 }
 
+// GetAkamaiCliPath ...
 func GetAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
@@ -45,12 +48,14 @@ func GetAkamaiCliPath() (string, error) {
 	return cliPath, nil
 }
 
+// GetAkamaiCliSrcPath ...
 func GetAkamaiCliSrcPath() (string, error) {
 	cliHome, _ := GetAkamaiCliPath()
 
 	return filepath.Join(cliHome, "src"), nil
 }
 
+// Githubize ..
 func Githubize(repo string) string {
 	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
 		return strings.TrimPrefix(repo, "ssh://")

@@ -2,12 +2,15 @@ package io
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/fatih/color"
+
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
-	"strings"
 )
 
+// ShowBanner ...
 func ShowBanner() {
 	fmt.Fprintln(app.App.Writer)
 	bg := color.New(color.BgMagenta)

@@ -18,11 +18,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/stats"
-	"github.com/akamai/cli/pkg/tools"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -32,6 +28,13 @@ import (
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
+
+	akamai "github.com/akamai/cli-common-golang"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/config"
+	pkgio "github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 func firstRun() error {
@@ -58,7 +61,7 @@ func firstRunCheckInPath() (bool, error) {
 	os.Args[0] = selfPath
 	dirPath := filepath.Dir(selfPath)
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == operatingSystemWindows {
 		dirPath = strings.ToLower(dirPath)
 	}
 
@@ -79,16 +82,16 @@ func firstRunCheckInPath() (bool, error) {
 	}
 
 	for _, path := range paths {
-		if len(strings.TrimSpace(path)) == 0 {
+		if strings.TrimSpace(path) == "" {
 			continue
 		}
 
-		if runtime.GOOS == "windows" {
+		if runtime.GOOS == operatingSystemWindows {
 			path = strings.ToLower(path)
 		}
 
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			if err := checkAccess(path, ACCESS_W_OK); err == nil {
+			if err := checkAccess(path, ACCESSWOK); err == nil {
 				writablePaths = append(writablePaths, path)
 			}
 		}
@@ -101,13 +104,13 @@ func firstRunCheckInPath() (bool, error) {
 
 	if !inPath && len(writablePaths) > 0 {
 		if !bannerShown {
-			io.ShowBanner()
+			pkgio.ShowBanner()
 			bannerShown = true
 		}
 		fmt.Fprint(app.App.Writer, "Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
 		answer := ""
 		fmt.Scanln(&answer)
-		if answer != "" && strings.ToLower(answer) != "y" {
+		if answer != "" && strings.EqualFold(answer, "y") {
 			config.SetConfigValue("cli", "install-in-path", "no")
 			config.SaveConfig()
 			firstRunCheckUpgrade(true)
@@ -120,8 +123,8 @@ func firstRunCheckInPath() (bool, error) {
 	return bannerShown, nil
 }
 
-func choosePath(writablePaths []string, answer string, selfPath string) {
-	fmt.Fprintln(app.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
+func choosePath(writablePaths []string, answer, selfPath string) {
+	fmt.Fprintln(akamai.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
 	for i, path := range writablePaths {
 		fmt.Fprintf(app.App.Writer, "(%d) %s\n", i+1, path)
 	}
@@ -138,11 +141,11 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 		choosePath(writablePaths, answer, selfPath)
 	}
 	suffix := ""
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == operatingSystemWindows {
 		suffix = ".exe"
 	}
 	newPath := filepath.Join(writablePaths[index-1], "akamai"+suffix)
-	s := io.StartSpinner(
+	s := pkgio.StartSpinner(
 		"Installing to "+newPath+"...",
 		"Installing to "+newPath+"...... ["+color.GreenString("OK")+"]\n",
 	)
@@ -150,23 +153,23 @@ func choosePath(writablePaths []string, answer string, selfPath string) {
 
 	os.Args[0] = newPath
 	if err != nil {
-		io.StopSpinnerFail(s)
+		pkgio.StopSpinnerFail(s)
 		fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
 	}
-	io.StopSpinnerOk(s)
+	pkgio.StopSpinnerOk(s)
 }
 
 func firstRunCheckUpgrade(bannerShown bool) bool {
 	if config.GetConfigValue("cli", "last-upgrade-check") == "" {
 		if !bannerShown {
 			bannerShown = true
-			io.ShowBanner()
+			pkgio.ShowBanner()
 		}
 		fmt.Fprint(app.App.Writer, "Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
 
 		answer := ""
 		fmt.Scanln(&answer)
-		if answer != "" && strings.ToLower(answer) != "y" {
+		if answer != "" && strings.EqualFold(answer, "y") {
 			config.SetConfigValue("cli", "last-upgrade-check", "ignore")
 			config.SaveConfig()
 			return bannerShown
@@ -177,4 +180,41 @@ func firstRunCheckUpgrade(bannerShown bool) bool {
 	}
 
 	return bannerShown
+}
+
+// We must copy+unlink the file because moving files is broken across filesystems
+func moveFile(src, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(dst, 0755)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(src)
+	return err
 }

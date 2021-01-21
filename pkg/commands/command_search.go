@@ -17,8 +17,6 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/tools"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,6 +25,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type packageList struct {
@@ -75,13 +76,17 @@ func fetchPackageList() (*packageList, error) {
 	}
 	resp, err := http.Get(repo)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
 	defer resp.Body.Close()
 
 	result := &packageList{}
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
+	}
+
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())

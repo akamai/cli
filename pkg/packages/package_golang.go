@@ -31,10 +31,11 @@ import (
 	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallGolang(dir string, cmdReq string, commands []string) (bool, error) {
+// InstallGolang ...
+func InstallGolang(dir, cmdReq string, commands []string) (bool, error) {
 	bin, err := exec.LookPath("go")
 	if err != nil {
-		return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Go")
+		return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Go")
 	}
 
 	log.Tracef("Go binary found: %s", bin)
@@ -43,16 +44,16 @@ func InstallGolang(dir string, cmdReq string, commands []string) (bool, error) {
 		cmd := exec.Command(bin, "version")
 		output, _ := cmd.Output()
 		log.Tracef("%s version: %s", bin, output)
-		r, _ := regexp.Compile("go version go(.*?) .*")
+		r := regexp.MustCompile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Go", cmdReq)
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Go", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			log.Tracef("Go Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Go", cmdReq, matches[1])
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Go", cmdReq, matches[1])
 		}
 	}
 
@@ -84,8 +85,8 @@ func InstallGolang(dir string, cmdReq string, commands []string) (bool, error) {
 		cmd.Dir = dir
 		_, err = cmd.Output()
 		if err != nil {
-			akalog.LogMultilinef(log.Debugf, "Unable to build binary (%s): \n%s", execName, err.(*exec.ExitError).Stderr)
-			return false, errors.NewExitErrorf(1, errors.ERR_PACKAGE_COMPILE_FAILURE, command)
+			akalog.Multilinef(log.Debugf, "Unable to build binary (%s): \n%s", execName, err.(*exec.ExitError).Stderr)
+			return false, errors.NewExitErrorf(1, errors.ERRPACKAGECOMPILEFAILURE, command)
 		}
 	}
 
@@ -101,12 +102,12 @@ func installGolangDepsGlide(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (glide install): \n %s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "glide")
+				akalog.Multilinef(log.Debugf, "Unable execute package manager (glide install): \n %s", err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "glide")
 			}
 		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "glide")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "glide")
+			log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "glide")
+			return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "glide")
 		}
 	}
 
@@ -122,12 +123,12 @@ func installGolangModules(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (dep ensure): \n %s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "dep")
+				akalog.Multilinef(log.Debugf, "Unable execute package manager (dep ensure): \n %s", err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "dep")
 			}
 		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "dep")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "dep")
+			log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "dep")
+			return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "dep")
 		}
 	}
 

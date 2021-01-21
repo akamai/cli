@@ -16,9 +16,7 @@ package commands
 
 import (
 	"errors"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/tools"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,6 +26,10 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type command struct {
@@ -105,7 +107,11 @@ func getBuiltinCommands() []subcommands {
 						},
 					},
 					Aliases: []string{"get"},
-					Docs:    "Examples:\n\n   akamai install property purge\n   akamai install akamai/cli-property\n   akamai install git@github.com:akamai/cli-property.git\n   akamai install https://github.com/akamai/cli-property.git",
+					Docs: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
+						"akamai install property purge",
+						"akamai install akamai/cli-property",
+						"akamai install git@github.com:akamai/cli-property.git",
+						"akamai install https://github.com/akamai/cli-property.git"),
 				},
 			},
 			Action: cmdInstall,
@@ -186,10 +192,6 @@ func getCommands() []subcommands {
 	}
 
 	packagePaths := getPackagePaths()
-	if len(packagePaths) == 0 {
-
-	}
-
 	for _, dir := range packagePaths {
 		pkg, err := readPackage(dir)
 		if err == nil {
@@ -210,6 +212,7 @@ func getCommands() []subcommands {
 	return commands
 }
 
+// CommandLocator ...
 func CommandLocator() ([]cli.Command, error) {
 	commands := make([]cli.Command, 0)
 	builtinCmds := make(map[string]bool)
@@ -257,7 +260,9 @@ func CommandLocator() ([]cli.Command, error) {
 							}
 
 							executable = append(executable, os.Args[2:]...)
-							passthruCommand(executable)
+							if err = passthruCommand(executable); err != nil {
+								return
+							}
 						}
 					},
 				},
@@ -296,7 +301,7 @@ func findExec(cmd string) ([]string, error) {
 
 	os.Setenv("PATH", systemPath)
 	if packagePaths == "" {
-		return nil, errors.New("No executables found.")
+		return nil, errors.New("no executables found")
 	}
 
 	for _, path := range filepath.SplitList(packagePaths) {
@@ -338,16 +343,16 @@ func findExec(cmd string) ([]string, error) {
 		)
 		switch {
 		// Compiled Languages
-		case language == "go" || language == "c#" || language == "csharp":
+		case language == languageGO || language == languageC || language == languageCSharp:
 			err = nil
 			cmd = []string{cmdFile}
-		case language == "javascript":
+		case language == languageJavaScript:
 			bin, err = exec.LookPath("node")
 			if err != nil {
 				bin, err = exec.LookPath("nodejs")
 			}
 			cmd = []string{bin, cmdFile}
-		case language == "python":
+		case language == languagePython:
 			var bins packages.PythonBins
 			bins, err = packages.FindPythonBins(cmdPackage.Requirements.Python)
 			bin = bins.Python
@@ -366,7 +371,7 @@ func findExec(cmd string) ([]string, error) {
 		return cmd, nil
 	}
 
-	return nil, errors.New("No executables found.")
+	return nil, errors.New("no executables found")
 }
 
 func getPackageBinPaths() string {

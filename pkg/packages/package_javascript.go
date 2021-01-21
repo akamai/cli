@@ -15,23 +15,25 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/akamai/cli/pkg/errors"
+	akalog "github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallJavaScript(dir string, cmdReq string) (bool, error) {
+// InstallJavaScript ...
+func InstallJavaScript(dir, cmdReq string) (bool, error) {
 	bin, err := exec.LookPath("node")
 	if err != nil {
 		bin, err = exec.LookPath("nodejs")
 		if err != nil {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Node.js")
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Node.js")
 		}
 	}
 
@@ -41,16 +43,16 @@ func InstallJavaScript(dir string, cmdReq string) (bool, error) {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
 		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("^v(.*?)\\s*$")
+		r := regexp.MustCompile("^v(.*?)\\s*$")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Node.js", cmdReq)
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Node.js", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			log.Tracef("Node.js Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Node.js", cmdReq, matches[1])
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Node.js", cmdReq, matches[1])
 		}
 	}
 
@@ -74,14 +76,14 @@ func installNodeDepsYarn(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "yarn")
+				akalog.Multilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "yarn")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "yarn")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "yarn")
 		}
+
+		log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "yarn")
+		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "yarn")
 	}
 
 	return nil
@@ -97,14 +99,14 @@ func installNodeDepsNpm(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "npm")
+				akalog.Multilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "npm")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "npm")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "npm")
 		}
+
+		log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "npm")
+		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "npm")
 	}
 
 	return nil

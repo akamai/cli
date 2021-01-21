@@ -16,11 +16,12 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/config"
 	"strings"
 
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/config"
 )
 
 func cmdConfigSet(c *cli.Context) {
@@ -46,14 +47,14 @@ func cmdConfigUnset(c *cli.Context) {
 }
 
 func cmdConfigList(c *cli.Context) {
-	config, err := config.OpenConfig()
+	conf, err := config.OpenConfig()
 	if err != nil {
 		return
 	}
 
 	if c.NArg() > 0 {
 		sectionName := c.Args().First()
-		section := config.Section(sectionName)
+		section := conf.Section(sectionName)
 		for _, key := range section.Keys() {
 			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", sectionName, key.Name(), key.Value())
 		}
@@ -61,16 +62,16 @@ func cmdConfigList(c *cli.Context) {
 		return
 	}
 
-	for _, section := range config.Sections() {
+	for _, section := range conf.Sections() {
 		for _, key := range section.Keys() {
 			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", section.Name(), key.Name(), key.Value())
 		}
 	}
 }
 
-func parseConfigPath(c *cli.Context) (string, string) {
+func parseConfigPath(c *cli.Context) (section, key string) {
 	path := strings.Split(c.Args().First(), ".")
-	section := path[0]
-	key := strings.Join(path[1:], "-")
+	section = path[0]
+	key = strings.Join(path[1:], "-")
 	return section, key
 }

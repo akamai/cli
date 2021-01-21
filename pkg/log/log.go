@@ -17,15 +17,17 @@ package log
 import (
 	"bufio"
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
 	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/akamai/cli/pkg/app"
 )
 
 var logBuffer *bufio.Writer
 
+// Setup logger
 func Setup() {
 	log.SetFormatter(&log.TextFormatter{
 		DisableLevelTruncation:    true,
@@ -45,7 +47,8 @@ func Setup() {
 	}
 }
 
-func LogMultiline(f func(args ...interface{}), args ...string) {
+// Multiline ...
+func Multiline(f func(args ...interface{}), args ...string) {
 	for _, str := range args {
 		for _, str := range strings.Split(strings.Trim(str, "\n"), "\n") {
 			f(str)
@@ -53,11 +56,13 @@ func LogMultiline(f func(args ...interface{}), args ...string) {
 	}
 }
 
-func LogMultilineln(f func(args ...interface{}), args ...string) {
-	LogMultiline(f, args...)
+// Multilineln ...
+func Multilineln(f func(args ...interface{}), args ...string) {
+	Multiline(f, args...)
 }
 
-func LogMultilinef(f func(formatter string, args ...interface{}), formatter string, args ...interface{}) {
+// Multilinef ...
+func Multilinef(f func(formatter string, args ...interface{}), formatter string, args ...interface{}) {
 	str := fmt.Sprintf(formatter, args...)
 	for _, str := range strings.Split(strings.Trim(str, "\n"), "\n") {
 		f(str)

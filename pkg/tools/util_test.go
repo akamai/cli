@@ -15,8 +15,9 @@
 package tools
 
 import (
-	"github.com/akamai/cli/pkg/version"
 	"testing"
+
+	"github.com/akamai/cli/pkg/version"
 )
 
 func TestVersionCompare(t *testing.T) {

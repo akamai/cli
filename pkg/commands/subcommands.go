@@ -17,7 +17,6 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/akamai/cli/pkg/tools"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -29,6 +28,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type subcommands struct {
@@ -103,23 +104,23 @@ func findPackageDir(dir string) string {
 
 func determineCommandLanguage(cmdPackage subcommands) string {
 	if cmdPackage.Requirements.Php != "" {
-		return "php"
+		return languagePHP
 	}
 
 	if cmdPackage.Requirements.Node != "" {
-		return "javascript"
+		return languageJavaScript
 	}
 
 	if cmdPackage.Requirements.Ruby != "" {
-		return "ruby"
+		return languageRuby
 	}
 
 	if cmdPackage.Requirements.Go != "" {
-		return "go"
+		return languageGO
 	}
 
 	if cmdPackage.Requirements.Python != "" {
-		return "python"
+		return languagePython
 	}
 
 	return ""
@@ -148,11 +149,14 @@ func downloadBin(dir string, cmd command) bool {
 	log.Tracef("Fetching binary from %s", url)
 
 	bin, err := os.Create(filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix))
-	bin.Chmod(0775)
 	if err != nil {
 		return false
 	}
 	defer bin.Close()
+
+	if err := bin.Chmod(0775); err != nil {
+		return false
+	}
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -160,7 +164,7 @@ func downloadBin(dir string, cmd command) bool {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return false
 	}
 

@@ -16,11 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/stats"
-	"github.com/akamai/cli/pkg/tools"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +24,12 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdInstall(c *cli.Context) error {
@@ -147,7 +148,7 @@ func installPackage(repo string, forceBinary bool) error {
 
 	io.StopSpinnerOk(s)
 
-	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
+	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
 		fmt.Fprintln(app.App.Writer, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
@@ -174,15 +175,15 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 
 	var success bool
 	switch lang {
-	case "php":
+	case languagePHP:
 		success, err = packages.InstallPHP(dir, cmdPackage.Requirements.Php)
-	case "javascript":
+	case languageJavaScript:
 		success, err = packages.InstallJavaScript(dir, cmdPackage.Requirements.Node)
-	case "ruby":
+	case languageRuby:
 		success, err = packages.InstallRuby(dir, cmdPackage.Requirements.Ruby)
-	case "python":
+	case languagePython:
 		success, err = packages.InstallPython(dir, cmdPackage.Requirements.Python)
-	case "go":
+	case languageGO:
 		var commands []string
 		for _, cmd := range cmdPackage.Commands {
 			commands = append(commands, cmd.Name)
@@ -214,12 +215,14 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 					fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
-					if answer != "" && strings.ToLower(answer) != "y" {
+					if answer != "" && strings.EqualFold(answer, "y") {
 						return false
 					}
 				}
 
-				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
+				if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+					return false
+				}
 
 				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
@@ -235,7 +238,7 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 			first = false
 			io.StopSpinnerFail(s)
 			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
-			return false
+			return first
 		}
 	}
 

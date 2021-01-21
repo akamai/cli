@@ -19,16 +19,17 @@ import (
 )
 
 const (
-	ERR_NOT_FOUND                        = "%s Not Found."
-	ERR_RUNTIME_NOT_FOUND                = "Unable to locate %s runtime."
-	ERR_RUNTIME_NO_VERSION_FOUND         = "%s %s is required to install this command, unable to determine installed version."
-	ERR_RUNTIME_MINIMUM_VERSION_REQUIRED = "%s %s is required to install this command, you have %s."
-	ERR_PACKAGE_MANAGER_NOT_FOUND        = "Unable to locate package manager (%s) in PATH"
-	ERR_PACKAGE_MANAGER_EXEC             = "Unable to execute package manager (%s)."
-	ERR_PACKAGE_NEEDS_REINSTALL          = "You must reinstall this package to continue."
-	ERR_PACKAGE_COMPILE_FAILURE          = "Unable to build binary (%s)."
+	ERRNOTFOUND                      = "%s Not Found."
+	ERRRUNTIMENOTFOUND               = "Unable to locate %s runtime."
+	ERRRUNTIMENOVERSIONFOUND         = "%s %s is required to install this command, unable to determine installed version."
+	ERRRUNTIMEMINIMUMVERSIONREQUIRED = "%s %s is required to install this command, you have %s."
+	ERRPACKAGEMANAGERNOTFOUND        = "Unable to locate package manager (%s) in PATH"
+	ERRPACKAGEMANAGEREXEC            = "Unable to execute package manager (%s)."
+	ERRPACKAGENEEDSREINSTALL         = "You must reinstall this package to continue."
+	ERRPACKAGECOMPILEFAILURE         = "Unable to build binary (%s)."
 )
 
+// ExitError ...
 type ExitError struct {
 	exitCode int
 	message  interface{}

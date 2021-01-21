@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-// We must copy+unlink the file because moving files is broken across filesystems
-func MoveFile(src string, dst string) error {
+// MoveFile must copy+unlink the file because moving files is broken across filesystems
+func MoveFile(src, dst string) error {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return err

@@ -15,9 +15,6 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,9 +23,14 @@ import (
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/errors"
+	akalog "github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallRuby(dir string, cmdReq string) (bool, error) {
+// InstallRuby ...
+func InstallRuby(dir, cmdReq string) (bool, error) {
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
 		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
@@ -40,16 +42,16 @@ func InstallRuby(dir string, cmdReq string) (bool, error) {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
 		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)")
+		r := regexp.MustCompile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Ruby", cmdReq)
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Ruby", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			log.Tracef("Ruby Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Ruby", cmdReq, matches[1])
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Ruby", cmdReq, matches[1])
 		}
 	}
 
@@ -69,14 +71,14 @@ func installRubyDepsBundler(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "bundler")
+				akalog.Multilinef(log.Debugf, "Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "bundler")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
 		}
+
+		log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
+		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
 	}
 
 	return nil

@@ -16,11 +16,12 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdList(c *cli.Context) error {
@@ -37,7 +38,7 @@ func cmdList(c *cli.Context) error {
 		foundCommands := true
 		for _, cmd := range packageList.Packages {
 			for _, command := range cmd.Commands {
-				if _, ok := commands[command.Name]; ok != true {
+				if _, ok := commands[command.Name]; !ok {
 					foundCommands = false
 					continue
 				}
@@ -52,11 +53,11 @@ func cmdList(c *cli.Context) error {
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {
-				if _, ok := commands[command.Name]; ok == true {
+				if _, ok := commands[command.Name]; ok {
 					continue
 				}
 				bold.Printf("  %s", command.Name)
-				fmt.Fprintln(app.App.Writer, fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
+				fmt.Fprintf(app.App.Writer, "[package: %s]\n", color.BlueString(remotePackage.Name))
 				fmt.Fprintf(app.App.Writer, "    %s\n", command.Description)
 			}
 		}
@@ -66,7 +67,7 @@ func cmdList(c *cli.Context) error {
 
 	return nil
 }
-func listInstalledCommands(added map[string]bool, removed map[string]bool) map[string]bool {
+func listInstalledCommands(added, removed map[string]bool) map[string]bool {
 	bold := color.New(color.FgWhite, color.Bold)
 
 	commands := make(map[string]bool)

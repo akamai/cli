@@ -16,9 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/tools"
 	"path/filepath"
 	"strings"
 
@@ -26,6 +23,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"gopkg.in/src-d/go-git.v4"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdUpdate(c *cli.Context) error {
@@ -89,6 +90,10 @@ func updatePackage(cmd string, forceBinary bool) error {
 	}
 
 	w, err := repo.Worktree()
+	if err != nil {
+		log.Trace("Unable to open repo")
+		return cli.NewExitError(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
+	}
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
 	refBeforePull, errBeforePull := repo.Head()
@@ -102,25 +107,29 @@ func updatePackage(cmd string, forceBinary bool) error {
 	}
 
 	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
-	if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
+	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		log.Tracef("Fetch error: %s", err.Error())
 		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	ref, err := repo.Head()
+	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
+		log.Tracef("Fetch error: %s", err.Error())
+		io.StopSpinnerFail(s)
+		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+	}
 
 	if refBeforePull.Hash() != ref.Hash() {
 		commit, err := repo.CommitObject(ref.Hash())
 		log.Tracef("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		log.Tracef("Latest commit: %s", commit)
 
-		if err != nil && err.Error() != "already up-to-date" && err.Error() != "object not found" {
+		if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 			log.Tracef("Fetch error: %s", err.Error())
 			io.StopSpinnerFail(s)
 			return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 		}
-
 	} else {
 		log.Tracef("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		io.StopSpinnerWarnOk(s)

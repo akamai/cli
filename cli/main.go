@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/akamai/cli/cli/app"
 	"os"
+
+	"github.com/akamai/cli/cli/app"
 )
 
 func main() {

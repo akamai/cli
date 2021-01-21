@@ -15,9 +15,9 @@
 package app
 
 const (
-	ACCESS_R_OK = iota
-	ACCESS_W_OK
-	ACCESS_X_OK
+	ACCESSROK = iota
+	ACCESSWOK
+	ACCESSXOK
 )
 
 func checkAccess(path string, perm int) error {

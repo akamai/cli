@@ -2,6 +2,12 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/fatih/color"
+
+	akamai "github.com/akamai/cli-common-golang"
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
 	"github.com/akamai/cli/pkg/config"
@@ -9,11 +15,9 @@ import (
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
-	"os"
-	"path/filepath"
 )
 
+// Run ...
 func Run() int {
 	os.Setenv("AKAMAI_CLI", "1")
 	os.Setenv("AKAMAI_CLI_VERSION", version.Version)
@@ -25,7 +29,7 @@ func Run() int {
 		cachePath = filepath.Join(cliHome, "cache")
 		err := os.MkdirAll(cachePath, 0700)
 		if err != nil {
-			return 1
+			return exitCode1
 		}
 	}
 
@@ -44,14 +48,15 @@ func Run() int {
 	log.Setup()
 
 	if err := firstRun(); err != nil {
-		return 3
+		return exitCode2
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	if err := app.App.Run(os.Args); err != nil {
-		return 4
+	if err := akamai.App.Run(os.Args); err != nil {
+		return exitCode3
 	}
-	return 0
+
+	return exitCode0
 }
 
 func checkUpgrade() {

@@ -15,9 +15,6 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,12 +22,17 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/errors"
+	akalog "github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallPHP(dir string, cmdReq string) (bool, error) {
+// InstallPHP ..
+func InstallPHP(dir, cmdReq string) (bool, error) {
 	bin, err := exec.LookPath("php")
 	if err != nil {
-		return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "PHP")
+		return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "PHP")
 	}
 
 	log.Tracef("PHP binary found: %s", bin)
@@ -39,16 +41,16 @@ func InstallPHP(dir string, cmdReq string) (bool, error) {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
 		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("PHP (.*?) .*")
+		r := regexp.MustCompile("PHP (.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "PHP", cmdReq)
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "PHP", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			log.Tracef("PHP Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "PHP", cmdReq, matches[1])
+			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "PHP", cmdReq, matches[1])
 		}
 	}
 
@@ -70,7 +72,7 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				log.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, err.(*exec.ExitError).Stderr)
-				return cli.NewExitError(errors.ERR_PACKAGE_MANAGER_EXEC, 1)
+				return cli.NewExitError(errors.ERRPACKAGEMANAGEREXEC, 1)
 			}
 			return nil
 		}
@@ -82,7 +84,7 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				log.Debugf("Unable to execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "composer")
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "composer")
 			}
 			return nil
 		}
@@ -93,14 +95,14 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "composer")
+				akalog.Multilinef(log.Debugf, "Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "composer")
 			}
 			return nil
 		}
 
-		log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
-		return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
+		log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "composer")
+		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "composer")
 	}
 
 	return nil

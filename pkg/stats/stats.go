@@ -16,9 +16,6 @@ package stats
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,14 +25,22 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/io"
 )
 
 // Akamai CLI (optionally) tracks upgrades, package installs, and updates anonymously
 //
 // This is done by generating an anonymous UUID that events are tied to
 
-const statsVersion string = "1.1"
+const (
+	statsVersion     string = "1.1"
+	sleepTime24Hours        = time.Hour * 24
+)
 
+// FirstRunCheckStats ...
 func FirstRunCheckStats(bannerShown bool) bool {
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 
@@ -51,7 +56,7 @@ func FirstRunCheckStats(bannerShown bool) bool {
 
 		answer := ""
 		fmt.Scanln(&answer)
-		if answer != "" && strings.ToLower(answer) != "y" {
+		if answer != "" && strings.EqualFold(answer, "y") {
 			TrackEvent("first-run", "stats-opt-out", "true")
 			config.SetConfigValue("cli", "enable-cli-statistics", "false")
 			config.SaveConfig()
@@ -83,8 +88,7 @@ func migrateStats(bannerShown bool) bool {
 	}
 
 	var newStats []string
-	switch currentVersion {
-	case "1.0":
+	if currentVersion == "1.0" {
 		newStats = []string{"command name executed (no arguments)", "command version executed"}
 	}
 
@@ -99,7 +103,7 @@ func migrateStats(bannerShown bool) bool {
 
 	answer := ""
 	fmt.Scanln(&answer)
-	if answer != "" && strings.ToLower(answer) != "y" {
+	if answer != "" && strings.EqualFold(answer, "y") {
 		TrackEvent("first-run", "stats-update-opt-out", statsVersion)
 		config.SetConfigValue("cli", "enable-cli-statistics", "false")
 		config.SaveConfig()
@@ -115,33 +119,34 @@ func migrateStats(bannerShown bool) bool {
 
 func setupUUID() error {
 	if config.GetConfigValue("cli", "client-id") == "" {
-		uuid, err := uuid.NewRandom()
+		uid, err := uuid.NewRandom()
 		if err != nil {
 			return err
 		}
 
-		config.SetConfigValue("cli", "client-id", uuid.String())
+		config.SetConfigValue("cli", "client-id", uid.String())
 		config.SaveConfig()
 	}
 
 	return nil
 }
 
-func TrackEvent(category string, action string, value string) {
+// TrackEvent ...
+func TrackEvent(category, action, value string) {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
 		return
 	}
 
-	clientId := "anonymous"
+	clientID := "anonymous"
 	if val := config.GetConfigValue("cli", "client-id"); val != "" {
-		clientId = val
+		clientID = val
 	}
 
 	form := url.Values{}
 	form.Add("tid", "UA-34796267-23")
 	form.Add("v", "1")        // Version 1
 	form.Add("aip", "1")      // Anonymize IP
-	form.Add("cid", clientId) // Client ID
+	form.Add("cid", clientID) // Client ID
 	form.Add("t", "event")    // Type
 	form.Add("ec", category)  // Category
 	form.Add("ea", action)    // Action
@@ -153,9 +158,9 @@ func TrackEvent(category string, action string, value string) {
 	var err error
 
 	if debug != "" {
-		req, err = http.NewRequest("POST", "https://www.google-analytics.com/debug/collect", strings.NewReader(form.Encode()))
+		req, err = http.NewRequest(http.MethodPost, "https://www.google-analytics.com/debug/collect", strings.NewReader(form.Encode()))
 	} else {
-		req, err = http.NewRequest("POST", "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
+		req, err = http.NewRequest(http.MethodPost, "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
 	}
 
 	if err != nil {
@@ -171,6 +176,7 @@ func TrackEvent(category string, action string, value string) {
 	}
 }
 
+// CheckPing ...
 func CheckPing() {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
 		return
@@ -182,14 +188,14 @@ func CheckPing() {
 	if data == "" || data == "never" {
 		doPing = true
 	} else {
-		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
+		configValue := strings.TrimPrefix(strings.TrimSuffix(data, "\""), "\"")
 		lastPing, err := time.Parse(time.RFC3339, configValue)
 		if err != nil {
 			return
 		}
 
 		currentTime := time.Now()
-		if lastPing.Add(time.Hour * 24).Before(currentTime) {
+		if lastPing.Add(sleepTime24Hours).Before(currentTime) {
 			doPing = true
 		}
 	}

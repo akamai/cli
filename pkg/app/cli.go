@@ -2,20 +2,25 @@ package app
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-colorable"
 	"github.com/urfave/cli"
-	"os"
-	"strings"
-	"time"
+
+	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/pkg/version"
 )
 
-// TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
+// App : TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
 var App *cli.App
 
+const sleepTime24Hours = time.Hour * 24
+
+// CreateApp ...
 func CreateApp() *cli.App {
 	appName := "akamai"
 	app := cli.NewApp()
@@ -81,7 +86,7 @@ func CreateApp() *cli.App {
 
 		if c.IsSet("daemon") {
 			for {
-				time.Sleep(time.Hour * 24)
+				time.Sleep(sleepTime24Hours)
 			}
 		}
 		return nil
@@ -90,6 +95,7 @@ func CreateApp() *cli.App {
 	return app
 }
 
+// DefaultAutoComplete ...
 func DefaultAutoComplete(ctx *cli.Context) {
 	if ctx.Command.Name == "help" {
 		var args []string

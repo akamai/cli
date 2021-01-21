@@ -16,9 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/stats"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,6 +23,10 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/stats"
 )
 
 func cmdSubcommand(c *cli.Context) error {
@@ -56,19 +57,19 @@ func cmdSubcommand(c *cli.Context) error {
 		}
 
 		if err == nil {
-			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ERR_PACKAGE_NEEDS_REINSTALL))
+			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ERRPACKAGENEEDSREINSTALL))
 			fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
 			answer := ""
 			fmt.Scanln(&answer)
 			if answer != "" && strings.ToLower(answer) != "y" {
-				return cli.NewExitError(color.RedString(errors.ERR_PACKAGE_NEEDS_REINSTALL), -1)
+				return cli.NewExitError(color.RedString(errors.ERRPACKAGENEEDSREINSTALL), -1)
 			}
 
-			if err := uninstallPackage(commandName); err != nil {
+			if err = uninstallPackage(commandName); err != nil {
 				return err
 			}
 
-			if err := installPackage(commandName, false); err != nil {
+			if err = installPackage(commandName, false); err != nil {
 				return err
 			}
 		}
@@ -81,13 +82,13 @@ func cmdSubcommand(c *cli.Context) error {
 
 	var currentCmd command
 	for _, cmd := range cmdPackage.Commands {
-		if strings.ToLower(cmd.Name) == commandName {
+		if strings.EqualFold(cmd.Name, commandName) {
 			currentCmd = cmd
 			break
 		}
 
 		for _, alias := range cmd.Aliases {
-			if strings.ToLower(alias) == commandName {
+			if strings.EqualFold(alias, commandName) {
 				currentCmd = cmd
 			}
 		}
