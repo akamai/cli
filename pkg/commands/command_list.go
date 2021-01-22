@@ -20,7 +20,7 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdList(c *cli.Context) error {

@@ -7,7 +7,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-colorable"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
 	"time"
@@ -28,44 +28,44 @@ func CreateApp() *cli.App {
 	app.ErrWriter = colorable.NewColorableStderr()
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
-	cli.VersionFlag = cli.BoolFlag{
+	cli.VersionFlag = &cli.BoolFlag{
 		Name:   "version",
 		Hidden: true,
 	}
 
-	cli.BashCompletionFlag = cli.BoolFlag{
+	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "generate-auto-complete",
 		Hidden: true,
 	}
-	cli.HelpFlag = cli.BoolFlag{
+	cli.HelpFlag = &cli.BoolFlag{
 		Name:  "help",
 		Usage: "show help",
 	}
 
 	setHelpTemplates()
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "bash",
 			Usage: "Output bash auto-complete",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "zsh",
 			Usage: "Output zsh auto-complete",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "proxy",
 			Usage: "Set a proxy to use",
 		},
-		cli.BoolFlag{
-			Name:   "daemon",
-			Usage:  "Keep Akamai CLI running in the background, particularly useful for Docker containers",
-			Hidden: true,
-			EnvVar: "AKAMAI_CLI_DAEMON",
+		&cli.BoolFlag{
+			Name:    "daemon",
+			Usage:   "Keep Akamai CLI running in the background, particularly useful for Docker containers",
+			Hidden:  true,
+			EnvVars: []string{"AKAMAI_CLI_DAEMON"},
 		},
 	}
 
-	app.Action = func(c *cli.Context) {
-		defaultAction(app, c)
+	app.Action = func(c *cli.Context) error {
+		return defaultAction(app, c)
 	}
 
 	app.Before = func(c *cli.Context) error {
@@ -102,7 +102,7 @@ func DefaultAutoComplete(ctx *cli.Context) {
 		return
 	}
 
-	commands := make([]cli.Command, 0)
+	commands := make([]*cli.Command, 0)
 	flags := make([]cli.Flag, 0)
 
 	if ctx.Command.Name == "" {
@@ -130,10 +130,10 @@ func DefaultAutoComplete(ctx *cli.Context) {
 
 	for _, flag := range flags {
 	nextFlag:
-		for _, name := range strings.Split(flag.GetName(), ",") {
+		for _, name := range flag.Names() {
 			name = strings.TrimSpace(name)
 
-			if name == cli.BashCompletionFlag.GetName() {
+			if len(cli.BashCompletionFlag.Names()) > 0 && name == cli.BashCompletionFlag.Names()[0] {
 				continue
 			}
 
@@ -232,7 +232,7 @@ func setHelpTemplates() {
 		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
 }
 
-func defaultAction(app *cli.App, c *cli.Context) {
+func defaultAction(app *cli.App, c *cli.Context) error {
 	cmd, err := osext.Executable()
 	if err != nil {
 		cmd = tools.Self()
@@ -261,14 +261,15 @@ complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
 	if c.Bool("bash") {
 		fmt.Fprintln(app.Writer, bashComments)
 		fmt.Fprintln(app.Writer, bashScript)
-		return
+		return nil
 	}
 
 	if c.Bool("zsh") {
 		fmt.Fprintln(app.Writer, zshScript)
 		fmt.Fprintln(app.Writer, bashScript)
-		return
+		return nil
 	}
 
 	cli.ShowAppHelpAndExit(c, 0)
+	return nil
 }

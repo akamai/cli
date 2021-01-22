@@ -28,7 +28,7 @@ import (
 	"text/template"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 type subcommands struct {
@@ -42,7 +42,7 @@ type subcommands struct {
 		Python string `json:"python"`
 	} `json:"requirements"`
 
-	Action interface{} `json:"-"`
+	Action cli.ActionFunc `json:"-"`
 }
 
 func readPackage(dir string) (subcommands, error) {

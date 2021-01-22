@@ -27,7 +27,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -43,7 +43,7 @@ func cmdInstall(c *cli.Context) error {
 
 	oldCmds := getCommands()
 
-	for _, repo := range c.Args() {
+	for _, repo := range c.Args().Slice() {
 		repo = tools.Githubize(repo)
 		err := installPackage(repo, c.Bool("force"))
 		if err != nil {

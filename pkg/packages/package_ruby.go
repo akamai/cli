@@ -25,7 +25,7 @@ import (
 
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func InstallRuby(dir string, cmdReq string) (bool, error) {
