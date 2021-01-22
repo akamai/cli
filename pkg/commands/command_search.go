@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 type packageList struct {
@@ -60,7 +60,7 @@ func cmdSearch(c *cli.Context) error {
 		return cli.NewExitError(color.RedString(err.Error()), 1)
 	}
 
-	err = searchPackages(c.Args(), packageList)
+	err = searchPackages(c.Args().Slice(), packageList)
 	if err != nil {
 		return cli.NewExitError(color.RedString(err.Error()), 1)
 	}

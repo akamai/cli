@@ -6,8 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.2.7
 	github.com/Masterminds/semver v1.5.0
 	github.com/Netflix/go-expect v0.0.0-20201125194554-85d881c3777e // indirect
-	github.com/akamai/AkamaiOPEN-edgegrid-golang v1.0.1 // indirect
-	github.com/akamai/cli-common-golang v0.0.0-20200508194158-7dad60634830
+	github.com/apex/log v1.9.0
 	github.com/briandowns/spinner v1.12.0
 	github.com/fatih/color v1.10.0
 	github.com/go-ini/ini v1.62.0
@@ -20,11 +19,10 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/sirupsen/logrus v1.7.0
-    github.com/tj/assert v0.0.3
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
-	github.com/urfave/cli v1.22.5
+	github.com/stretchr/testify v1.6.1
+	github.com/tj/assert v0.0.3
+	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20210110051926-789bb1bd4061

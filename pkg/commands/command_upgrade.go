@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdUpgrade(c *cli.Context) error {

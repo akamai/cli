@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
@@ -35,20 +36,20 @@ func Run() int {
 
 	// TODO return value should be used once App singleton is removed
 	_ = app.CreateApp()
-	cmds, err := commands.CommandLocator()
+	ctx := log.SetupContext(context.Background(), app.App.Writer)
+	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
 		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
 		return 2
 	}
 	app.App.Commands = cmds
-	log.Setup()
 
 	if err := firstRun(); err != nil {
 		return 3
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	if err := app.App.Run(os.Args); err != nil {
+	if err := app.App.RunContext(ctx, os.Args); err != nil {
 		return 4
 	}
 	return 0
