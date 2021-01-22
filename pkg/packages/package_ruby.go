@@ -28,10 +28,10 @@ import (
 )
 
 // InstallRuby ...
-func InstallRuby(logger log.Logger, dir, cmdReq string) (bool, error) {
+func InstallRuby(logger log.Logger, dir, cmdReq string) error {
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
-		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
+		return cli.Exit(color.RedString("Unable to locate Ruby runtime"), 1)
 	}
 
 	logger.Debugf("Ruby binary found: %s", bin)
@@ -44,20 +44,20 @@ func InstallRuby(logger log.Logger, dir, cmdReq string) (bool, error) {
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Ruby", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Ruby", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Ruby Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Ruby", cmdReq, matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Ruby", cmdReq, matches[1])
 		}
 	}
 
 	if err := installRubyDepsBundler(logger, dir); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func installRubyDepsBundler(logger log.Logger, dir string) error {
@@ -70,13 +70,13 @@ func installRubyDepsBundler(logger log.Logger, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "bundler")
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "bundler")
 			}
 			return nil
 		}
 
-		logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
-		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
+		logger.Debugf(errors.ErrPackageManagerNotFound, "bundler")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "bundler")
 	}
 
 	return nil

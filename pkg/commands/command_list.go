@@ -32,7 +32,7 @@ func cmdList(c *cli.Context) error {
 	if c.IsSet("remote") {
 		packageList, err := fetchPackageList()
 		if err != nil {
-			return cli.NewExitError("Unable to fetch remote package list", 1)
+			return cli.Exit("Unable to fetch remote package list", 1)
 		}
 
 		foundCommands := true
@@ -45,11 +45,10 @@ func cmdList(c *cli.Context) error {
 			}
 		}
 
-		if !foundCommands {
-			fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
-		} else {
+		if foundCommands {
 			return nil
 		}
+		fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {

@@ -50,7 +50,7 @@ func readPackage(dir string) (subcommands, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-			return subcommands{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
+			return subcommands{}, cli.Exit("Package does not contain a cli.json file.", 1)
 		}
 	}
 
@@ -152,7 +152,11 @@ func downloadBin(logger log.Logger, dir string, cmd command) bool {
 	if err != nil {
 		return false
 	}
-	defer bin.Close()
+	defer func() {
+		if err := bin.Close(); err != nil {
+			logger.Errorf("Error closing file: %s", err)
+		}
+	}()
 
 	if err := bin.Chmod(0775); err != nil {
 		return false
@@ -162,7 +166,11 @@ func downloadBin(logger log.Logger, dir string, cmd command) bool {
 	if err != nil {
 		return false
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.Errorf("Error closing request body: %s", err)
+		}
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		return false

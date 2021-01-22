@@ -287,7 +287,9 @@ func findExec(logger log.Logger, cmd string) ([]string, error) {
 
 	systemPath := os.Getenv("PATH")
 	packagePaths := getPackageBinPaths()
-	os.Setenv("PATH", packagePaths)
+	if err := os.Setenv("PATH", packagePaths); err != nil {
+		return nil, err
+	}
 
 	// Quick look for executables on the path
 	var path string
@@ -297,11 +299,15 @@ func findExec(logger log.Logger, cmd string) ([]string, error) {
 	}
 
 	if path != "" {
-		os.Setenv("PATH", systemPath)
+		if err := os.Setenv("PATH", systemPath); err != nil {
+			return nil, err
+		}
 		return []string{path}, nil
 	}
 
-	os.Setenv("PATH", systemPath)
+	if err := os.Setenv("PATH", systemPath); err != nil {
+		return nil, err
+	}
 	if packagePaths == "" {
 		return nil, errors.New("no executables found")
 	}
@@ -357,6 +363,9 @@ func findExec(logger log.Logger, cmd string) ([]string, error) {
 		case language == languagePython:
 			var bins packages.PythonBins
 			bins, err = packages.FindPythonBins(logger, cmdPackage.Requirements.Python)
+			if err != nil {
+				return nil, err
+			}
 			bin = bins.Python
 
 			cmd = []string{bin, cmdFile}
@@ -407,7 +416,7 @@ func passthruCommand(executable []string) error {
 		}
 	}
 	if err != nil {
-		return cli.NewExitError("", exitCode)
+		return cli.Exit("", exitCode)
 	}
 	return nil
 }

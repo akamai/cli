@@ -75,11 +75,19 @@ func CreateApp() *cli.App {
 	app.Before = func(c *cli.Context) error {
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
-			os.Setenv("HTTP_PROXY", proxy)
-			os.Setenv("http_proxy", proxy)
+			if err := os.Setenv("HTTP_PROXY", proxy); err != nil {
+				return err
+			}
+			if err := os.Setenv("http_proxy", proxy); err != nil {
+				return err
+			}
 			if strings.HasPrefix(proxy, "https") {
-				os.Setenv("HTTPS_PROXY", proxy)
-				os.Setenv("https_proxy", proxy)
+				if err := os.Setenv("HTTPS_PROXY", proxy); err != nil {
+					return err
+				}
+				if err := os.Setenv("https_proxy", proxy); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -104,7 +112,6 @@ func DefaultAutoComplete(ctx *cli.Context) {
 		}
 
 		ctx.App.Run(args)
-		return
 	}
 
 	commands := make([]*cli.Command, 0)

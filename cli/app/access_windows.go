@@ -14,12 +14,6 @@
 
 package app
 
-const (
-	ACCESSROK = iota
-	ACCESSWOK
-	ACCESSXOK
-)
-
 func checkAccess(path string, perm int) error {
 	return nil
 }

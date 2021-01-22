@@ -34,14 +34,14 @@ func GetAkamaiCliPath() (string, error) {
 		var err error
 		cliHome, err = homedir.Dir()
 		if err != nil {
-			return "", cli.NewExitError("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
+			return "", cli.Exit("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
 		}
 	}
 
 	cliPath := filepath.Join(cliHome, ".akamai-cli")
 	err := os.MkdirAll(cliPath, 0700)
 	if err != nil {
-		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
+		return "", cli.Exit("Unable to create Akamai CLI root directory.", -1)
 	}
 
 	return cliPath, nil

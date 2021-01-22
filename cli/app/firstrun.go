@@ -18,7 +18,7 @@ package app
 
 import (
 	"fmt"
-	"io"
+	"golang.org/x/sys/unix"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -35,6 +35,10 @@ import (
 	pkgio "github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
+)
+
+const (
+	windowsOS = "windows"
 )
 
 func firstRun() error {
@@ -61,7 +65,7 @@ func firstRunCheckInPath() (bool, error) {
 	os.Args[0] = selfPath
 	dirPath := filepath.Dir(selfPath)
 
-	if runtime.GOOS == operatingSystemWindows {
+	if runtime.GOOS == windowsOS {
 		dirPath = strings.ToLower(dirPath)
 	}
 
@@ -86,12 +90,12 @@ func firstRunCheckInPath() (bool, error) {
 			continue
 		}
 
-		if runtime.GOOS == operatingSystemWindows {
+		if runtime.GOOS == windowsOS {
 			path = strings.ToLower(path)
 		}
 
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			if err := checkAccess(path, ACCESSWOK); err == nil {
+			if err := checkAccess(path, unix.W_OK); err == nil {
 				writablePaths = append(writablePaths, path)
 			}
 		}
@@ -141,7 +145,7 @@ func choosePath(writablePaths []string, answer, selfPath string) {
 		choosePath(writablePaths, answer, selfPath)
 	}
 	suffix := ""
-	if runtime.GOOS == operatingSystemWindows {
+	if runtime.GOOS == windowsOS {
 		suffix = ".exe"
 	}
 	newPath := filepath.Join(writablePaths[index-1], "akamai"+suffix)
@@ -180,41 +184,4 @@ func firstRunCheckUpgrade(bannerShown bool) bool {
 	}
 
 	return bannerShown
-}
-
-// We must copy+unlink the file because moving files is broken across filesystems
-func moveFile(src, dst string) error {
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
-	}
-
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-
-	destination, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destination.Close()
-	_, err = io.Copy(destination, source)
-
-	if err != nil {
-		return err
-	}
-
-	err = os.Chmod(dst, 0755)
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(src)
-	return err
 }

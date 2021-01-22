@@ -53,17 +53,17 @@ type packageListPackage struct {
 
 func cmdSearch(c *cli.Context) error {
 	if !c.Args().Present() {
-		return cli.NewExitError(color.RedString("You must specify one or more keywords"), 1)
+		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
 	packageList, err := fetchPackageList()
 	if err != nil {
-		return cli.NewExitError(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
 	err = searchPackages(c.Args().Slice(), packageList)
 	if err != nil {
-		return cli.NewExitError(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
 	return nil

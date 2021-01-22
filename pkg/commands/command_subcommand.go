@@ -35,7 +35,7 @@ func cmdSubcommand(c *cli.Context) error {
 
 	executable, err := findExec(logger, commandName)
 	if err != nil {
-		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", commandName), 1)
+		return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
 	}
 
 	var packageDir string
@@ -58,12 +58,12 @@ func cmdSubcommand(c *cli.Context) error {
 		}
 
 		if err == nil {
-			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ERRPACKAGENEEDSREINSTALL))
+			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ErrPackageNeedsReinstall))
 			fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
 			answer := ""
 			fmt.Scanln(&answer)
 			if answer != "" && strings.ToLower(answer) != "y" {
-				return cli.NewExitError(color.RedString(errors.ERRPACKAGENEEDSREINSTALL), -1)
+				return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
 			}
 
 			if err = uninstallPackage(logger, commandName); err != nil {
@@ -74,9 +74,7 @@ func cmdSubcommand(c *cli.Context) error {
 				return err
 			}
 		}
-
-		os.Setenv("PYTHONUSERBASE", packageDir)
-		if err != nil {
+		if err := os.Setenv("PYTHONUSERBASE", packageDir); err != nil {
 			return err
 		}
 	}
@@ -96,8 +94,12 @@ func cmdSubcommand(c *cli.Context) error {
 	}
 
 	executable = append(executable, os.Args[2:]...)
-	os.Setenv("AKAMAI_CLI_COMMAND", commandName)
-	os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version)
+	if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
+		return err
+	}
+	if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
+		return err
+	}
 	stats.TrackEvent("exec", commandName, currentCmd.Version)
 	return passthruCommand(executable)
 }

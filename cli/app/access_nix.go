@@ -18,15 +18,6 @@ package app
 
 import "golang.org/x/sys/unix"
 
-const (
-	// ACCESSROK ...
-	ACCESSROK = unix.R_OK
-	// ACCESSWOK ...
-	ACCESSWOK = unix.W_OK
-	// ACCESSXOK ...
-	ACCESSXOK = unix.X_OK
-)
-
 func checkAccess(path string, perm uint32) error {
 	return unix.Access(path, perm)
 }

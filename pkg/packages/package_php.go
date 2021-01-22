@@ -27,10 +27,10 @@ import (
 )
 
 // InstallPHP ..
-func InstallPHP(logger log.Logger, dir, cmdReq string) (bool, error) {
+func InstallPHP(logger log.Logger, dir, cmdReq string) error {
 	bin, err := exec.LookPath("php")
 	if err != nil {
-		return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "PHP")
+		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "PHP")
 	}
 
 	logger.Debugf("PHP binary found: %s", bin)
@@ -43,20 +43,20 @@ func InstallPHP(logger log.Logger, dir, cmdReq string) (bool, error) {
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "PHP", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "PHP", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("PHP Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "PHP", cmdReq, matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "PHP", cmdReq, matches[1])
 		}
 	}
 
 	if err := installPHPDepsComposer(logger, bin, dir); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func installPHPDepsComposer(logger log.Logger, phpBin, dir string) error {
@@ -70,7 +70,7 @@ func installPHPDepsComposer(logger log.Logger, phpBin, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, err.(*exec.ExitError).Stderr)
-				return cli.NewExitError(errors.ERRPACKAGEMANAGEREXEC, 1)
+				return cli.Exit(errors.ErrPackageManagerExec, 1)
 			}
 			return nil
 		}
@@ -82,7 +82,7 @@ func installPHPDepsComposer(logger log.Logger, phpBin, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable to execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "composer")
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "composer")
 			}
 			return nil
 		}
@@ -94,13 +94,13 @@ func installPHPDepsComposer(logger log.Logger, phpBin, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "composer")
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "composer")
 			}
 			return nil
 		}
 
-		logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "composer")
-		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "composer")
+		logger.Debugf(errors.ErrPackageManagerNotFound, "composer")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "composer")
 	}
 
 	return nil

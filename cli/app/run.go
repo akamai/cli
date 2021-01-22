@@ -19,8 +19,12 @@ import (
 
 // Run ...
 func Run() int {
-	os.Setenv("AKAMAI_CLI", "1")
-	os.Setenv("AKAMAI_CLI_VERSION", version.Version)
+	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
+		return 1
+	}
+	if err := os.Setenv("AKAMAI_CLI_VERSION", version.Version); err != nil {
+		return 1
+	}
 
 	cachePath := config.GetConfigValue("cli", "cache-path")
 	if cachePath == "" {
@@ -29,12 +33,14 @@ func Run() int {
 		cachePath = filepath.Join(cliHome, "cache")
 		err := os.MkdirAll(cachePath, 0700)
 		if err != nil {
-			return exitCode1
+			return 2
 		}
 	}
 
 	config.SetConfigValue("cli", "cache-path", cachePath)
-	config.SaveConfig()
+	if err := config.SaveConfig(); err != nil {
+		return 3
+	}
 	config.ExportConfigEnv()
 
 	// TODO return value should be used once App singleton is removed
@@ -43,20 +49,20 @@ func Run() int {
 	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
 		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
-		return 2
+		return 4
 	}
 	app.App.Commands = cmds
 
 	if err := firstRun(); err != nil {
-		return exitCode2
+		return 5
 	}
 	checkUpgrade()
 	stats.CheckPing()
 	if err := app.App.RunContext(ctx, os.Args); err != nil {
-		return exitCode3
+		return 6
 	}
 
-	return exitCode0
+	return 0
 }
 
 func checkUpgrade() {

@@ -19,17 +19,16 @@ import (
 )
 
 const (
-	ERRNOTFOUND                      = "%s Not Found."
-	ERRRUNTIMENOTFOUND               = "Unable to locate %s runtime."
-	ERRRUNTIMENOVERSIONFOUND         = "%s %s is required to install this command, unable to determine installed version."
-	ERRRUNTIMEMINIMUMVERSIONREQUIRED = "%s %s is required to install this command, you have %s."
-	ERRPACKAGEMANAGERNOTFOUND        = "Unable to locate package manager (%s) in PATH"
-	ERRPACKAGEMANAGEREXEC            = "Unable to execute package manager (%s)."
-	ERRPACKAGENEEDSREINSTALL         = "You must reinstall this package to continue."
-	ERRPACKAGECOMPILEFAILURE         = "Unable to build binary (%s)."
+	ErrRuntimeNotFound               = "Unable to locate %s runtime."
+	ErrRuntimeNoVersionFound         = "%s %s is required to install this command, unable to determine installed version."
+	ErrRuntimeMinimumVersionRequired = "%s %s is required to install this command, you have %s."
+	ErrPackageManagerNotFound        = "Unable to locate package manager (%s) in PATH"
+	ErrPackageManagerExec            = "Unable to execute package manager (%s)."
+	ErrPackageNeedsReinstall         = "You must reinstall this package to continue."
+	ErrPackageCompileFailure         = "Unable to build binary (%s)."
 )
 
-// ExitError ...
+// ExitError implements `error` interface
 type ExitError struct {
 	exitCode int
 	message  interface{}

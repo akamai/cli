@@ -26,10 +26,10 @@ import (
 )
 
 // InstallPython ...
-func InstallPython(logger log.Logger, dir, cmdReq string) (bool, error) {
+func InstallPython(logger log.Logger, dir, cmdReq string) error {
 	bins, err := FindPythonBins(logger, cmdReq)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if cmdReq != "" && cmdReq != "*" {
@@ -40,20 +40,20 @@ func InstallPython(logger log.Logger, dir, cmdReq string) (bool, error) {
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Python", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Python", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Python Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Python")
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 		}
 	}
 
 	if err := installPythonDepsPip(logger, bins, dir); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 // PythonBins ...
@@ -73,7 +73,7 @@ func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
 			if err != nil {
 				bins.Python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Python 3")
+					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python 3")
 				}
 			}
 		} else {
@@ -84,7 +84,7 @@ func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
 					// Even though the command specified Python 2.x, try using python3 as a last resort
 					bins.Python, err = exec.LookPath("python3")
 					if err != nil {
-						return bins, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Python")
+						return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 					}
 				}
 			}
@@ -96,7 +96,7 @@ func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
 			if err != nil {
 				bins.Python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Python")
+					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 				}
 			}
 		}
@@ -142,27 +142,26 @@ func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
 }
 
 func installPythonDepsPip(logger log.Logger, bins PythonBins, dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err == nil {
-		logger.Info("requirements.txt found, running pip package manager")
+	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err != nil {
+		return nil
+	}
+	logger.Info("requirements.txt found, running pip package manager")
 
-		if bins.Pip == "" {
-			logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "pip")
-			return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "pip")
-		}
-
-		if err == nil {
-			os.Setenv("PYTHONUSERBASE", dir)
-			args := []string{bins.Pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
-			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Dir = dir
-			_, err = cmd.Output()
-			if err != nil {
-				logger.Debugf("Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "pip")
-			}
-			return nil
-		}
+	if bins.Pip == "" {
+		logger.Debugf(errors.ErrPackageManagerNotFound, "pip")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "pip")
 	}
 
+	if err := os.Setenv("PYTHONUSERBASE", dir); err != nil {
+		return err
+	}
+	args := []string{bins.Pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = dir
+	if _, err := cmd.Output(); err != nil {
+		logger.Debugf("Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), err.(*exec.ExitError).Stderr)
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "pip")
+	}
 	return nil
+
 }

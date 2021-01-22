@@ -25,12 +25,12 @@ import (
 )
 
 // InstallJavaScript ...
-func InstallJavaScript(logger log.Logger, dir, cmdReq string) (bool, error) {
+func InstallJavaScript(logger log.Logger, dir, cmdReq string) error {
 	bin, err := exec.LookPath("node")
 	if err != nil {
 		bin, err = exec.LookPath("nodejs")
 		if err != nil {
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOTFOUND, "Node.js")
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Node.js")
 		}
 	}
 
@@ -44,24 +44,24 @@ func InstallJavaScript(logger log.Logger, dir, cmdReq string) (bool, error) {
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMENOVERSIONFOUND, "Node.js", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Node.js", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Node.js Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Node.js", cmdReq, matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Node.js", cmdReq, matches[1])
 		}
 	}
 
 	if err := installNodeDepsYarn(logger, dir); err != nil {
-		return false, err
+		return err
 	}
 
 	if err := installNodeDepsNpm(logger, dir); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func installNodeDepsYarn(logger log.Logger, dir string) error {
@@ -74,12 +74,12 @@ func installNodeDepsYarn(logger log.Logger, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "yarn")
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "yarn")
 			}
 			return nil
 		}
-		logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "yarn")
-		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "yarn")
+		logger.Debugf(errors.ErrPackageManagerNotFound, "yarn")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "yarn")
 	}
 
 	return nil
@@ -96,13 +96,13 @@ func installNodeDepsNpm(logger log.Logger, dir string) error {
 			_, err = cmd.Output()
 			if err != nil {
 				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "npm")
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "npm")
 			}
 			return nil
 		}
 
-		logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "npm")
-		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "npm")
+		logger.Debugf(errors.ErrPackageManagerNotFound, "npm")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "npm")
 	}
 
 	return nil

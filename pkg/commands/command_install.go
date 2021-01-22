@@ -35,7 +35,7 @@ import (
 func cmdInstall(c *cli.Context) error {
 	logger := log.WithCommand(c.Context, c.Command.Name)
 	if !c.Args().Present() {
-		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
+		return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 	}
 
 	oldCmds := getCommands()
@@ -141,10 +141,12 @@ func installPackage(logger log.Logger, repo string, forceBinary bool) error {
 	})
 
 	if err != nil {
-		os.RemoveAll(packageDir)
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
 
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+		return cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
 	io.StopSpinnerOk(s)
@@ -154,8 +156,10 @@ func installPackage(logger log.Logger, repo string, forceBinary bool) error {
 	}
 
 	if !installPackageDependencies(logger, packageDir, forceBinary) {
-		os.RemoveAll(packageDir)
-		return cli.NewExitError("", 1)
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
+		return cli.Exit("", 1)
 	}
 
 	return nil
@@ -174,29 +178,28 @@ func installPackageDependencies(logger log.Logger, dir string, forceBinary bool)
 
 	lang := determineCommandLanguage(cmdPackage)
 
-	var success bool
 	switch lang {
 	case languagePHP:
-		success, err = packages.InstallPHP(logger, dir, cmdPackage.Requirements.Php)
+		err = packages.InstallPHP(logger, dir, cmdPackage.Requirements.Php)
 	case languageJavaScript:
-		success, err = packages.InstallJavaScript(logger, dir, cmdPackage.Requirements.Node)
+		err = packages.InstallJavaScript(logger, dir, cmdPackage.Requirements.Node)
 	case languageRuby:
-		success, err = packages.InstallRuby(logger, dir, cmdPackage.Requirements.Ruby)
+		err = packages.InstallRuby(logger, dir, cmdPackage.Requirements.Ruby)
 	case languagePython:
-		success, err = packages.InstallPython(logger, dir, cmdPackage.Requirements.Python)
+		err = packages.InstallPython(logger, dir, cmdPackage.Requirements.Python)
 	case languageGO:
 		var commands []string
 		for _, cmd := range cmdPackage.Commands {
 			commands = append(commands, cmd.Name)
 		}
-		success, err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
+		err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
 	default:
 		io.StopSpinnerWarnOk(s)
 		fmt.Fprintln(app.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
-	if success && err == nil {
+	if err == nil {
 		io.StopSpinnerOk(s)
 		return true
 	}
@@ -204,29 +207,30 @@ func installPackageDependencies(logger log.Logger, dir string, forceBinary bool)
 	first := true
 	for _, cmd := range cmdPackage.Commands {
 		if cmd.Bin != "" {
-			if first {
-				first = false
-				io.StopSpinnerWarn(s)
-				fmt.Fprintln(app.App.Writer, color.CyanString(err.Error()))
-				if !forceBinary {
-					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-						return false
-					}
-
-					fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
-					answer := ""
-					fmt.Scanln(&answer)
-					if answer != "" && strings.EqualFold(answer, "y") {
-						return false
-					}
-				}
-
-				if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+			if !first {
+				continue
+			}
+			first = false
+			io.StopSpinnerWarn(s)
+			fmt.Fprintln(app.App.Writer, color.CyanString(err.Error()))
+			if !forceBinary {
+				if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 					return false
 				}
 
-				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
+				fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
+				answer := ""
+				fmt.Scanln(&answer)
+				if answer != "" && strings.EqualFold(answer, "y") {
+					return false
+				}
 			}
+
+			if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+				return false
+			}
+
+			s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 
 			if !downloadBin(logger, filepath.Join(dir, "bin"), cmd) {
 				io.StopSpinnerFail(s)

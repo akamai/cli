@@ -62,7 +62,7 @@ func cmdUpdate(c *cli.Context) error {
 func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 	exec, err := findExec(logger, cmd)
 	if err != nil {
-		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
+		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
 
 	logger.Debugf("Command found: %s", filepath.Join(exec...))
@@ -79,7 +79,7 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 
 	if repoDir == "" {
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
+		return cli.Exit(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	logger.Debugf("Repo found: %s", repoDir)
@@ -87,13 +87,13 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 	repo, err := git.PlainOpen(repoDir)
 	if err != nil {
 		logger.Debug("Unable to open repo")
-		return cli.NewExitError(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
+		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
 
 	w, err := repo.Worktree()
 	if err != nil {
 		logger.Debug("Unable to open repo")
-		return cli.NewExitError(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
+		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
@@ -104,21 +104,21 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 	if errBeforePull != nil {
 		logger.Debugf("Fetch error: %s", errBeforePull.Error())
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
+		return cli.Exit(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
 	}
 
 	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	ref, err := repo.Head()
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	if refBeforePull.Hash() != ref.Hash() {
@@ -129,7 +129,7 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 		if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 			logger.Debugf("Fetch error: %s", err.Error())
 			io.StopSpinnerFail(s)
-			return cli.NewExitError(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+			return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 		}
 	} else {
 		logger.Debugf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
@@ -143,7 +143,7 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 
 	if !installPackageDependencies(logger, repoDir, forceBinary) {
 		logger.Debug("Error updating dependencies")
-		return cli.NewExitError("Unable to update command", 1)
+		return cli.Exit("Unable to update command", 1)
 	}
 
 	return nil
