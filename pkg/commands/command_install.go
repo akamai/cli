@@ -15,15 +15,16 @@
 package commands
 
 import (
-	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/stats"
-	"github.com/akamai/cli/pkg/tools"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
@@ -45,7 +46,7 @@ func cmdInstall(c *cli.Context) error {
 
 	for _, repo := range c.Args().Slice() {
 		repo = tools.Githubize(repo)
-		err := installPackage(repo, c.Bool("force"))
+		err := installPackage(c.Context, repo, c.Bool("force"))
 		if err != nil {
 			// Only track public github repos
 			if isPublicRepo(repo) {
@@ -59,12 +60,12 @@ func cmdInstall(c *cli.Context) error {
 		}
 	}
 
-	packageListDiff(oldCmds)
+	packageListDiff(c.Context, oldCmds)
 
 	return nil
 }
 
-func packageListDiff(oldcmds []subcommands) {
+func packageListDiff(ctx context.Context, oldcmds []subcommands) {
 	cmds := getCommands()
 
 	var old []command
@@ -112,38 +113,30 @@ func packageListDiff(oldcmds []subcommands) {
 		}
 	}
 
-	listInstalledCommands(added, removed)
+	listInstalledCommands(ctx, added, removed)
 }
 
 func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(repo string, forceBinary bool) error {
+func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
 	}
 
-	term := terminal.Standard()
+	term := terminal.Get(ctx)
 
 	spin := term.Spinner()
 
-<<<<<<< HEAD
-	s := io.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
-=======
-	spin.Start("Attempting to fetch command from %s", repo)
->>>>>>> TFP-541
+	spin.Start("Attempting to fetch command from %s...", repo)
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
-<<<<<<< HEAD
-		io.StopSpinnerFail(s)
-
-=======
 		spin.Stop(terminal.SpinnerStatusFail)
->>>>>>> TFP-541
+
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
@@ -158,27 +151,14 @@ func installPackage(repo string, forceBinary bool) error {
 
 		os.RemoveAll(packageDir)
 
-<<<<<<< HEAD
-		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
-	io.StopSpinnerOk(s)
-
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		fmt.Fprintln(app.App.Writer, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
-=======
-		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+		term.Printf(color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
 	}
 
-	spin.Stop(terminal.SpinnerStatusOK)
-
-	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		term.Writef(ThirdPartyDisclaimer)
->>>>>>> TFP-541
-	}
-
-	if !installPackageDependencies(packageDir, forceBinary) {
+	if !installPackageDependencies(ctx, packageDir, forceBinary) {
 		os.RemoveAll(packageDir)
 		return cli.NewExitError("", 1)
 	}
@@ -186,22 +166,16 @@ func installPackage(repo string, forceBinary bool) error {
 	return nil
 }
 
-func installPackageDependencies(dir string, forceBinary bool) bool {
-<<<<<<< HEAD
+func installPackageDependencies(ctx context.Context, dir string, forceBinary bool) bool {
 	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
-=======
-	term := terminal.Standard()
-
-	spin := term.Spinner()
-
-	spin.Start("Installing...")
->>>>>>> TFP-541
 
 	cmdPackage, err := readPackage(dir)
 
+	term := terminal.Get(ctx)
+
 	if err != nil {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, err.Error())
+		term.Spinner().Stop(terminal.SpinnerStatusFail)
+		term.Writeln(err.Error())
 		return false
 	}
 
@@ -224,24 +198,13 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		}
 		success, err = packages.InstallGolang(dir, cmdPackage.Requirements.Go, commands)
 	default:
-<<<<<<< HEAD
-		io.StopSpinnerWarnOk(s)
-		fmt.Fprintln(app.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
-=======
-		spin.Stop(terminal.SpinnerStatusWarnOK)
-
-		term.Writef(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
-
->>>>>>> TFP-541
+		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
+		term.Writeln(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
 	if success && err == nil {
-<<<<<<< HEAD
 		io.StopSpinnerOk(s)
-=======
-		spin.Stop(terminal.SpinnerStatusOK)
->>>>>>> TFP-541
 		return true
 	}
 
@@ -250,79 +213,43 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		if cmd.Bin != "" {
 			if first {
 				first = false
-<<<<<<< HEAD
-				io.StopSpinnerWarn(s)
-				fmt.Fprintln(app.App.Writer, color.CyanString(err.Error()))
-=======
-
-				spin.Stop(terminal.SpinnerStatusWarnOK)
-
-				term.Writef(color.CyanString(err.Error()))
-
->>>>>>> TFP-541
+				term.Spinner().Stop(terminal.SpinnerStatusWarn)
+				term.Writeln(color.CyanString(err.Error()))
 				if !forceBinary {
 					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 						return false
 					}
 
-<<<<<<< HEAD
-					fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
-					answer := ""
-					fmt.Scanln(&answer)
-					if answer != "" && strings.ToLower(answer) != "y" {
-=======
-					answer, _ := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
-
-					if !answer {
->>>>>>> TFP-541
+					ok, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+					if err != nil {
+						term.Writeln(color.CyanString(err.Error()))
+						return false
+					}
+					if !ok {
 						return false
 					}
 				}
 
 				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
 
-<<<<<<< HEAD
-				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
+				term.Spinner().Start("Downloading binary...")
 			}
 
 			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
-				io.StopSpinnerFail(s)
-				fmt.Fprintln(app.App.Writer, color.RedString("Unable to download binary: "+err.Error()))
-=======
-				spin.Start("Downloading binary...")
-			}
-
-			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
-				spin.Stop(terminal.SpinnerStatusFail)
-
-				term.Writef(color.RedString("Unable to download binary: " + err.Error()))
-
->>>>>>> TFP-541
+				term.Spinner().Stop(terminal.SpinnerStatusFail)
+				term.Writeln(color.RedString("Unable to download binary: " + err.Error()))
 				return false
 			}
 		}
 
 		if first {
 			first = false
-<<<<<<< HEAD
-			io.StopSpinnerFail(s)
-			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
-=======
-
-			spin.Stop(terminal.SpinnerStatusFail)
-
-			term.Writef(color.RedString(err.Error()))
-
->>>>>>> TFP-541
+			term.Spinner().Stop(terminal.SpinnerStatusFail)
+			term.Writeln(color.RedString(err.Error()))
 			return false
 		}
 	}
 
-<<<<<<< HEAD
-	io.StopSpinnerOk(s)
-=======
-	spin.Stop(terminal.SpinnerStatusOK)
-
->>>>>>> TFP-541
+	term.Spinner().Stop(terminal.SpinnerStatusOK)
 	return true
 }

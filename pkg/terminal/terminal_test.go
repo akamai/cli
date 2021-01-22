@@ -32,7 +32,7 @@ func TestWrite(t *testing.T) {
 
 	term := New(out, nil, DiscardWriter())
 
-	term.Writef(t.Name())
+	term.Writeln(t.Name())
 
 	out.Seek(0, 0)
 

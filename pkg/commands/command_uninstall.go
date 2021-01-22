@@ -15,12 +15,14 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/tools"
-	"os"
-	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -28,7 +30,7 @@ import (
 
 func cmdUninstall(c *cli.Context) error {
 	for _, cmd := range c.Args().Slice() {
-		if err := uninstallPackage(cmd); err != nil {
+		if err := uninstallPackage(c.Context, cmd); err != nil {
 			stats.TrackEvent("package.uninstall", "failed", cmd)
 			return err
 		}
@@ -38,7 +40,7 @@ func cmdUninstall(c *cli.Context) error {
 	return nil
 }
 
-func uninstallPackage(cmd string) error {
+func uninstallPackage(ctx context.Context, cmd string) error {
 	exec, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)

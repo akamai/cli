@@ -15,12 +15,14 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/tools"
-	"path/filepath"
-	"strings"
 
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
@@ -38,7 +40,7 @@ func cmdUpdate(c *cli.Context) error {
 		for _, cmd := range getCommands() {
 			for _, command := range cmd.Commands {
 				if _, ok := builtinCmds[command.Name]; !ok {
-					if err := updatePackage(command.Name, c.Bool("force")); err != nil {
+					if err := updatePackage(c.Context, command.Name, c.Bool("force")); err != nil {
 						return err
 					}
 				}
@@ -49,7 +51,7 @@ func cmdUpdate(c *cli.Context) error {
 	}
 
 	for _, cmd := range c.Args().Slice() {
-		if err := updatePackage(cmd, c.Bool("force")); err != nil {
+		if err := updatePackage(c.Context, cmd, c.Bool("force")); err != nil {
 			return err
 		}
 	}
@@ -57,7 +59,7 @@ func cmdUpdate(c *cli.Context) error {
 	return nil
 }
 
-func updatePackage(cmd string, forceBinary bool) error {
+func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
 	exec, err := findExec(cmd)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
@@ -131,7 +133,7 @@ func updatePackage(cmd string, forceBinary bool) error {
 	log.Tracef("Repo updated successfully")
 	io.StopSpinnerOk(s)
 
-	if !installPackageDependencies(repoDir, forceBinary) {
+	if !installPackageDependencies(ctx, repoDir, forceBinary) {
 		log.Trace("Error updating dependencies")
 		return cli.NewExitError("Unable to update command", 1)
 	}

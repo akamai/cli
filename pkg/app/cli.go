@@ -2,15 +2,16 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
-	"github.com/mattn/go-colorable"
 	"github.com/urfave/cli/v2"
-	"os"
-	"strings"
-	"time"
 )
 
 // TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
@@ -24,8 +25,6 @@ func CreateApp() *cli.App {
 	app.Usage = "Akamai CLI"
 	app.Version = version.Version
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Writer = colorable.NewColorableStdout()
-	app.ErrWriter = colorable.NewColorableStderr()
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
 	cli.VersionFlag = &cli.BoolFlag{
@@ -69,6 +68,11 @@ func CreateApp() *cli.App {
 	}
 
 	app.Before = func(c *cli.Context) error {
+		term := terminal.Get(c.Context)
+
+		app.Writer = term
+		app.ErrWriter = term.Error()
+
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
 			os.Setenv("HTTP_PROXY", proxy)
@@ -258,15 +262,17 @@ autoload -U bashcompinit && bashcompinit`
 
 complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
 
+	term := terminal.Get(c.Context)
+
 	if c.Bool("bash") {
-		fmt.Fprintln(app.Writer, bashComments)
-		fmt.Fprintln(app.Writer, bashScript)
+		term.Writeln(bashComments)
+		term.Writeln(bashScript)
 		return nil
 	}
 
 	if c.Bool("zsh") {
-		fmt.Fprintln(app.Writer, zshScript)
-		fmt.Fprintln(app.Writer, bashScript)
+		term.Writeln(zshScript)
+		term.Writeln(bashScript)
 		return nil
 	}
 

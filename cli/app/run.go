@@ -3,16 +3,18 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
-	"os"
-	"path/filepath"
 )
 
 func Run() int {
@@ -49,7 +51,9 @@ func Run() int {
 	}
 	checkUpgrade()
 	stats.CheckPing()
-	ctx := context.TODO()
+
+	ctx := terminal.Context(context.TODO())
+
 	if err := app.App.RunContext(ctx, os.Args); err != nil {
 		return 4
 	}

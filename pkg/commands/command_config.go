@@ -15,10 +15,10 @@
 package commands
 
 import (
-	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/config"
 	"strings"
+
+	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/terminal"
 
 	"github.com/urfave/cli/v2"
 )
@@ -35,7 +35,10 @@ func cmdConfigSet(c *cli.Context) error {
 func cmdConfigGet(c *cli.Context) error {
 	section, key := parseConfigPath(c)
 
-	fmt.Fprintln(app.App.Writer, config.GetConfigValue(section, key))
+	terminal.
+		Get(c.Context).
+		Writeln(config.GetConfigValue(section, key))
+
 	return nil
 }
 
@@ -52,11 +55,13 @@ func cmdConfigList(c *cli.Context) error {
 		return err
 	}
 
+	term := terminal.Get(c.Context)
+
 	if c.NArg() > 0 {
 		sectionName := c.Args().First()
 		section := config.Section(sectionName)
 		for _, key := range section.Keys() {
-			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", sectionName, key.Name(), key.Value())
+			term.Printf("%s.%s = %s\n", sectionName, key.Name(), key.Value())
 		}
 
 		return nil
@@ -64,7 +69,7 @@ func cmdConfigList(c *cli.Context) error {
 
 	for _, section := range config.Sections() {
 		for _, key := range section.Keys() {
-			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", section.Name(), key.Name(), key.Value())
+			term.Printf("%s.%s = %s\n", section.Name(), key.Name(), key.Value())
 		}
 	}
 	return nil
