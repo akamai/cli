@@ -15,33 +15,31 @@
 package packages
 
 import (
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
 	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/urfave/cli/v2"
 )
 
 // InstallRuby ...
-func InstallRuby(dir, cmdReq string) (bool, error) {
+func InstallRuby(logger log.Logger, dir, cmdReq string) (bool, error) {
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
 		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
 	}
 
-	log.Tracef("Ruby binary found: %s", bin)
+	logger.Debugf("Ruby binary found: %s", bin)
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		log.Tracef("%s -v: %s", bin, output)
+		logger.Debugf("%s -v: %s", bin, output)
 		r := regexp.MustCompile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 
@@ -50,34 +48,34 @@ func InstallRuby(dir, cmdReq string) (bool, error) {
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
-			log.Tracef("Ruby Version found: %s", matches[1])
+			logger.Debugf("Ruby Version found: %s", matches[1])
 			return false, errors.NewExitErrorf(1, errors.ERRRUNTIMEMINIMUMVERSIONREQUIRED, "Ruby", cmdReq, matches[1])
 		}
 	}
 
-	if err := installRubyDepsBundler(dir); err != nil {
+	if err := installRubyDepsBundler(logger, dir); err != nil {
 		return false, err
 	}
 
 	return true, nil
 }
 
-func installRubyDepsBundler(dir string) error {
+func installRubyDepsBundler(logger log.Logger, dir string) error {
 	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
-		log.Info("Gemfile found, running yarn package manager")
+		logger.Debugf("Gemfile found, running yarn package manager")
 		bin, err := exec.LookPath("bundle")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.Multilinef(log.Debugf, "Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
+				logger.Debugf("Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
 				return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGEREXEC, "bundler")
 			}
 			return nil
 		}
 
-		log.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
+		logger.Debugf(errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
 		return errors.NewExitErrorf(1, errors.ERRPACKAGEMANAGERNOTFOUND, "bundler")
 	}
 

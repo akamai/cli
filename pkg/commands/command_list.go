@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"

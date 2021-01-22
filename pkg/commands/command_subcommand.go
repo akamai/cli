@@ -16,23 +16,24 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/stats"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
-
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/stats"
+	"github.com/urfave/cli/v2"
 )
 
 func cmdSubcommand(c *cli.Context) error {
+	logger := log.WithCommand(c.Context, c.Command.Name)
 	commandName := strings.ToLower(c.Command.Name)
 
-	executable, err := findExec(commandName)
+	executable, err := findExec(logger, commandName)
 	if err != nil {
 		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", commandName), 1)
 	}
@@ -65,11 +66,11 @@ func cmdSubcommand(c *cli.Context) error {
 				return cli.NewExitError(color.RedString(errors.ERRPACKAGENEEDSREINSTALL), -1)
 			}
 
-			if err = uninstallPackage(commandName); err != nil {
+			if err = uninstallPackage(logger, commandName); err != nil {
 				return err
 			}
 
-			if err = installPackage(commandName, false); err != nil {
+			if err = installPackage(logger, commandName, false); err != nil {
 				return err
 			}
 		}

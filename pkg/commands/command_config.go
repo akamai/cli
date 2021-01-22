@@ -18,38 +18,39 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
 )
 
-func cmdConfigSet(c *cli.Context) {
+func cmdConfigSet(c *cli.Context) error {
 	section, key := parseConfigPath(c)
 
 	value := strings.Join(c.Args().Tail(), " ")
 
 	config.SetConfigValue(section, key, value)
-	config.SaveConfig()
+	return config.SaveConfig()
 }
 
-func cmdConfigGet(c *cli.Context) {
+func cmdConfigGet(c *cli.Context) error {
 	section, key := parseConfigPath(c)
 
 	fmt.Fprintln(app.App.Writer, config.GetConfigValue(section, key))
+	return nil
 }
 
-func cmdConfigUnset(c *cli.Context) {
+func cmdConfigUnset(c *cli.Context) error {
 	section, key := parseConfigPath(c)
 
 	config.UnsetConfigValue(section, key)
-	config.SaveConfig()
+	return config.SaveConfig()
 }
 
-func cmdConfigList(c *cli.Context) {
+func cmdConfigList(c *cli.Context) error {
 	conf, err := config.OpenConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	if c.NArg() > 0 {
@@ -59,7 +60,7 @@ func cmdConfigList(c *cli.Context) {
 			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", sectionName, key.Name(), key.Value())
 		}
 
-		return
+		return nil
 	}
 
 	for _, section := range conf.Sections() {
@@ -67,6 +68,7 @@ func cmdConfigList(c *cli.Context) {
 			fmt.Fprintf(app.App.Writer, "%s.%s = %s\n", section.Name(), key.Name(), key.Value())
 		}
 	}
+	return nil
 }
 
 func parseConfigPath(c *cli.Context) (section, key string) {

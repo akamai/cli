@@ -15,12 +15,11 @@
 package tools
 
 import (
+	"github.com/mitchellh/go-homedir"
+	"github.com/urfave/cli/v2"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/mitchellh/go-homedir"
-	"github.com/urfave/cli"
 )
 
 // Self ...

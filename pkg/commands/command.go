@@ -15,8 +15,13 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/pkg/tools"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,11 +30,7 @@ import (
 	"syscall"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
-
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/urfave/cli/v2"
 )
 
 type command struct {
@@ -42,12 +43,12 @@ type command struct {
 	Bin          string   `json:"bin"`
 	AutoComplete bool     `json:"auto-complete"`
 
-	Flags       []cli.Flag    `json:"-"`
-	Docs        string        `json:"-"`
-	BinSuffix   string        `json:"-"`
-	OS          string        `json:"-"`
-	Arch        string        `json:"-"`
-	Subcommands []cli.Command `json:"-"`
+	Flags       []cli.Flag     `json:"-"`
+	Docs        string         `json:"-"`
+	BinSuffix   string         `json:"-"`
+	OS          string         `json:"-"`
+	Arch        string         `json:"-"`
+	Subcommands []*cli.Command `json:"-"`
 }
 
 func getBuiltinCommands() []subcommands {
@@ -58,7 +59,7 @@ func getBuiltinCommands() []subcommands {
 					Name:        "config",
 					Arguments:   "<action> <setting> [value]",
 					Description: "Manage configuration",
-					Subcommands: []cli.Command{
+					Subcommands: []*cli.Command{
 						{
 							Name:      "get",
 							ArgsUsage: "<setting>",
@@ -101,7 +102,7 @@ func getBuiltinCommands() []subcommands {
 					Arguments:   "<package name or repository URL>...",
 					Description: "Fetch and install packages from a Git repository.",
 					Flags: []cli.Flag{
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "force",
 							Usage: "Force binary installation if available when source installation fails",
 						},
@@ -122,7 +123,7 @@ func getBuiltinCommands() []subcommands {
 					Name:        "list",
 					Description: "Displays available commands",
 					Flags: []cli.Flag{
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "remote",
 							Usage: "Display all available packages",
 						},
@@ -159,7 +160,7 @@ func getBuiltinCommands() []subcommands {
 					Arguments:   "[<command>...]",
 					Description: "Update one or more commands. If no command is specified, all commands are updated",
 					Flags: []cli.Flag{
-						cli.BoolFlag{
+						&cli.BoolFlag{
 							Name:  "force",
 							Usage: "Force binary installation if available when source installation fails",
 						},
@@ -213,14 +214,15 @@ func getCommands() []subcommands {
 }
 
 // CommandLocator ...
-func CommandLocator() ([]cli.Command, error) {
-	commands := make([]cli.Command, 0)
+func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
+	logger := log.FromContext(ctx)
+	commands := make([]*cli.Command, 0)
 	builtinCmds := make(map[string]bool)
 	for _, cmd := range getBuiltinCommands() {
 		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
 		commands = append(
 			commands,
-			cli.Command{
+			&cli.Command{
 				Name:         strings.ToLower(cmd.Commands[0].Name),
 				Aliases:      cmd.Commands[0].Aliases,
 				Usage:        cmd.Commands[0].Usage,
@@ -244,7 +246,7 @@ func CommandLocator() ([]cli.Command, error) {
 
 			commands = append(
 				commands,
-				cli.Command{
+				&cli.Command{
 					Name:        strings.ToLower(command.Name),
 					Aliases:     command.Aliases,
 					Description: command.Description,
@@ -254,7 +256,7 @@ func CommandLocator() ([]cli.Command, error) {
 					SkipFlagParsing: true,
 					BashComplete: func(c *cli.Context) {
 						if command.AutoComplete {
-							executable, err := findExec(c.Command.Name)
+							executable, err := findExec(logger, c.Command.Name)
 							if err != nil {
 								return
 							}
@@ -273,7 +275,7 @@ func CommandLocator() ([]cli.Command, error) {
 	return commands, nil
 }
 
-func findExec(cmd string) ([]string, error) {
+func findExec(logger log.Logger, cmd string) ([]string, error) {
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
 	cmdName := "akamai"
@@ -354,7 +356,7 @@ func findExec(cmd string) ([]string, error) {
 			cmd = []string{bin, cmdFile}
 		case language == languagePython:
 			var bins packages.PythonBins
-			bins, err = packages.FindPythonBins(cmdPackage.Requirements.Python)
+			bins, err = packages.FindPythonBins(logger, cmdPackage.Requirements.Python)
 			bin = bins.Python
 
 			cmd = []string{bin, cmdFile}
