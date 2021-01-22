@@ -31,6 +31,11 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
+var (
+	// ThirdPartyDisclaimer is the message to be used when third party packages are installed
+	ThirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+)
+
 func cmdInstall(c *cli.Context) error {
 	if !c.Args().Present() {
 		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
@@ -120,27 +125,40 @@ func installPackage(repo string, forceBinary bool) error {
 		return err
 	}
 
-	_ = os.MkdirAll(srcPath, 0700)
+	term := terminal.Standard()
 
+	spin := term.Spinner()
+
+<<<<<<< HEAD
 	s := io.StartSpinner(fmt.Sprintf("Attempting to fetch command from %s...", repo), fmt.Sprintf("Attempting to fetch command from %s...", repo)+"... ["+color.GreenString("OK")+"]\n")
+=======
+	spin.Start("Attempting to fetch command from %s", repo)
+>>>>>>> TFP-541
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
+<<<<<<< HEAD
 		io.StopSpinnerFail(s)
 
+=======
+		spin.Stop(terminal.SpinnerStatusFail)
+>>>>>>> TFP-541
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
 	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
 		URL:      repo,
-		Progress: nil,
+		Progress: spin,
 		Depth:    1,
 	})
 
 	if err != nil {
+		spin.Stop(terminal.SpinnerStatusFail)
+
 		os.RemoveAll(packageDir)
 
+<<<<<<< HEAD
 		io.StopSpinnerFail(s)
 		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
@@ -149,6 +167,15 @@ func installPackage(repo string, forceBinary bool) error {
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
 		fmt.Fprintln(app.App.Writer, color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
+=======
+		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+	}
+
+	spin.Stop(terminal.SpinnerStatusOK)
+
+	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
+		term.Writef(ThirdPartyDisclaimer)
+>>>>>>> TFP-541
 	}
 
 	if !installPackageDependencies(packageDir, forceBinary) {
@@ -160,7 +187,15 @@ func installPackage(repo string, forceBinary bool) error {
 }
 
 func installPackageDependencies(dir string, forceBinary bool) bool {
+<<<<<<< HEAD
 	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
+=======
+	term := terminal.Standard()
+
+	spin := term.Spinner()
+
+	spin.Start("Installing...")
+>>>>>>> TFP-541
 
 	cmdPackage, err := readPackage(dir)
 
@@ -189,13 +224,24 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		}
 		success, err = packages.InstallGolang(dir, cmdPackage.Requirements.Go, commands)
 	default:
+<<<<<<< HEAD
 		io.StopSpinnerWarnOk(s)
 		fmt.Fprintln(app.App.Writer, color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
+=======
+		spin.Stop(terminal.SpinnerStatusWarnOK)
+
+		term.Writef(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
+
+>>>>>>> TFP-541
 		return true
 	}
 
 	if success && err == nil {
+<<<<<<< HEAD
 		io.StopSpinnerOk(s)
+=======
+		spin.Stop(terminal.SpinnerStatusOK)
+>>>>>>> TFP-541
 		return true
 	}
 
@@ -204,41 +250,79 @@ func installPackageDependencies(dir string, forceBinary bool) bool {
 		if cmd.Bin != "" {
 			if first {
 				first = false
+<<<<<<< HEAD
 				io.StopSpinnerWarn(s)
 				fmt.Fprintln(app.App.Writer, color.CyanString(err.Error()))
+=======
+
+				spin.Stop(terminal.SpinnerStatusWarnOK)
+
+				term.Writef(color.CyanString(err.Error()))
+
+>>>>>>> TFP-541
 				if !forceBinary {
 					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 						return false
 					}
 
+<<<<<<< HEAD
 					fmt.Fprint(app.App.Writer, "Binary command(s) found, would you like to download and install it? (Y/n): ")
 					answer := ""
 					fmt.Scanln(&answer)
 					if answer != "" && strings.ToLower(answer) != "y" {
+=======
+					answer, _ := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+
+					if !answer {
+>>>>>>> TFP-541
 						return false
 					}
 				}
 
 				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
 
+<<<<<<< HEAD
 				s = io.StartSpinner("Downloading binary...", "Downloading binary...... ["+color.GreenString("OK")+"]\n")
 			}
 
 			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
 				io.StopSpinnerFail(s)
 				fmt.Fprintln(app.App.Writer, color.RedString("Unable to download binary: "+err.Error()))
+=======
+				spin.Start("Downloading binary...")
+			}
+
+			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
+				spin.Stop(terminal.SpinnerStatusFail)
+
+				term.Writef(color.RedString("Unable to download binary: " + err.Error()))
+
+>>>>>>> TFP-541
 				return false
 			}
 		}
 
 		if first {
 			first = false
+<<<<<<< HEAD
 			io.StopSpinnerFail(s)
 			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
+=======
+
+			spin.Stop(terminal.SpinnerStatusFail)
+
+			term.Writef(color.RedString(err.Error()))
+
+>>>>>>> TFP-541
 			return false
 		}
 	}
 
+<<<<<<< HEAD
 	io.StopSpinnerOk(s)
+=======
+	spin.Stop(terminal.SpinnerStatusOK)
+
+>>>>>>> TFP-541
 	return true
 }
