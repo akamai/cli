@@ -18,10 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/tools"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,6 +27,12 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/git"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type command struct {
@@ -52,6 +54,9 @@ type command struct {
 }
 
 func getBuiltinCommands() []subcommands {
+	// initialize git repo.
+	gitRepo := git.NewRepository()
+
 	commands := []subcommands{
 		{
 			Commands: []command{
@@ -115,7 +120,7 @@ func getBuiltinCommands() []subcommands {
 						"akamai install https://github.com/akamai/cli-property.git"),
 				},
 			},
-			Action: cmdInstall,
+			Action: cmdInstall(gitRepo),
 		},
 		{
 			Commands: []command{
@@ -167,7 +172,7 @@ func getBuiltinCommands() []subcommands {
 					},
 				},
 			},
-			Action: cmdUpdate,
+			Action: cmdUpdate(gitRepo),
 		},
 	}
 
@@ -244,6 +249,8 @@ func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 				continue
 			}
 
+			gitRepo := git.NewRepository()
+
 			commands = append(
 				commands,
 				&cli.Command{
@@ -251,7 +258,7 @@ func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 					Aliases:     command.Aliases,
 					Description: command.Description,
 
-					Action:          cmdSubcommand,
+					Action:          cmdSubcommand(gitRepo),
 					Category:        color.YellowString("Installed Commands:"),
 					SkipFlagParsing: true,
 					BashComplete: func(c *cli.Context) {

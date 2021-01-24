@@ -15,51 +15,54 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
-	"github.com/akamai/cli/pkg/log"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/tools"
 )
 
-func cmdUpdate(c *cli.Context) error {
-	logger := log.WithCommand(c.Context, c.Command.Name)
-	if !c.Args().Present() {
-		var builtinCmds = make(map[string]bool)
-		for _, cmd := range getBuiltinCommands() {
-			builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
-		}
+func cmdUpdate(gitRepo git.Repository) cli.ActionFunc {
+	return func(c *cli.Context) error {
+		logger := log.WithCommand(c.Context, c.Command.Name)
+		if !c.Args().Present() {
+			var builtinCmds = make(map[string]bool)
+			for _, cmd := range getBuiltinCommands() {
+				builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
+			}
 
-		for _, cmd := range getCommands() {
-			for _, command := range cmd.Commands {
-				if _, ok := builtinCmds[command.Name]; !ok {
-					if err := updatePackage(logger, command.Name, c.Bool("force")); err != nil {
-						return err
+			for _, cmd := range getCommands() {
+				for _, command := range cmd.Commands {
+					if _, ok := builtinCmds[command.Name]; !ok {
+						if err := updatePackage(c.Context, gitRepo, logger, command.Name, c.Bool("force")); err != nil {
+							return err
+						}
 					}
 				}
+			}
+
+			return nil
+		}
+
+		for _, cmd := range c.Args().Slice() {
+			if err := updatePackage(c.Context, gitRepo, logger, cmd, c.Bool("force")); err != nil {
+				return err
 			}
 		}
 
 		return nil
 	}
-
-	for _, cmd := range c.Args().Slice() {
-		if err := updatePackage(logger, cmd, c.Bool("force")); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
-func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
+func updatePackage(ctx context.Context, gitRepo git.Repository, logger log.Logger, cmd string, forceBinary bool) error {
 	exec, err := findExec(logger, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
@@ -84,7 +87,7 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 
 	logger.Debugf("Repo found: %s", repoDir)
 
-	repo, err := git.PlainOpen(repoDir)
+	repo, err := gitRepo.Open(repoDir)
 	if err != nil {
 		logger.Debug("Unable to open repo")
 		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
@@ -107,7 +110,7 @@ func updatePackage(logger log.Logger, cmd string, forceBinary bool) error {
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
 	}
 
-	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
+	err = gitRepo.Pull(ctx, w)
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
 		io.StopSpinnerFail(s)

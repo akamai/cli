@@ -16,10 +16,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/stats"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -27,79 +23,87 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/git"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/stats"
 )
 
-func cmdSubcommand(c *cli.Context) error {
-	logger := log.WithCommand(c.Context, c.Command.Name)
-	commandName := strings.ToLower(c.Command.Name)
+func cmdSubcommand(git git.Repository) cli.ActionFunc {
+	return func(c *cli.Context) error {
+		logger := log.WithCommand(c.Context, c.Command.Name)
+		commandName := strings.ToLower(c.Command.Name)
 
-	executable, err := findExec(logger, commandName)
-	if err != nil {
-		return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
-	}
-
-	var packageDir string
-	if len(executable) == 1 {
-		packageDir = findPackageDir(executable[0])
-	} else if len(executable) > 1 {
-		packageDir = findPackageDir(executable[1])
-	}
-
-	cmdPackage, _ := readPackage(packageDir)
-
-	if cmdPackage.Requirements.Python != "" {
-		var err error
-		if runtime.GOOS == "linux" {
-			_, err = os.Stat(filepath.Join(packageDir, ".local"))
-		} else if runtime.GOOS == "darwin" {
-			_, err = os.Stat(filepath.Join(packageDir, "Library"))
-		} else if runtime.GOOS == "windows" {
-			_, err = os.Stat(filepath.Join(packageDir, "Lib"))
+		executable, err := findExec(logger, commandName)
+		if err != nil {
+			return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
 		}
 
-		if err == nil {
-			fmt.Fprintln(app.App.Writer, color.CyanString(errors.ErrPackageNeedsReinstall))
-			fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
-			answer := ""
-			fmt.Scanln(&answer)
-			if answer != "" && strings.ToLower(answer) != "y" {
-				return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
+		var packageDir string
+		if len(executable) == 1 {
+			packageDir = findPackageDir(executable[0])
+		} else if len(executable) > 1 {
+			packageDir = findPackageDir(executable[1])
+		}
+
+		cmdPackage, _ := readPackage(packageDir)
+
+		if cmdPackage.Requirements.Python != "" {
+			var err error
+			if runtime.GOOS == "linux" {
+				_, err = os.Stat(filepath.Join(packageDir, ".local"))
+			} else if runtime.GOOS == "darwin" {
+				_, err = os.Stat(filepath.Join(packageDir, "Library"))
+			} else if runtime.GOOS == "windows" {
+				_, err = os.Stat(filepath.Join(packageDir, "Lib"))
 			}
 
-			if err = uninstallPackage(logger, commandName); err != nil {
-				return err
-			}
+			if err == nil {
+				fmt.Fprintln(app.App.Writer, color.CyanString(errors.ErrPackageNeedsReinstall))
+				fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
+				answer := ""
+				fmt.Scanln(&answer)
+				if answer != "" && strings.ToLower(answer) != "y" {
+					return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
+				}
 
-			if err = installPackage(logger, commandName, false); err != nil {
+				if err = uninstallPackage(logger, commandName); err != nil {
+					return err
+				}
+
+				if err = installPackage(c.Context, git, logger, commandName, false); err != nil {
+					return err
+				}
+			}
+			if err := os.Setenv("PYTHONUSERBASE", packageDir); err != nil {
 				return err
 			}
 		}
-		if err := os.Setenv("PYTHONUSERBASE", packageDir); err != nil {
+
+		var currentCmd command
+		for _, cmd := range cmdPackage.Commands {
+			if strings.EqualFold(cmd.Name, commandName) {
+				currentCmd = cmd
+				break
+			}
+
+			for _, alias := range cmd.Aliases {
+				if strings.EqualFold(alias, commandName) {
+					currentCmd = cmd
+				}
+			}
+		}
+
+		executable = append(executable, os.Args[2:]...)
+		if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
 			return err
 		}
-	}
-
-	var currentCmd command
-	for _, cmd := range cmdPackage.Commands {
-		if strings.EqualFold(cmd.Name, commandName) {
-			currentCmd = cmd
-			break
+		if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
+			return err
 		}
-
-		for _, alias := range cmd.Aliases {
-			if strings.EqualFold(alias, commandName) {
-				currentCmd = cmd
-			}
-		}
+		stats.TrackEvent("exec", commandName, currentCmd.Version)
+		return passthruCommand(executable)
 	}
-
-	executable = append(executable, os.Args[2:]...)
-	if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
-		return err
-	}
-	if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
-		return err
-	}
-	stats.TrackEvent("exec", commandName, currentCmd.Version)
-	return passthruCommand(executable)
 }
