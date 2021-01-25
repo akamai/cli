@@ -24,9 +24,12 @@ import (
 
 	"os"
 
+	"github.com/akamai/cli/pkg/version"
 	spnr "github.com/briandowns/spinner"
 	"github.com/fatih/color"
+
 	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -59,6 +62,9 @@ type (
 
 		// Error return the error writer
 		Error() io.Writer
+
+		// IsTTY returns true if the terminal is a valid tty
+		IsTTY() bool
 	}
 
 	// Writer provides a minimal interface for Stdin.
@@ -201,6 +207,10 @@ func (t terminal) Confirm(p string, def bool) (bool, error) {
 	return rval, err
 }
 
+func (t terminal) IsTTY() bool {
+	return isatty.IsTerminal(t.Out.Fd()) || isatty.IsCygwinTerminal(t.Out.Fd())
+}
+
 func (t *terminal) Spinner() *Spinner {
 	return t.spnr
 }
@@ -223,6 +233,26 @@ func (s *Spinner) Stop(status SpinnerStatus) {
 func (s *Spinner) Write(v []byte) (n int, err error) {
 	s.Spinner.Suffix = " " + strings.TrimSpace(string(v))
 	return len(v), nil
+}
+
+// OK stops the spinner with ok status
+func (s *Spinner) OK() {
+	s.Stop(SpinnerStatusOK)
+}
+
+// WarnOK stops the spinner with WarnOK status
+func (s *Spinner) WarnOK() {
+	s.Stop(SpinnerStatusWarnOK)
+}
+
+// Warn stops the spinner with Warn status
+func (s *Spinner) Warn() {
+	s.Stop(SpinnerStatusWarn)
+}
+
+// Fail stops the spinner with fail status
+func (s *Spinner) Fail() {
+	s.Stop(SpinnerStatusFail)
 }
 
 // DiscardWriter returns a discard write that direct output to /dev/null
@@ -254,4 +284,18 @@ func Get(ctx context.Context) Terminal {
 
 func (w *colorWriter) Fd() uintptr {
 	return w.fd
+}
+
+func ShowBanner(ctx context.Context) {
+	term := Get(ctx)
+
+	term.Writeln()
+	bg := color.New(color.BgMagenta)
+	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
+	fg := bg.Add(color.FgWhite)
+	title := "Welcome to Akamai CLI v" + version.Version
+	ws := strings.Repeat(" ", 16)
+	term.Printf(fg.Sprintf(ws + title + ws + "\n"))
+	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
+	term.Writeln()
 }

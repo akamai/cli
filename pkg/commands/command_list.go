@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/terminal"
 
 	"github.com/fatih/color"
@@ -28,11 +27,10 @@ import (
 )
 
 func cmdList(c *cli.Context) error {
+	term := terminal.Get(c.Context)
 	bold := color.New(color.FgWhite, color.Bold)
 
 	commands := listInstalledCommands(c.Context, nil, nil)
-
-	term := terminal.Get(c.Context)
 
 	if c.IsSet("remote") {
 		packageList, err := fetchPackageList()
@@ -53,7 +51,7 @@ func cmdList(c *cli.Context) error {
 		if foundCommands {
 			return nil
 		}
-		fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
+		term.Writeln(color.YellowString("\nAvailable Commands:\n\n"))
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {
@@ -77,7 +75,7 @@ func listInstalledCommands(ctx context.Context, added map[string]bool, removed m
 	term := terminal.Get(ctx)
 
 	commands := make(map[string]bool)
-	fmt.Fprintln(app.App.Writer, color.YellowString("\nInstalled Commands:\n"))
+	term.Writeln(color.YellowString("\nInstalled Commands:\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true
@@ -98,7 +96,7 @@ func listInstalledCommands(ctx context.Context, added map[string]bool, removed m
 					aliases = "aliases"
 				}
 
-				fmt.Fprintf(app.App.Writer, " (%s: ", aliases)
+				term.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
@@ -108,7 +106,7 @@ func listInstalledCommands(ctx context.Context, added map[string]bool, removed m
 				term.Printf(")")
 			}
 
-			fmt.Fprintln(app.App.Writer)
+			term.Writeln()
 			if len(command.Description) > 0 {
 				term.Printf("    %s\n", command.Description)
 			}

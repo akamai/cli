@@ -20,8 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/akamai/cli/pkg/log"
@@ -60,6 +59,7 @@ func cmdUpdate(c *cli.Context) error {
 }
 
 func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
+	term := terminal.Get(ctx)
 	logger := log.FromContext(ctx)
 
 	exec, err := findExec(ctx, cmd)
@@ -69,7 +69,7 @@ func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
 
 	logger.Debugf("Command found: %s", filepath.Join(exec...))
 
-	s := io.StartSpinner(fmt.Sprintf("Attempting to update \"%s\" command...", cmd), fmt.Sprintf("Attempting to update \"%s\" command...", cmd)+"... ["+color.CyanString("OK")+"]\n")
+	term.Spinner().Start(fmt.Sprintf("Attempting to update \"%s\" command...", cmd))
 
 	var repoDir string
 	logger.Debug("Searching for package repo")
@@ -80,7 +80,7 @@ func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
 	}
 
 	if repoDir == "" {
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
@@ -105,21 +105,21 @@ func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
 
 	if errBeforePull != nil {
 		logger.Debugf("Fetch error: %s", errBeforePull.Error())
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
 	}
 
 	err = w.Pull(&git.PullOptions{RemoteName: git.DefaultRemoteName})
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	ref, err := repo.Head()
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
@@ -130,18 +130,18 @@ func updatePackage(ctx context.Context, cmd string, forceBinary bool) error {
 
 		if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 			logger.Debugf("Fetch error: %s", err.Error())
-			io.StopSpinnerFail(s)
+			term.Spinner().Fail()
 			return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 		}
 	} else {
 		logger.Debugf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
-		io.StopSpinnerWarnOk(s)
-		fmt.Fprintln(app.App.Writer, color.CyanString("command \"%s\" already up-to-date", cmd))
+		term.Spinner().Fail()
+		term.Writeln(color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
 	}
 
 	logger.Debug("Repo updated successfully")
-	io.StopSpinnerOk(s)
+	term.Spinner().Fail()
 
 	if !installPackageDependencies(ctx, repoDir, forceBinary) {
 		logger.Trace("Error updating dependencies")

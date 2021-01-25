@@ -15,6 +15,7 @@
 package stats
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,9 +27,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/terminal"
 )
 
 // Akamai CLI (optionally) tracks upgrades, package installs, and updates anonymously
@@ -41,42 +41,44 @@ const (
 )
 
 // FirstRunCheckStats ...
-func FirstRunCheckStats(bannerShown bool) bool {
+func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
+	term := terminal.Get(ctx)
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "" {
 		if !bannerShown {
 			bannerShown = true
-			io.ShowBanner()
+			terminal.ShowBanner(ctx)
 		}
-		fmt.Fprintf(app.App.Writer, "Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		fmt.Fprintln(app.App.Writer, "Examples of data being sent include upgrade statistics, and packages installed and updated.")
-		fmt.Fprintf(app.App.Writer, "Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.", anonymous)
-		fmt.Fprintf(app.App.Writer, "\n\nSend %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+		term.Printf("Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
+		term.Writeln("Examples of data being sent include upgrade statistics, and packages installed and updated.")
+		term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
 
-		answer := ""
-		fmt.Scanln(&answer)
-		if answer != "" && strings.EqualFold(answer, "y") {
-			TrackEvent("first-run", "stats-opt-out", "true")
+		answer, _ := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+
+		if answer {
+			TrackEvent(ctx, "first-run", "stats-opt-out", "true")
 			config.SetConfigValue("cli", "enable-cli-statistics", "false")
-			config.SaveConfig()
+			config.SaveConfig(ctx)
 			return bannerShown
 		}
 
 		config.SetConfigValue("cli", "enable-cli-statistics", statsVersion)
 		config.SetConfigValue("cli", "stats-version", statsVersion)
 		config.SetConfigValue("cli", "last-ping", "never")
-		setupUUID()
-		config.SaveConfig()
-		TrackEvent("first-run", "stats-enabled", statsVersion)
+		setupUUID(ctx)
+		config.SaveConfig(ctx)
+		TrackEvent(ctx, "first-run", "stats-enabled", statsVersion)
 	} else if config.GetConfigValue("cli", "enable-cli-statistics") != "false" {
-		migrateStats(bannerShown)
+		migrateStats(ctx, bannerShown)
 	}
 
 	return bannerShown
 }
 
-func migrateStats(bannerShown bool) bool {
+func migrateStats(ctx context.Context, bannerShown bool) bool {
+	term := terminal.Get(ctx)
+
 	currentVersion := config.GetConfigValue("cli", "stats-version")
 	if currentVersion == statsVersion {
 		return bannerShown
@@ -84,7 +86,7 @@ func migrateStats(bannerShown bool) bool {
 
 	if !bannerShown {
 		bannerShown = true
-		io.ShowBanner()
+		terminal.ShowBanner(ctx)
 	}
 
 	var newStats []string
@@ -93,31 +95,30 @@ func migrateStats(bannerShown bool) bool {
 	}
 
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
-	fmt.Fprintf(app.App.Writer, "Akamai CLI has changed the %s data it collects. It now additionally collects the following: \n\n", anonymous)
+	term.Printf("Akamai CLI has changed the %s data it collects. It now additionally collects the following: \n\n", anonymous)
 	for _, value := range newStats {
-		fmt.Fprintf(app.App.Writer, " - %s\n", value)
+		term.Printf(" - %s\n", value)
 	}
-	fmt.Fprintf(app.App.Writer, "\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
-	fmt.Fprintln(app.App.Writer, "Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.")
-	fmt.Fprintf(app.App.Writer, "\nContinue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+	term.Printf("\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
+	term.Writeln("Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.\n")
 
-	answer := ""
-	fmt.Scanln(&answer)
-	if answer != "" && strings.EqualFold(answer, "y") {
-		TrackEvent("first-run", "stats-update-opt-out", statsVersion)
+	answer, _ := term.Confirm(fmt.Sprintf("Continue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+
+	if answer {
+		TrackEvent(ctx, "first-run", "stats-update-opt-out", statsVersion)
 		config.SetConfigValue("cli", "enable-cli-statistics", "false")
-		config.SaveConfig()
+		config.SaveConfig(ctx)
 		return bannerShown
 	}
 
 	config.SetConfigValue("cli", "stats-version", statsVersion)
-	config.SaveConfig()
-	TrackEvent("first-run", "stats-update-opt-in", statsVersion)
+	config.SaveConfig(ctx)
+	TrackEvent(ctx, "first-run", "stats-update-opt-in", statsVersion)
 
 	return bannerShown
 }
 
-func setupUUID() error {
+func setupUUID(ctx context.Context) error {
 	if config.GetConfigValue("cli", "client-id") == "" {
 		uid, err := uuid.NewRandom()
 		if err != nil {
@@ -125,17 +126,19 @@ func setupUUID() error {
 		}
 
 		config.SetConfigValue("cli", "client-id", uid.String())
-		config.SaveConfig()
+		config.SaveConfig(ctx)
 	}
 
 	return nil
 }
 
 // TrackEvent ...
-func TrackEvent(category, action, value string) {
+func TrackEvent(ctx context.Context, category, action, value string) {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
 		return
 	}
+
+	term := terminal.Get(ctx)
 
 	clientID := "anonymous"
 	if val := config.GetConfigValue("cli", "client-id"); val != "" {
@@ -172,12 +175,12 @@ func TrackEvent(category, action, value string) {
 	res, err := hc.Do(req)
 	if debug != "" {
 		body, _ := ioutil.ReadAll(res.Body)
-		fmt.Fprintln(app.App.Writer, string(body))
+		term.Writeln(string(body))
 	}
 }
 
 // CheckPing ...
-func CheckPing() {
+func CheckPing(ctx context.Context) {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
 		return
 	}
@@ -201,8 +204,8 @@ func CheckPing() {
 	}
 
 	if doPing {
-		TrackEvent("ping", "daily", "pong")
+		TrackEvent(ctx, "ping", "daily", "pong")
 		config.SetConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
-		config.SaveConfig()
+		config.SaveConfig(ctx)
 	}
 }

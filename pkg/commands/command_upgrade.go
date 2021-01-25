@@ -15,33 +15,34 @@
 package commands
 
 import (
-	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/stats"
-	"github.com/akamai/cli/pkg/version"
 	"os"
+
+	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/pkg/version"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
 func cmdUpgrade(c *cli.Context) error {
-	s := io.StartSpinner("Checking for upgrades...", "Checking for upgrades...... ["+color.GreenString("OK")+"]\n")
+	term := terminal.Get(c.Context)
 
-	if latestVersion := CheckUpgradeVersion(true); latestVersion != "" {
-		io.StopSpinnerOk(s)
-		fmt.Fprintf(app.App.Writer, "Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+version.Version))
+	term.Spinner().Start("Checking for upgrades...")
+
+	if latestVersion := CheckUpgradeVersion(c.Context, true); latestVersion != "" {
+		term.Spinner().Stop(terminal.SpinnerStatusOK)
+		term.Printf("Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+version.Version))
 		os.Args = []string{os.Args[0], "--version"}
-		success := UpgradeCli(latestVersion)
+		success := UpgradeCli(c.Context, latestVersion)
 		if success {
-			stats.TrackEvent("upgrade.user", "success", "to: "+latestVersion+" from:"+version.Version)
+			stats.TrackEvent(c.Context, "upgrade.user", "success", "to: "+latestVersion+" from:"+version.Version)
 		} else {
-			stats.TrackEvent("upgrade.user", "failed", "to: "+latestVersion+" from:"+version.Version)
+			stats.TrackEvent(c.Context, "upgrade.user", "failed", "to: "+latestVersion+" from:"+version.Version)
 		}
 	} else {
-		io.StopSpinnerWarnOk(s)
-		fmt.Fprintf(app.App.Writer, "Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
+		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
+		term.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
 	}
 
 	return nil

@@ -18,6 +18,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -32,17 +33,17 @@ import (
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
-	"github.com/mattn/go-isatty"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 )
 
 // CheckUpgradeVersion ...
-func CheckUpgradeVersion(force bool) string {
-	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+func CheckUpgradeVersion(ctx context.Context, force bool) string {
+	term := terminal.Get(ctx)
+
+	if !term.IsTTY() {
 		return ""
 	}
 
@@ -73,7 +74,7 @@ func CheckUpgradeVersion(force bool) string {
 
 	if checkForUpgrade {
 		config.SetConfigValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
-		err := config.SaveConfig()
+		err := config.SaveConfig(ctx)
 		if err != nil {
 			return ""
 		}
@@ -81,15 +82,13 @@ func CheckUpgradeVersion(force bool) string {
 		latestVersion := getLatestReleaseVersion()
 		if version.Compare(version.Version, latestVersion) == 1 {
 			if !force {
-				fmt.Fprintf(
-					app.App.Writer,
+				answer, _ := term.Confirm(fmt.Sprintf(
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(version.Version),
-				)
-				answer := ""
-				fmt.Scanln(&answer)
-				if answer != "" && strings.ToLower(answer) != "y" {
+				), true)
+
+				if !answer {
 					return ""
 				}
 			}
@@ -123,8 +122,10 @@ func getLatestReleaseVersion() string {
 }
 
 // UpgradeCli ...
-func UpgradeCli(latestVersion string) bool {
-	s := io.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
+func UpgradeCli(ctx context.Context, latestVersion string) bool {
+	term := terminal.Get(ctx)
+
+	term.Spinner().Start("Upgrading Akamai CLI")
 
 	cmd := command{
 		Version: latestVersion,
@@ -149,56 +150,56 @@ func UpgradeCli(latestVersion string) bool {
 
 	resp, err := http.Get(buf.String())
 	if err != nil || resp.StatusCode != http.StatusOK {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, color.RedString("Unable to download release, please try again."))
+		term.Spinner().Fail()
+		term.Writeln(color.RedString("Unable to download release, please try again."))
 		return false
 	}
 	defer resp.Body.Close()
 
 	shaResp, err := http.Get(fmt.Sprintf("%v%v", buf.String(), ".sig"))
 	if err != nil || shaResp.StatusCode != http.StatusOK {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
+		term.Spinner().Fail()
+		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 	defer shaResp.Body.Close()
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
+		term.Spinner().Fail()
+		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
 	if err != nil {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
+		term.Spinner().Fail()
+		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
 	selfPath, err := osext.Executable()
 	if err != nil {
-		io.StopSpinnerFail(s)
-		fmt.Fprintln(app.App.Writer, color.RedString("Unable to determine install location"))
+		term.Spinner().Fail()
+		term.Writeln(color.RedString("Unable to determine install location"))
 		return false
 	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		if rerr := update.RollbackError(err); rerr != nil {
-			fmt.Fprintln(app.App.Writer, color.RedString("Unable to install or rollback, please re-install."))
+			term.Writeln(color.RedString("Unable to install or rollback, please re-install."))
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			fmt.Fprintln(app.App.Writer, color.RedString(err.Error()))
-			fmt.Fprintln(app.App.Writer, color.RedString("Checksums do not match, please try again."))
+			term.Writeln(color.RedString(err.Error()))
+			term.Writeln(color.RedString("Checksums do not match, please try again."))
 		}
 		return false
 	}
 
-	io.StopSpinnerOk(s)
+	term.Spinner().OK()
 
 	if err == nil {
 		os.Args[0] = selfPath

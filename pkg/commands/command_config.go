@@ -29,7 +29,7 @@ func cmdConfigSet(c *cli.Context) error {
 	value := strings.Join(c.Args().Tail(), " ")
 
 	config.SetConfigValue(section, key, value)
-	return config.SaveConfig()
+	return config.SaveConfig(c.Context)
 }
 
 func cmdConfigGet(c *cli.Context) error {
@@ -46,7 +46,7 @@ func cmdConfigUnset(c *cli.Context) error {
 	section, key := parseConfigPath(c)
 
 	config.UnsetConfigValue(section, key)
-	return config.SaveConfig()
+	return config.SaveConfig(c.Context)
 }
 
 func cmdConfigList(c *cli.Context) error {

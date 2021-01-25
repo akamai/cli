@@ -17,9 +17,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// App : TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
-var App *cli.App
-
 const sleepTime24Hours = time.Hour * 24
 
 // CreateApp ...
@@ -106,7 +103,7 @@ func CreateApp(ctx context.Context) *cli.App {
 		}
 		return nil
 	}
-	App = app
+
 	return app
 }
 

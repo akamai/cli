@@ -15,7 +15,7 @@
 package config
 
 import (
-	"fmt"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-ini/ini"
 
-	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 )
 
@@ -70,7 +70,9 @@ func OpenConfig() (*ini.File, error) {
 }
 
 // SaveConfig ...
-func SaveConfig() error {
+func SaveConfig(ctx context.Context) error {
+
+	term := terminal.Get(ctx)
 	config, err := OpenConfig()
 	if err != nil {
 		return err
@@ -83,14 +85,14 @@ func SaveConfig() error {
 
 	err = config.SaveTo(path)
 	if err != nil {
-		fmt.Fprintln(app.App.Writer, err.Error())
+		term.Writeln(err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func migrateConfig() {
+func migrateConfig(ctx context.Context) {
 	configPath, err := getConfigFilePath()
 	if err != nil {
 		return
@@ -152,8 +154,8 @@ func migrateConfig() {
 		SetConfigValue("cli", "config-version", "1.1")
 	}
 
-	SaveConfig()
-	migrateConfig()
+	SaveConfig(ctx)
+	migrateConfig(ctx)
 }
 
 // GetConfigValue ...
@@ -195,8 +197,8 @@ func UnsetConfigValue(sectionName, key string) {
 }
 
 // ExportConfigEnv ...
-func ExportConfigEnv() {
-	migrateConfig()
+func ExportConfigEnv(ctx context.Context) {
+	migrateConfig(ctx)
 
 	config, err := OpenConfig()
 	if err != nil {

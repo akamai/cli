@@ -18,8 +18,6 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
-
-	"github.com/akamai/cli/pkg/app"
 )
 
 func cmdHelp(c *cli.Context) error {
@@ -35,7 +33,7 @@ func cmdHelp(c *cli.Context) error {
 
 		// The arg mangling ensures that aliases are handled
 		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
-		err := app.App.Run(os.Args)
+		err := c.App.Run(os.Args)
 		return err
 	}
 

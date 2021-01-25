@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
@@ -51,13 +50,13 @@ func cmdInstall(c *cli.Context) error {
 		if err != nil {
 			// Only track public github repos
 			if isPublicRepo(repo) {
-				stats.TrackEvent("package.install", "failed", repo)
+				stats.TrackEvent(c.Context, "package.install", "failed", repo)
 			}
 			return err
 		}
 
 		if isPublicRepo(repo) {
-			stats.TrackEvent("package.install", "success", repo)
+			stats.TrackEvent(c.Context, "package.install", "success", repo)
 		}
 	}
 
@@ -171,12 +170,12 @@ func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 
 func installPackageDependencies(ctx context.Context, dir string, forceBinary bool) bool {
 	logger := log.FromContext(ctx)
-	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	cmdPackage, err := readPackage(dir)
 
 	term := terminal.Get(ctx)
 
+	term.Spinner().Start("Installing...")
 	if err != nil {
 		term.Spinner().Stop(terminal.SpinnerStatusFail)
 		term.Writeln(err.Error())
@@ -207,7 +206,7 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 	}
 
 	if err == nil {
-		io.StopSpinnerOk(s)
+		term.Spinner().OK()
 		return true
 	}
 

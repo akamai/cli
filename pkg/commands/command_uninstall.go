@@ -20,8 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/akamai/cli/pkg/io"
 	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
@@ -31,22 +31,24 @@ import (
 func cmdUninstall(c *cli.Context) error {
 	for _, cmd := range c.Args().Slice() {
 		if err := uninstallPackage(c.Context, cmd); err != nil {
-			stats.TrackEvent("package.uninstall", "failed", cmd)
+			stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)
 			return err
 		}
-		stats.TrackEvent("package.uninstall", "success", cmd)
+		stats.TrackEvent(c.Context, "package.uninstall", "success", cmd)
 	}
 
 	return nil
 }
 
 func uninstallPackage(ctx context.Context, cmd string) error {
+	term := terminal.Get(ctx)
+
 	exec, err := findExec(ctx, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
 
-	s := io.StartSpinner(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd), fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd)+"... ["+color.GreenString("OK")+"]\n")
+	term.Spinner().Start(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -56,16 +58,16 @@ func uninstallPackage(ctx context.Context, cmd string) error {
 	}
 
 	if repoDir == "" {
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to uninstall, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	if err := os.RemoveAll(repoDir); err != nil {
-		io.StopSpinnerFail(s)
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to remove directory: %s", repoDir), 1)
 	}
 
-	io.StopSpinnerOk(s)
+	term.Spinner().OK()
 
 	return nil
 }

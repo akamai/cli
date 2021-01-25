@@ -37,13 +37,13 @@ func Run() int {
 		}
 	}
 
+	ctx := terminal.Context(context.TODO())
+
 	config.SetConfigValue("cli", "cache-path", cachePath)
-	if err := config.SaveConfig(); err != nil {
+	if err := config.SaveConfig(ctx); err != nil {
 		return 3
 	}
-	config.ExportConfigEnv()
-
-	ctx := terminal.Context(context.TODO())
+	config.ExportConfigEnv(ctx)
 
 	app := app.CreateApp(ctx)
 
@@ -55,11 +55,11 @@ func Run() int {
 	}
 	app.Commands = cmds
 
-	if err := firstRun(); err != nil {
+	if err := firstRun(ctx); err != nil {
 		return 5
 	}
-	checkUpgrade()
-	stats.CheckPing()
+	checkUpgrade(ctx)
+	stats.CheckPing(ctx)
 
 	if err := app.RunContext(ctx, os.Args); err != nil {
 		return 6
@@ -68,12 +68,12 @@ func Run() int {
 	return 0
 }
 
-func checkUpgrade() {
-	if latestVersion := commands.CheckUpgradeVersion(false); latestVersion != "" {
-		if commands.UpgradeCli(latestVersion) {
-			stats.TrackEvent("upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
+func checkUpgrade(ctx context.Context) {
+	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" {
+		if commands.UpgradeCli(ctx, latestVersion) {
+			stats.TrackEvent(ctx, "upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
 			return
 		}
-		stats.TrackEvent("upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
+		stats.TrackEvent(ctx, "upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
 	}
 }

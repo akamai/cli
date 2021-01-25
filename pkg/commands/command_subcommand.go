@@ -102,6 +102,6 @@ func cmdSubcommand(c *cli.Context) error {
 	if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
 		return err
 	}
-	stats.TrackEvent("exec", commandName, currentCmd.Version)
+	stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
 	return passthruCommand(executable)
 }
