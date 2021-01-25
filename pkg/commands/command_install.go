@@ -25,7 +25,6 @@ import (
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/src-d/go-git.v4"
 
@@ -218,7 +217,7 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 				term.Spinner().Stop(terminal.SpinnerStatusWarn)
 				term.Writeln(color.CyanString(err.Error()))
 				if !forceBinary {
-					if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+					if !term.IsTTY() {
 						return false
 					}
 
