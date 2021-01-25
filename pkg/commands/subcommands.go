@@ -16,8 +16,8 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"github.com/akamai/cli/pkg/tools"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -27,8 +27,10 @@ import (
 	"strings"
 	"text/template"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type subcommands struct {
@@ -49,7 +51,7 @@ func readPackage(dir string) (subcommands, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-			return subcommands{}, cli.NewExitError("Package does not contain a cli.json file.", 1)
+			return subcommands{}, cli.Exit("Package does not contain a cli.json file.", 1)
 		}
 	}
 
@@ -103,29 +105,30 @@ func findPackageDir(dir string) string {
 
 func determineCommandLanguage(cmdPackage subcommands) string {
 	if cmdPackage.Requirements.Php != "" {
-		return "php"
+		return languagePHP
 	}
 
 	if cmdPackage.Requirements.Node != "" {
-		return "javascript"
+		return languageJavaScript
 	}
 
 	if cmdPackage.Requirements.Ruby != "" {
-		return "ruby"
+		return languageRuby
 	}
 
 	if cmdPackage.Requirements.Go != "" {
-		return "go"
+		return languageGO
 	}
 
 	if cmdPackage.Requirements.Python != "" {
-		return "python"
+		return languagePython
 	}
 
 	return ""
 }
 
-func downloadBin(dir string, cmd command) bool {
+func downloadBin(ctx context.Context, dir string, cmd command) bool {
+	logger := log.FromContext(ctx)
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS
@@ -140,27 +143,38 @@ func downloadBin(dir string, cmd command) bool {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
-		log.Tracef("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
+		logger.Debugf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
 		return false
 	}
 
 	url := buf.String()
-	log.Tracef("Fetching binary from %s", url)
+	logger.Debugf("Fetching binary from %s", url)
 
 	bin, err := os.Create(filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix))
-	bin.Chmod(0775)
 	if err != nil {
 		return false
 	}
-	defer bin.Close()
+	defer func() {
+		if err := bin.Close(); err != nil {
+			logger.Errorf("Error closing file: %s", err)
+		}
+	}()
+
+	if err := bin.Chmod(0775); err != nil {
+		return false
+	}
 
 	res, err := http.Get(url)
 	if err != nil {
 		return false
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.Errorf("Error closing request body: %s", err)
+		}
+	}()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return false
 	}
 

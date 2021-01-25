@@ -15,68 +15,74 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
+
 	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
-func InstallRuby(dir string, cmdReq string) (bool, error) {
+// InstallRuby ...
+func InstallRuby(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
-		return false, cli.NewExitError(color.RedString("Unable to locate Ruby runtime"), 1)
+		return cli.Exit(color.RedString("Unable to locate Ruby runtime"), 1)
 	}
 
-	log.Tracef("Ruby binary found: %s", bin)
+	logger.Debugf("Ruby binary found: %s", bin)
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("^ruby (.*?)(p.*?) (.*)")
+		logger.Debugf("%s -v: %s", bin, output)
+		r := regexp.MustCompile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Ruby", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Ruby", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
-			log.Tracef("Ruby Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Ruby", cmdReq, matches[1])
+			logger.Debugf("Ruby Version found: %s", matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Ruby", cmdReq, matches[1])
 		}
 	}
 
-	if err := installRubyDepsBundler(dir); err != nil {
-		return false, err
+	if err := installRubyDepsBundler(ctx, dir); err != nil {
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
-func installRubyDepsBundler(dir string) error {
+func installRubyDepsBundler(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
-		log.Info("Gemfile found, running yarn package manager")
+		logger.Debugf("Gemfile found, running yarn package manager")
 		bin, err := exec.LookPath("bundle")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "bundler")
+				logger.Debugf("Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "bundler")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "bundler")
 		}
+
+		logger.Debugf(errors.ErrPackageManagerNotFound, "bundler")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "bundler")
 	}
 
 	return nil

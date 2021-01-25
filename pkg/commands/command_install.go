@@ -21,15 +21,16 @@ import (
 	"strings"
 
 	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-
-	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/src-d/go-git.v4"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -39,7 +40,7 @@ var (
 
 func cmdInstall(c *cli.Context) error {
 	if !c.Args().Present() {
-		return cli.NewExitError(color.RedString("You must specify a repository URL"), 1)
+		return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 	}
 
 	oldCmds := getCommands()
@@ -136,7 +137,6 @@ func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
 		spin.Stop(terminal.SpinnerStatusFail)
-
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
@@ -147,6 +147,9 @@ func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 	})
 
 	if err != nil {
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
 		os.RemoveAll(packageDir)
@@ -167,6 +170,7 @@ func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 }
 
 func installPackageDependencies(ctx context.Context, dir string, forceBinary bool) bool {
+	logger := log.FromContext(ctx)
 	s := io.StartSpinner("Installing...", "Installing...... ["+color.GreenString("OK")+"]\n")
 
 	cmdPackage, err := readPackage(dir)
@@ -181,29 +185,28 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 
 	lang := determineCommandLanguage(cmdPackage)
 
-	var success bool
 	switch lang {
-	case "php":
-		success, err = packages.InstallPHP(dir, cmdPackage.Requirements.Php)
-	case "javascript":
-		success, err = packages.InstallJavaScript(dir, cmdPackage.Requirements.Node)
-	case "ruby":
-		success, err = packages.InstallRuby(dir, cmdPackage.Requirements.Ruby)
-	case "python":
-		success, err = packages.InstallPython(dir, cmdPackage.Requirements.Python)
-	case "go":
+	case languagePHP:
+		err = packages.InstallPHP(ctx, dir, cmdPackage.Requirements.Php)
+	case languageJavaScript:
+		err = packages.InstallJavaScript(ctx, dir, cmdPackage.Requirements.Node)
+	case languageRuby:
+		err = packages.InstallRuby(ctx, dir, cmdPackage.Requirements.Ruby)
+	case languagePython:
+		err = packages.InstallPython(ctx, dir, cmdPackage.Requirements.Python)
+	case languageGO:
 		var commands []string
 		for _, cmd := range cmdPackage.Commands {
 			commands = append(commands, cmd.Name)
 		}
-		success, err = packages.InstallGolang(dir, cmdPackage.Requirements.Go, commands)
+		err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
 	default:
 		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 		term.Writeln(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
-	if success && err == nil {
+	if err == nil {
 		io.StopSpinnerOk(s)
 		return true
 	}
@@ -220,22 +223,21 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 						return false
 					}
 
-					ok, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
-					if err != nil {
-						term.Writeln(color.CyanString(err.Error()))
-						return false
-					}
-					if !ok {
+					answer, _ := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+
+					if !answer {
 						return false
 					}
 				}
 
-				os.MkdirAll(filepath.Join(dir, "bin"), 0700)
+				if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+					return false
+				}
 
 				term.Spinner().Start("Downloading binary...")
 			}
 
-			if !downloadBin(filepath.Join(dir, "bin"), cmd) {
+			if !downloadBin(ctx, filepath.Join(dir, "bin"), cmd) {
 				term.Spinner().Stop(terminal.SpinnerStatusFail)
 				term.Writeln(color.RedString("Unable to download binary: " + err.Error()))
 				return false

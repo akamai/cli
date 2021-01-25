@@ -1,29 +1,39 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
+
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/urfave/cli/v2"
 )
 
-// TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
+// App : TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
 var App *cli.App
 
-func CreateApp() *cli.App {
+const sleepTime24Hours = time.Hour * 24
+
+// CreateApp ...
+func CreateApp(ctx context.Context) *cli.App {
+	term := terminal.Get(ctx)
+
 	appName := "akamai"
 	app := cli.NewApp()
 	app.Name = appName
 	app.HelpName = appName
 	app.Usage = "Akamai CLI"
 	app.Version = version.Version
+	app.Writer = term
+	app.ErrWriter = term.Error()
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
@@ -68,24 +78,30 @@ func CreateApp() *cli.App {
 	}
 
 	app.Before = func(c *cli.Context) error {
-		term := terminal.Get(c.Context)
-
-		app.Writer = term
-		app.ErrWriter = term.Error()
+		// Update the log name in the context
+		c.Context = log.WithName(ctx, c.Command.Name)
 
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
-			os.Setenv("HTTP_PROXY", proxy)
-			os.Setenv("http_proxy", proxy)
+			if err := os.Setenv("HTTP_PROXY", proxy); err != nil {
+				return err
+			}
+			if err := os.Setenv("http_proxy", proxy); err != nil {
+				return err
+			}
 			if strings.HasPrefix(proxy, "https") {
-				os.Setenv("HTTPS_PROXY", proxy)
-				os.Setenv("https_proxy", proxy)
+				if err := os.Setenv("HTTPS_PROXY", proxy); err != nil {
+					return err
+				}
+				if err := os.Setenv("https_proxy", proxy); err != nil {
+					return err
+				}
 			}
 		}
 
 		if c.IsSet("daemon") {
 			for {
-				time.Sleep(time.Hour * 24)
+				time.Sleep(sleepTime24Hours)
 			}
 		}
 		return nil
@@ -94,6 +110,7 @@ func CreateApp() *cli.App {
 	return app
 }
 
+// DefaultAutoComplete ...
 func DefaultAutoComplete(ctx *cli.Context) {
 	if ctx.Command.Name == "help" {
 		var args []string
@@ -103,7 +120,6 @@ func DefaultAutoComplete(ctx *cli.Context) {
 		}
 
 		ctx.App.Run(args)
-		return
 	}
 
 	commands := make([]*cli.Command, 0)

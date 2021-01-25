@@ -15,81 +15,87 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallJavaScript(dir string, cmdReq string) (bool, error) {
+// InstallJavaScript ...
+func InstallJavaScript(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
 	bin, err := exec.LookPath("node")
 	if err != nil {
 		bin, err = exec.LookPath("nodejs")
 		if err != nil {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Node.js")
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Node.js")
 		}
 	}
 
-	log.Tracef("Node.js binary found: %s", bin)
+	logger.Debugf("Node.js binary found: %s", bin)
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("^v(.*?)\\s*$")
+		logger.Debugf("%s -v: %s", bin, output)
+		r := regexp.MustCompile("^v(.*?)\\s*$")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Node.js", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Node.js", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
-			log.Tracef("Node.js Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "Node.js", cmdReq, matches[1])
+			logger.Debugf("Node.js Version found: %s", matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Node.js", cmdReq, matches[1])
 		}
 	}
 
-	if err := installNodeDepsYarn(dir); err != nil {
-		return false, err
+	if err := installNodeDepsYarn(ctx, dir); err != nil {
+		return err
 	}
 
-	if err := installNodeDepsNpm(dir); err != nil {
-		return false, err
+	if err := installNodeDepsNpm(ctx, dir); err != nil {
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
-func installNodeDepsYarn(dir string) error {
+func installNodeDepsYarn(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "yarn.lock")); err == nil {
-		log.Info("yarn.lock found, running yarn package manager")
+		logger.Info("yarn.lock found, running yarn package manager")
 		bin, err := exec.LookPath("yarn")
 		if err == nil {
 			cmd := exec.Command(bin, "install")
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "yarn")
+				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "yarn")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "yarn")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "yarn")
 		}
+		logger.Debugf(errors.ErrPackageManagerNotFound, "yarn")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "yarn")
 	}
 
 	return nil
 }
 
-func installNodeDepsNpm(dir string) error {
+func installNodeDepsNpm(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "package.json")); err == nil {
-		log.Info("package.json found, running npm package manager")
+		logger.Info("package.json found, running npm package manager")
 
 		bin, err := exec.LookPath("npm")
 		if err == nil {
@@ -97,14 +103,14 @@ func installNodeDepsNpm(dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "npm")
+				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "npm")
 			}
 			return nil
-		} else {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "npm")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "npm")
 		}
+
+		logger.Debugf(errors.ErrPackageManagerNotFound, "npm")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "npm")
 	}
 
 	return nil

@@ -15,53 +15,59 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
+
 	"github.com/urfave/cli/v2"
 )
 
-func InstallPHP(dir string, cmdReq string) (bool, error) {
+// InstallPHP ..
+func InstallPHP(ctx context.Context, dir, cmdReq string) error {
 	bin, err := exec.LookPath("php")
 	if err != nil {
-		return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "PHP")
+		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "PHP")
 	}
 
-	log.Tracef("PHP binary found: %s", bin)
+	logger := log.FromContext(ctx)
+
+	logger.Debugf("PHP binary found: %s", bin)
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := cmd.Output()
-		log.Tracef("%s -v: %s", bin, output)
-		r, _ := regexp.Compile("PHP (.*?) .*")
+		logger.Debugf("%s -v: %s", bin, output)
+		r := regexp.MustCompile("PHP (.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "PHP", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "PHP", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
-			log.Tracef("PHP Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_MINIMUM_VERSION_REQUIRED, "PHP", cmdReq, matches[1])
+			logger.Debugf("PHP Version found: %s", matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "PHP", cmdReq, matches[1])
 		}
 	}
 
-	if err := installPHPDepsComposer(bin, dir); err != nil {
-		return false, err
+	if err := installPHPDepsComposer(ctx, bin, dir); err != nil {
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
-func installPHPDepsComposer(phpBin string, dir string) error {
+func installPHPDepsComposer(ctx context.Context, phpBin, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "composer.json")); err == nil {
-		log.Info("composer.json found, running composer package manager")
+		logger.Info("composer.json found, running composer package manager")
 
 		phar := filepath.Join(dir, "composer.phar")
 		if _, err := os.Stat(phar); err == nil {
@@ -69,8 +75,8 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				log.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, err.(*exec.ExitError).Stderr)
-				return cli.NewExitError(errors.ERR_PACKAGE_MANAGER_EXEC, 1)
+				logger.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, err.(*exec.ExitError).Stderr)
+				return cli.Exit(errors.ErrPackageManagerExec, 1)
 			}
 			return nil
 		}
@@ -81,8 +87,8 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				log.Debugf("Unable to execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "composer")
+				logger.Debugf("Unable to execute package manager (%s install): \n%s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "composer")
 			}
 			return nil
 		}
@@ -93,14 +99,14 @@ func installPHPDepsComposer(phpBin string, dir string) error {
 			cmd.Dir = dir
 			_, err = cmd.Output()
 			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "composer")
+				logger.Debugf("Unable to execute package manager (%s install): %s", bin, err.(*exec.ExitError).Stderr)
+				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "composer")
 			}
 			return nil
 		}
 
-		log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
-		return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "composer")
+		logger.Debugf(errors.ErrPackageManagerNotFound, "composer")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "composer")
 	}
 
 	return nil

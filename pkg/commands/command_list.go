@@ -20,10 +20,11 @@ import (
 
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdList(c *cli.Context) error {
@@ -36,28 +37,27 @@ func cmdList(c *cli.Context) error {
 	if c.IsSet("remote") {
 		packageList, err := fetchPackageList()
 		if err != nil {
-			return cli.NewExitError("Unable to fetch remote package list", 1)
+			return cli.Exit("Unable to fetch remote package list", 1)
 		}
 
 		foundCommands := true
 		for _, cmd := range packageList.Packages {
 			for _, command := range cmd.Commands {
-				if _, ok := commands[command.Name]; ok != true {
+				if _, ok := commands[command.Name]; !ok {
 					foundCommands = false
 					continue
 				}
 			}
 		}
 
-		if !foundCommands {
-			fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
-		} else {
+		if foundCommands {
 			return nil
 		}
+		fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {
-				if _, ok := commands[command.Name]; ok == true {
+				if _, ok := commands[command.Name]; ok {
 					continue
 				}
 				bold.Printf("  %s", command.Name)

@@ -17,9 +17,14 @@ import (
 	"github.com/fatih/color"
 )
 
+// Run ...
 func Run() int {
-	os.Setenv("AKAMAI_CLI", "1")
-	os.Setenv("AKAMAI_CLI_VERSION", version.Version)
+	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
+		return 1
+	}
+	if err := os.Setenv("AKAMAI_CLI_VERSION", version.Version); err != nil {
+		return 1
+	}
 
 	cachePath := config.GetConfigValue("cli", "cache-path")
 	if cachePath == "" {
@@ -28,35 +33,38 @@ func Run() int {
 		cachePath = filepath.Join(cliHome, "cache")
 		err := os.MkdirAll(cachePath, 0700)
 		if err != nil {
-			return 1
+			return 2
 		}
 	}
 
 	config.SetConfigValue("cli", "cache-path", cachePath)
-	config.SaveConfig()
+	if err := config.SaveConfig(); err != nil {
+		return 3
+	}
 	config.ExportConfigEnv()
 
-	// TODO return value should be used once App singleton is removed
-	_ = app.CreateApp()
-	cmds, err := commands.CommandLocator()
+	ctx := terminal.Context(context.TODO())
+
+	app := app.CreateApp(ctx)
+
+	ctx = log.SetupContext(ctx, app.Writer)
+	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
-		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
-		return 2
+		fmt.Fprintln(app.ErrWriter, color.RedString("An error occurred initializing commands"))
+		return 4
 	}
-	app.App.Commands = cmds
-	log.Setup()
+	app.Commands = cmds
 
 	if err := firstRun(); err != nil {
-		return 3
+		return 5
 	}
 	checkUpgrade()
 	stats.CheckPing()
 
-	ctx := terminal.Context(context.TODO())
-
-	if err := app.App.RunContext(ctx, os.Args); err != nil {
-		return 4
+	if err := app.RunContext(ctx, os.Args); err != nil {
+		return 6
 	}
+
 	return 0
 }
 

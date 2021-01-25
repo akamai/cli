@@ -31,9 +31,9 @@ import (
 func cmdSubcommand(c *cli.Context) error {
 	commandName := strings.ToLower(c.Command.Name)
 
-	executable, err := findExec(commandName)
+	executable, err := findExec(c.Context, commandName)
 	if err != nil {
-		return cli.NewExitError(color.RedString("Executable \"%s\" not found.", commandName), 1)
+		return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
 	}
 
 	var packageDir string
@@ -58,14 +58,14 @@ func cmdSubcommand(c *cli.Context) error {
 		}
 
 		if err == nil {
-			term.Writeln(color.CyanString(errors.ERR_PACKAGE_NEEDS_REINSTALL))
+			term.Writeln(color.CyanString(errors.ErrPackageNeedsReinstall))
 			ok, err := term.Confirm("Would you like to reinstall it?", true)
 			if err != nil {
 				term.Writeln(err.Error())
 				return err
 			}
 			if !ok {
-				return cli.NewExitError(color.RedString(errors.ERR_PACKAGE_NEEDS_REINSTALL), -1)
+				return cli.NewExitError(color.RedString(errors.ErrPackageNeedsReinstall), -1)
 			}
 
 			if err := uninstallPackage(c.Context, commandName); err != nil {
@@ -76,30 +76,32 @@ func cmdSubcommand(c *cli.Context) error {
 				return err
 			}
 		}
-
-		os.Setenv("PYTHONUSERBASE", packageDir)
-		if err != nil {
+		if err := os.Setenv("PYTHONUSERBASE", packageDir); err != nil {
 			return err
 		}
 	}
 
 	var currentCmd command
 	for _, cmd := range cmdPackage.Commands {
-		if strings.ToLower(cmd.Name) == commandName {
+		if strings.EqualFold(cmd.Name, commandName) {
 			currentCmd = cmd
 			break
 		}
 
 		for _, alias := range cmd.Aliases {
-			if strings.ToLower(alias) == commandName {
+			if strings.EqualFold(alias, commandName) {
 				currentCmd = cmd
 			}
 		}
 	}
 
 	executable = append(executable, os.Args[2:]...)
-	os.Setenv("AKAMAI_CLI_COMMAND", commandName)
-	os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version)
+	if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
+		return err
+	}
+	if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
+		return err
+	}
 	stats.TrackEvent("exec", commandName, currentCmd.Version)
 	return passthruCommand(executable)
 }

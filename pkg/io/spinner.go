@@ -2,15 +2,18 @@ package io
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
+	"os"
+	"time"
+
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/mattn/go-isatty"
-	"os"
-	"time"
+
+	"github.com/akamai/cli/pkg/app"
 )
 
-func StartSpinner(prefix string, finalMsg string) *spinner.Spinner {
+// StartSpinner ...
+func StartSpinner(prefix, finalMsg string) *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[26], 500*time.Millisecond)
 	s.Writer = app.App.ErrWriter
 	s.Prefix = prefix
@@ -24,6 +27,7 @@ func StartSpinner(prefix string, finalMsg string) *spinner.Spinner {
 	return s
 }
 
+// StopSpinner ...
 func StopSpinner(s *spinner.Spinner, finalMsg string, usePrefix bool) {
 	if s == nil {
 		return
@@ -41,18 +45,22 @@ func StopSpinner(s *spinner.Spinner, finalMsg string, usePrefix bool) {
 	s.Stop()
 }
 
+// StopSpinnerOk ...
 func StopSpinnerOk(s *spinner.Spinner) {
 	StopSpinner(s, fmt.Sprintf("... [%s]\n", color.GreenString("OK")), true)
 }
 
+// StopSpinnerWarnOk ...
 func StopSpinnerWarnOk(s *spinner.Spinner) {
 	StopSpinner(s, fmt.Sprintf("... [%s]\n", color.CyanString("OK")), true)
 }
 
+// StopSpinnerWarn ...
 func StopSpinnerWarn(s *spinner.Spinner) {
 	StopSpinner(s, fmt.Sprintf("... [%s]\n", color.CyanString("WARN")), true)
 }
 
+// StopSpinnerFail ...
 func StopSpinnerFail(s *spinner.Spinner) {
 	StopSpinner(s, fmt.Sprintf("... [%s]\n", color.RedString("FAIL")), true)
 }

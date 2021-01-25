@@ -50,7 +50,7 @@ func cmdConfigUnset(c *cli.Context) error {
 }
 
 func cmdConfigList(c *cli.Context) error {
-	config, err := config.OpenConfig()
+	conf, err := config.OpenConfig()
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func cmdConfigList(c *cli.Context) error {
 
 	if c.NArg() > 0 {
 		sectionName := c.Args().First()
-		section := config.Section(sectionName)
+		section := conf.Section(sectionName)
 		for _, key := range section.Keys() {
 			term.Printf("%s.%s = %s\n", sectionName, key.Name(), key.Value())
 		}
@@ -67,7 +67,7 @@ func cmdConfigList(c *cli.Context) error {
 		return nil
 	}
 
-	for _, section := range config.Sections() {
+	for _, section := range conf.Sections() {
 		for _, key := range section.Keys() {
 			term.Printf("%s.%s = %s\n", section.Name(), key.Name(), key.Value())
 		}
@@ -75,9 +75,9 @@ func cmdConfigList(c *cli.Context) error {
 	return nil
 }
 
-func parseConfigPath(c *cli.Context) (string, string) {
+func parseConfigPath(c *cli.Context) (section, key string) {
 	path := strings.Split(c.Args().First(), ".")
-	section := path[0]
-	key := strings.Join(path[1:], "-")
+	section = path[0]
+	key = strings.Join(path[1:], "-")
 	return section, key
 }

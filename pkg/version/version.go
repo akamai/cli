@@ -7,7 +7,8 @@ const (
 	Version = "1.1.4"
 )
 
-func Compare(left string, right string) int {
+// Compare ...
+func Compare(left, right string) int {
 	leftVersion, err := semver.NewVersion(left)
 	if err != nil {
 		return -2

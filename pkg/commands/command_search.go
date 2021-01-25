@@ -25,10 +25,11 @@ import (
 	"strings"
 
 	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/tools"
 )
 
 type packageList struct {
@@ -54,17 +55,17 @@ type packageListPackage struct {
 
 func cmdSearch(c *cli.Context) error {
 	if !c.Args().Present() {
-		return cli.NewExitError(color.RedString("You must specify one or more keywords"), 1)
+		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
 	packageList, err := fetchPackageList()
 	if err != nil {
-		return cli.NewExitError(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
 	err = searchPackages(c.Context, c.Args().Slice(), packageList)
 	if err != nil {
-		return cli.NewExitError(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
 	return nil
@@ -77,13 +78,17 @@ func fetchPackageList() (*packageList, error) {
 	}
 	resp, err := http.Get(repo)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
 	defer resp.Body.Close()
 
 	result := &packageList{}
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
+	}
+
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())

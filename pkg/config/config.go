@@ -16,8 +16,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/tools"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,6 +23,9 @@ import (
 	"time"
 
 	"github.com/go-ini/ini"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/tools"
 )
 
 const (
@@ -42,6 +43,7 @@ func getConfigFilePath() (string, error) {
 	return filepath.Join(cliPath, "config"), nil
 }
 
+// OpenConfig ..
 func OpenConfig() (*ini.File, error) {
 	path, err := getConfigFilePath()
 	if err != nil {
@@ -67,6 +69,7 @@ func OpenConfig() (*ini.File, error) {
 	return config[path], nil
 }
 
+// SaveConfig ...
 func SaveConfig() error {
 	config, err := OpenConfig()
 	if err != nil {
@@ -153,7 +156,8 @@ func migrateConfig() {
 	migrateConfig()
 }
 
-func GetConfigValue(sectionName string, keyName string) string {
+// GetConfigValue ...
+func GetConfigValue(sectionName, keyName string) string {
 	config, err := OpenConfig()
 	if err != nil {
 		return ""
@@ -168,7 +172,8 @@ func GetConfigValue(sectionName string, keyName string) string {
 	return ""
 }
 
-func SetConfigValue(sectionName string, key string, value string) {
+// SetConfigValue ...
+func SetConfigValue(sectionName, key, value string) {
 	config, err := OpenConfig()
 	if err != nil {
 		return
@@ -178,7 +183,8 @@ func SetConfigValue(sectionName string, key string, value string) {
 	section.Key(key).SetValue(value)
 }
 
-func UnsetConfigValue(sectionName string, key string) {
+// UnsetConfigValue ...
+func UnsetConfigValue(sectionName, key string) {
 	config, err := OpenConfig()
 	if err != nil {
 		return
@@ -188,6 +194,7 @@ func UnsetConfigValue(sectionName string, key string) {
 	section.DeleteKey(key)
 }
 
+// ExportConfigEnv ...
 func ExportConfigEnv() {
 	migrateConfig()
 

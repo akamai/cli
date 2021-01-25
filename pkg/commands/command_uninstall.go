@@ -41,9 +41,9 @@ func cmdUninstall(c *cli.Context) error {
 }
 
 func uninstallPackage(ctx context.Context, cmd string) error {
-	exec, err := findExec(cmd)
+	exec, err := findExec(ctx, cmd)
 	if err != nil {
-		return cli.NewExitError(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
+		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
 
 	s := io.StartSpinner(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd), fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd)+"... ["+color.GreenString("OK")+"]\n")
@@ -57,12 +57,12 @@ func uninstallPackage(ctx context.Context, cmd string) error {
 
 	if repoDir == "" {
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("unable to uninstall, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
+		return cli.Exit(color.RedString("unable to uninstall, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	if err := os.RemoveAll(repoDir); err != nil {
 		io.StopSpinnerFail(s)
-		return cli.NewExitError(color.RedString("unable to remove directory: %s", repoDir), 1)
+		return cli.Exit(color.RedString("unable to remove directory: %s", repoDir), 1)
 	}
 
 	io.StopSpinnerOk(s)

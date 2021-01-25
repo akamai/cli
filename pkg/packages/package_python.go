@@ -15,55 +15,62 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	akalog "github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
-func InstallPython(dir string, cmdReq string) (bool, error) {
-	bins, err := FindPythonBins(cmdReq)
+// InstallPython ...
+func InstallPython(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
+	bins, err := FindPythonBins(ctx, cmdReq)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bins.Python, "--version")
 		output, _ := cmd.CombinedOutput()
-		log.Tracef("%s --version: %s", bins.Python, output)
-		r, _ := regexp.Compile(`Python (\d+\.\d+\.\d+).*`)
+		logger.Debugf("%s --version: %s", bins.Python, output)
+		r := regexp.MustCompile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NO_VERSION_FOUND, "Python", cmdReq)
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Python", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
-			log.Tracef("Python Version found: %s", matches[1])
-			return false, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Python")
+			logger.Debugf("Python Version found: %s", matches[1])
+			return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 		}
 	}
 
-	if err := installPythonDepsPip(bins, dir); err != nil {
-		return false, err
+	if err := installPythonDepsPip(ctx, bins, dir); err != nil {
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
+// PythonBins ...
 type PythonBins struct {
 	Python string
 	Pip    string
 }
 
-func FindPythonBins(ver string) (PythonBins, error) {
+// FindPythonBins ...
+func FindPythonBins(ctx context.Context, ver string) (PythonBins, error) {
 	var err error
+
+	logger := log.FromContext(ctx)
 
 	bins := PythonBins{}
 	if ver != "" && ver != "*" {
@@ -72,7 +79,7 @@ func FindPythonBins(ver string) (PythonBins, error) {
 			if err != nil {
 				bins.Python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Python 3")
+					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python 3")
 				}
 			}
 		} else {
@@ -83,7 +90,7 @@ func FindPythonBins(ver string) (PythonBins, error) {
 					// Even though the command specified Python 2.x, try using python3 as a last resort
 					bins.Python, err = exec.LookPath("python3")
 					if err != nil {
-						return bins, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Python")
+						return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 					}
 				}
 			}
@@ -95,7 +102,7 @@ func FindPythonBins(ver string) (PythonBins, error) {
 			if err != nil {
 				bins.Python, err = exec.LookPath("python")
 				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ERR_RUNTIME_NOT_FOUND, "Python")
+					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 				}
 			}
 		}
@@ -135,33 +142,34 @@ func FindPythonBins(ver string) (PythonBins, error) {
 		}
 	}
 
-	log.Tracef("Python binary found: %s", bins.Python)
-	log.Tracef("Pip binary found: %s", bins.Pip)
+	logger.Debugf("Python binary found: %s", bins.Python)
+	logger.Debugf("Pip binary found: %s", bins.Pip)
 	return bins, nil
 }
 
-func installPythonDepsPip(bins PythonBins, dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err == nil {
-		log.Info("requirements.txt found, running pip package manager")
+func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) error {
+	logger := log.FromContext(ctx)
 
-		if bins.Pip == "" {
-			log.Debugf(errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "pip")
-			return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_NOT_FOUND, "pip")
-		}
+	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err != nil {
+		return nil
+	}
+	logger.Info("requirements.txt found, running pip package manager")
 
-		if err == nil {
-			os.Setenv("PYTHONUSERBASE", dir)
-			args := []string{bins.Pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
-			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Dir = dir
-			_, err = cmd.Output()
-			if err != nil {
-				akalog.LogMultilinef(log.Debugf, "Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ERR_PACKAGE_MANAGER_EXEC, "pip")
-			}
-			return nil
-		}
+	if bins.Pip == "" {
+		logger.Debugf(errors.ErrPackageManagerNotFound, "pip")
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "pip")
 	}
 
+	if err := os.Setenv("PYTHONUSERBASE", dir); err != nil {
+		return err
+	}
+	args := []string{bins.Pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = dir
+	if _, err := cmd.Output(); err != nil {
+		logger.Debugf("Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), err.(*exec.ExitError).Stderr)
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "pip")
+	}
 	return nil
+
 }

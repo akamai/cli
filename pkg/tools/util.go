@@ -22,35 +22,39 @@ import (
 	"strings"
 )
 
+// Self ...
 func Self() string {
 	return filepath.Base(os.Args[0])
 }
 
+// GetAkamaiCliPath ...
 func GetAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
 		var err error
 		cliHome, err = homedir.Dir()
 		if err != nil {
-			return "", cli.NewExitError("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
+			return "", cli.Exit("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
 		}
 	}
 
 	cliPath := filepath.Join(cliHome, ".akamai-cli")
 	err := os.MkdirAll(cliPath, 0700)
 	if err != nil {
-		return "", cli.NewExitError("Unable to create Akamai CLI root directory.", -1)
+		return "", cli.Exit("Unable to create Akamai CLI root directory.", -1)
 	}
 
 	return cliPath, nil
 }
 
+// GetAkamaiCliSrcPath ...
 func GetAkamaiCliSrcPath() (string, error) {
 	cliHome, _ := GetAkamaiCliPath()
 
 	return filepath.Join(cliHome, "src"), nil
 }
 
+// Githubize ..
 func Githubize(repo string) string {
 	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
 		return strings.TrimPrefix(repo, "ssh://")

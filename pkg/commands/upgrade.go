@@ -20,10 +20,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/io"
-	"github.com/akamai/cli/pkg/version"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -37,8 +33,14 @@ import (
 	"github.com/inconshreveable/go-update"
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
+
+	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/io"
+	"github.com/akamai/cli/pkg/version"
 )
 
+// CheckUpgradeVersion ...
 func CheckUpgradeVersion(force bool) string {
 	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 		return ""
@@ -56,7 +58,7 @@ func CheckUpgradeVersion(force bool) string {
 	}
 
 	if !checkForUpgrade {
-		configValue := strings.TrimPrefix(strings.TrimSuffix(string(data), "\""), "\"")
+		configValue := strings.TrimPrefix(strings.TrimSuffix(data, "\""), "\"")
 		lastUpgrade, err := time.Parse(time.RFC3339, configValue)
 
 		if err != nil {
@@ -64,7 +66,7 @@ func CheckUpgradeVersion(force bool) string {
 		}
 
 		currentTime := time.Now()
-		if lastUpgrade.Add(time.Hour * 24).Before(currentTime) {
+		if lastUpgrade.Add(sleepTime24Hours).Before(currentTime) {
 			checkForUpgrade = true
 		}
 	}
@@ -108,8 +110,9 @@ func getLatestReleaseVersion() string {
 	if err != nil {
 		return "0"
 	}
+	defer resp.Body.Close()
 
-	if resp.StatusCode != 302 {
+	if resp.StatusCode != http.StatusFound {
 		return "0"
 	}
 
@@ -119,6 +122,7 @@ func getLatestReleaseVersion() string {
 	return latestVersion
 }
 
+// UpgradeCli ...
 func UpgradeCli(latestVersion string) bool {
 	s := io.StartSpinner("Upgrading Akamai CLI", "Upgrading Akamai CLI...... ["+color.GreenString("OK")+"]\n\n")
 
@@ -143,23 +147,21 @@ func UpgradeCli(latestVersion string) bool {
 		return false
 	}
 
-	url := buf.String()
-
-	resp, err := http.Get(url)
-	defer resp.Body.Close()
-	if err != nil || resp.StatusCode != 200 {
+	resp, err := http.Get(buf.String())
+	if err != nil || resp.StatusCode != http.StatusOK {
 		io.StopSpinnerFail(s)
 		fmt.Fprintln(app.App.Writer, color.RedString("Unable to download release, please try again."))
 		return false
 	}
+	defer resp.Body.Close()
 
-	shaResp, err := http.Get(url + ".sig")
-	defer shaResp.Body.Close()
-	if err != nil || shaResp.StatusCode != 200 {
+	shaResp, err := http.Get(fmt.Sprintf("%v%v", buf.String(), ".sig"))
+	if err != nil || shaResp.StatusCode != http.StatusOK {
 		io.StopSpinnerFail(s)
 		fmt.Fprintln(app.App.Writer, color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
+	defer shaResp.Body.Close()
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {

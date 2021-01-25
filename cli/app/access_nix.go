@@ -18,10 +18,6 @@ package app
 
 import "golang.org/x/sys/unix"
 
-const (
-	ACCESS_W_OK = unix.W_OK
-)
-
 func checkAccess(path string, perm uint32) error {
 	return unix.Access(path, perm)
 }
