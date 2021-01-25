@@ -34,7 +34,7 @@ func TestSetupContext(t *testing.T) {
 			expectedLevel: log.InfoLevel,
 			withError:     regexp.MustCompile(`WARN.*Invalid value of AKAMAI_LOG_PATH`),
 		},
-		"invalid log level passed": {
+		"invalid log level passed, output to terminal": {
 			envs:          map[string]string{"AKAMAI_LOG": "abc"},
 			expectedLevel: log.InfoLevel,
 			withError:     regexp.MustCompile(`WARN.*Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, info, debug`),
@@ -44,8 +44,8 @@ func TestSetupContext(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			for k, v := range test.envs {
-				os.Setenv(k, v)
-				defer os.Unsetenv(k)
+				require.NoError(t, os.Setenv(k, v))
+				defer require.NoError(t, os.Unsetenv(k))
 			}
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
@@ -69,9 +69,34 @@ func TestSetupContext(t *testing.T) {
 }
 
 func TestWithCommand(t *testing.T) {
-	var buf bytes.Buffer
-	ctx := SetupContext(context.Background(), &buf)
-	logger := WithCommand(ctx, "test")
-	logger.Info("abc")
-	assert.Regexp(t, regexp.MustCompile(`abc.*command.*=test`), buf.String())
+	tests := map[string]struct {
+		logFile  string
+		expected *regexp.Regexp
+	}{
+		"output to terminal": {
+			expected: regexp.MustCompile(`\[.{3} {2}INFO\[0m\[[0-9]{4}] abc[ ]*\[.{3}command\[.{2}=test`),
+		},
+		"output to file": {
+			logFile:  "./testlogs.txt",
+			expected: regexp.MustCompile(`INFO\[[0-9]{4}] abc[ ]*command=test`),
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.NoError(t, os.Setenv("AKAMAI_LOG_PATH", test.logFile))
+			defer os.Unsetenv("AKAMAI_LOG_PATH")
+			var buf bytes.Buffer
+			ctx := SetupContext(context.Background(), &buf)
+			logger := WithCommand(ctx, "test")
+			logger.Info("abc")
+			if test.logFile != "" {
+				res, err := ioutil.ReadFile(test.logFile)
+				require.NoError(t, err)
+				assert.Regexp(t, test.expected, string(res))
+				require.NoError(t, os.Remove(test.logFile))
+				return
+			}
+			assert.Regexp(t, test.expected, buf.String())
+		})
+	}
 }
