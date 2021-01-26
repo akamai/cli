@@ -29,7 +29,6 @@ import (
 	"github.com/kardianos/osext"
 	"github.com/mattn/go-isatty"
 
-	akamai "github.com/akamai/cli-common-golang"
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
 	pkgio "github.com/akamai/cli/pkg/io"
@@ -128,7 +127,7 @@ func firstRunCheckInPath() (bool, error) {
 }
 
 func choosePath(writablePaths []string, answer, selfPath string) {
-	fmt.Fprintln(akamai.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
+	fmt.Fprintln(app.App.Writer, color.YellowString("Choose where you would like to install Akamai CLI:"))
 	for i, path := range writablePaths {
 		fmt.Fprintf(app.App.Writer, "(%d) %s\n", i+1, path)
 	}
