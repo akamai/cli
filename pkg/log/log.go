@@ -102,7 +102,8 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 	if h.withColors {
 		fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m[%04d] %-25s", color, level, ts, e.Message)
 	} else {
-		fmt.Fprintf(h.Writer, "%6s[%04d] %-25s", level, ts, e.Message)
+		t := time.Now().Format(time.RFC3339)
+		fmt.Fprintf(h.Writer, "%6s[%s] %-25s", level, t, e.Message)
 	}
 
 	for _, name := range names {

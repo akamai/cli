@@ -45,7 +45,7 @@ func TestSetupContext(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for k, v := range test.envs {
 				require.NoError(t, os.Setenv(k, v))
-				defer require.NoError(t, os.Unsetenv(k))
+				defer os.Unsetenv(k)
 			}
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
@@ -78,7 +78,7 @@ func TestWithCommand(t *testing.T) {
 		},
 		"output to file": {
 			logFile:  "./testlogs.txt",
-			expected: regexp.MustCompile(`INFO\[[0-9]{4}] abc[ ]*command=test`),
+			expected: regexp.MustCompile(`INFO\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] abc[ ]*command=test`),
 		},
 	}
 	for name, test := range tests {
