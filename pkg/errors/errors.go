@@ -18,6 +18,7 @@ import (
 	"fmt"
 )
 
+// Error constants
 const (
 	ErrRuntimeNotFound               = "Unable to locate %s runtime."
 	ErrRuntimeNoVersionFound         = "%s %s is required to install this command, unable to determine installed version."
@@ -46,7 +47,7 @@ func (ee *ExitError) ExitCode() int {
 	return ee.exitCode
 }
 
-// NewExitError makes a new *ExitError
+// NewExitErrorf makes a new *ExitError
 func NewExitErrorf(exitCode int, format string, a ...interface{}) *ExitError {
 	return &ExitError{
 		exitCode: exitCode,
