@@ -15,6 +15,7 @@
 package packages
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -56,14 +57,16 @@ func InstallGolang(logger log.Logger, dir, cmdReq string, commands []string) err
 		}
 	}
 
-	goPath, err := tools.GetAkamaiCliPath()
+	cliPath, err := tools.GetAkamaiCliPath()
+	if goPath := os.Getenv("GOPATH"); goPath != "" {
+		cliPath = fmt.Sprintf("%s%d%s", goPath, os.PathListSeparator, cliPath)
+	}
 	if err != nil {
 		return cli.Exit(color.RedString("Unable to determine CLI home directory"), 1)
 	}
-	if err := os.Setenv("GOPATH", os.Getenv("GOPATH")+string(os.PathListSeparator)+goPath); err != nil {
+	if err := os.Setenv("GOPATH", cliPath); err != nil {
 		return err
 	}
-
 	// installGolangModules ...
 	if err = installGolangModules(logger, dir); err != nil {
 		logger.Info("go.sum not found, running glide package manager[WARN: Usage of Glide is DEPRECTED]")
@@ -77,7 +80,7 @@ func InstallGolang(logger log.Logger, dir, cmdReq string, commands []string) err
 		execName := "akamai-" + strings.ToLower(command)
 
 		var cmd *exec.Cmd
-		if len(cmdReq) > 1 {
+		if len(commands) > 1 {
 			cmd = exec.Command(bin, "build", "-o", execName, "./"+command)
 		} else {
 			cmd = exec.Command(bin, "build", "-o", execName, ".")
