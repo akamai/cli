@@ -28,7 +28,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
-	"github.com/mattn/go-isatty"
 
 	"github.com/akamai/cli/pkg/config"
 
@@ -42,7 +41,8 @@ const (
 )
 
 func firstRun(ctx context.Context) error {
-	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+	term := terminal.Get(ctx)
+	if !term.IsTTY() {
 		return nil
 	}
 

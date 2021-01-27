@@ -1,0 +1,1 @@
+  INFO[2021-01-27T07:32:36-08:00] abc                       command=test

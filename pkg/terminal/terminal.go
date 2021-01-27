@@ -104,6 +104,7 @@ type (
 	contextType string
 )
 
+// SpinnerStatus strings
 var (
 	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.GreenString("OK")))
 	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("OK")))

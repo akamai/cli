@@ -20,15 +20,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
+
+	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/urfave/cli/v2"
-	"gopkg.in/src-d/go-git.v4"
-
-	"github.com/fatih/color"
 )
 
 var (
@@ -36,32 +36,35 @@ var (
 	ThirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
 )
 
-func cmdInstall(c *cli.Context) error {
-	if !c.Args().Present() {
-		return cli.Exit(color.RedString("You must specify a repository URL"), 1)
-	}
+func cmdInstall(git git.Repository) cli.ActionFunc {
+	return func(c *cli.Context) error {
+		logger := log.WithCommand(c.Context, c.Command.Name)
+		if !c.Args().Present() {
+			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
+		}
 
-	oldCmds := getCommands()
+		oldCmds := getCommands()
 
-	for _, repo := range c.Args().Slice() {
-		repo = tools.Githubize(repo)
-		err := installPackage(c.Context, repo, c.Bool("force"))
-		if err != nil {
-			// Only track public github repos
-			if isPublicRepo(repo) {
-				stats.TrackEvent(c.Context, "package.install", "failed", repo)
+		for _, repo := range c.Args().Slice() {
+			repo = tools.Githubize(repo)
+			err := installPackage(c.Context, git, logger, repo, c.Bool("force"))
+			if err != nil {
+				// Only track public github repos
+				if isPublicRepo(repo) {
+					stats.TrackEvent(c.Context, "package.install", "failed", repo)
+				}
+				return err
 			}
-			return err
+
+			if isPublicRepo(repo) {
+				stats.TrackEvent(c.Context, "package.install", "success", repo)
+			}
 		}
 
-		if isPublicRepo(repo) {
-			stats.TrackEvent(c.Context, "package.install", "success", repo)
-		}
+		packageListDiff(c.Context, oldCmds)
+
+		return nil
 	}
-
-	packageListDiff(c.Context, oldCmds)
-
-	return nil
 }
 
 func packageListDiff(ctx context.Context, oldcmds []subcommands) {
@@ -119,7 +122,7 @@ func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(ctx context.Context, repo string, forceBinary bool) error {
+func installPackage(ctx context.Context, git git.Repository, logger log.Logger, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
@@ -138,12 +141,7 @@ func installPackage(ctx context.Context, repo string, forceBinary bool) error {
 		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
-	_, err = git.PlainClone(packageDir, false, &git.CloneOptions{
-		URL:      repo,
-		Progress: spin,
-		Depth:    1,
-	})
-
+	_, err = git.Clone(ctx, packageDir, repo, false, spin, 1)
 	if err != nil {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return err

@@ -10,7 +10,6 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/go-ini/ini v1.62.0
 	github.com/google/uuid v1.1.1
-	github.com/hashicorp/go-version v1.2.1
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/mattn/go-colorable v0.1.8
