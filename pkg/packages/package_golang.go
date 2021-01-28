@@ -35,7 +35,7 @@ import (
 func InstallGolang(logger log.Logger, dir, cmdReq string, commands []string) error {
 	bin, err := exec.LookPath("go")
 	if err != nil {
-		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Go")
+		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "go")
 	}
 
 	logger.Debugf("Go binary found: %s", bin)
@@ -67,7 +67,6 @@ func InstallGolang(logger log.Logger, dir, cmdReq string, commands []string) err
 	if err := os.Setenv("GOPATH", cliPath); err != nil {
 		return err
 	}
-	// installGolangModules ...
 	if err = installGolangModules(logger, dir); err != nil {
 		logger.Info("go.sum not found, running glide package manager[WARN: Usage of Glide is DEPRECTED]")
 
@@ -119,22 +118,21 @@ func installGolangDepsGlide(logger log.Logger, dir string) error {
 }
 
 func installGolangModules(logger log.Logger, dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "go.sum")); err == nil {
-		logger.Info("go.sum found, running go module package manager")
-		bin, err := exec.LookPath("go mod")
-		if err == nil {
-			cmd := exec.Command(bin, "tidy")
-			cmd.Dir = dir
-			_, err = cmd.Output()
-			if err != nil {
-				logger.Debugf("Unable execute package manager (dep ensure): \n %s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "dep")
-			}
-		} else {
-			logger.Debugf(errors.ErrPackageManagerNotFound, "dep")
-			return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "dep")
-		}
+	if _, err := os.Stat(filepath.Join(dir, "go.sum")); err != nil {
+		return fmt.Errorf("go.sum not found")
 	}
-
+	logger.Info("go.sum found, running go module package manager")
+	bin, err := exec.LookPath("go")
+	if err != nil {
+		logger.Debugf(errors.ErrRuntimeNotFound, "go")
+		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "go")
+	}
+	cmd := exec.Command(bin, "mod", "tidy")
+	cmd.Dir = dir
+	_, err = cmd.Output()
+	if err != nil {
+		logger.Debugf("Unable execute 'go mod tidy'': \n %s", err.(*exec.ExitError).Stderr)
+		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "go mod")
+	}
 	return nil
 }
