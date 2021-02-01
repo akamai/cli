@@ -37,34 +37,26 @@ import (
 type (
 	// Terminal defines a terminal abstration interface
 	Terminal interface {
-		io.Writer
-
-		// Printf writes a formatted message to the output stream
-		Printf(f string, args ...interface{})
-
-		// Writeln writes a line to the terminal
-		Writeln(args ...interface{}) (int, error)
-
-		// WriteError write a message to the error stream
-		WriteError(interface{})
-
-		// WriteErrorf writes a formatted message to the error stream
-		WriteErrorf(f string, args ...interface{})
-
-		// Prompt prompts the use for an open or multiple choice anwswer
-		Prompt(p string, options ...string) (string, error)
-
-		// Confirm asks the user for a Y/n response, with a default
-		Confirm(p string, d bool) (bool, error)
-
-		// Spinner returns the terminal spinner
-		Spinner() *Spinner
-
-		// Error return the error writer
+		TermWriter
+		Prompter
+		Spinner() Spinner
 		Error() io.Writer
-
-		// IsTTY returns true if the terminal is a valid tty
 		IsTTY() bool
+	}
+
+	// TermWriter contains methods for basic terminal write operations
+	TermWriter interface {
+		io.Writer
+		Printf(f string, args ...interface{})
+		Writeln(args ...interface{}) (int, error)
+		WriteError(interface{})
+		WriteErrorf(f string, args ...interface{})
+	}
+
+	// Prompter contains methods enabling user input
+	Prompter interface {
+		Prompt(p string, options ...string) (string, error)
+		Confirm(p string, d bool) (bool, error)
 	}
 
 	// Writer provides a minimal interface for Stdin.
@@ -84,22 +76,17 @@ type (
 		Fd() uintptr
 	}
 
-	terminal struct {
-		Out   Writer
-		Err   io.Writer
-		In    Reader
+	// DefaultTerminal implementation of Terminal interface
+	DefaultTerminal struct {
+		out   Writer
+		err   io.Writer
+		in    Reader
 		start time.Time
-		spnr  *Spinner
+		spnr  *DefaultSpinner
 	}
 
 	// SpinnerStatus defines a spinner status message
 	SpinnerStatus string
-
-	// Spinner defines a simple status spinner
-	Spinner struct {
-		*spnr.Spinner
-		prefix string
-	}
 
 	contextType string
 )
@@ -114,13 +101,8 @@ var (
 	terminalContext contextType = "terminal"
 )
 
-// Standard returns the standard terminal
-func Standard() Terminal {
-	return New(os.Stdout, os.Stdin, os.Stderr)
-}
-
 // Color returns a colorable terminal
-func Color() Terminal {
+func Color() *DefaultTerminal {
 	wr := &colorWriter{
 		Writer: colorable.NewColorableStdout(),
 		fd:     os.Stdout.Fd(),
@@ -130,46 +112,52 @@ func Color() Terminal {
 }
 
 // New returns a new terminal with the specifed streams
-func New(out Writer, in Reader, err io.Writer) Terminal {
-	t := terminal{
-		Out:   out,
-		Err:   err,
-		In:    in,
+func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
+	t := DefaultTerminal{
+		out:   out,
+		err:   err,
+		in:    in,
 		start: time.Now(),
-		spnr:  &Spinner{Spinner: spnr.New(spnr.CharSets[33], 500*time.Millisecond)},
+		spnr:  &DefaultSpinner{spinner: spnr.New(spnr.CharSets[33], 500*time.Millisecond)},
 	}
 
-	t.spnr.Writer = t
+	t.spnr.spinner.Writer = &t
 
 	return &t
 }
 
-func (t terminal) Printf(f string, args ...interface{}) {
+// Printf writes a formatted message to the output stream
+func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
 	t.Write([]byte(fmt.Sprintf(f, args...)))
 }
 
-func (t terminal) Writeln(args ...interface{}) (int, error) {
+// Writeln writes a line to the terminal
+func (t *DefaultTerminal) Writeln(args ...interface{}) (int, error) {
 	return fmt.Fprintln(t, args...)
 }
 
-func (t terminal) Write(v []byte) (n int, err error) {
+func (t *DefaultTerminal) Write(v []byte) (n int, err error) {
 	msg := string(v)
-	return t.Out.Write([]byte(msg))
+	return t.out.Write([]byte(msg))
 }
 
-func (t terminal) WriteErrorf(f string, args ...interface{}) {
-	t.Err.Write([]byte(fmt.Sprintf(f, args...)))
+// WriteErrorf writes a formatted message to the error stream
+func (t *DefaultTerminal) WriteErrorf(f string, args ...interface{}) {
+	t.err.Write([]byte(fmt.Sprintf(f, args...)))
 }
 
-func (t terminal) WriteError(v interface{}) {
-	t.Err.Write([]byte(fmt.Sprint(v)))
+// WriteError write a message to the error stream
+func (t *DefaultTerminal) WriteError(v interface{}) {
+	t.err.Write([]byte(fmt.Sprint(v)))
 }
 
-func (t terminal) Error() io.Writer {
-	return t.Err
+// Error return the error writer
+func (t *DefaultTerminal) Error() io.Writer {
+	return t.err
 }
 
-func (t terminal) Prompt(p string, options ...string) (string, error) {
+// Prompt prompts the use for an open or multiple choice anwswer
+func (t *DefaultTerminal) Prompt(p string, options ...string) (string, error) {
 	q := survey.Question{
 		Name:     "q",
 		Prompt:   &survey.Input{Message: p},
@@ -187,7 +175,7 @@ func (t terminal) Prompt(p string, options ...string) (string, error) {
 		Q string
 	}{}
 
-	err := survey.Ask([]*survey.Question{&q}, &answers, survey.WithStdio(t.In, t.Out, t.Err))
+	err := survey.Ask([]*survey.Question{&q}, &answers, survey.WithStdio(t.in, t.out, t.err))
 	if err != nil {
 		return "", err
 	}
@@ -195,7 +183,8 @@ func (t terminal) Prompt(p string, options ...string) (string, error) {
 	return answers.Q, nil
 }
 
-func (t terminal) Confirm(p string, def bool) (bool, error) {
+// Confirm asks the user for a Y/n response, with a default
+func (t *DefaultTerminal) Confirm(p string, def bool) (bool, error) {
 	rval := def
 
 	q := &survey.Confirm{
@@ -203,57 +192,19 @@ func (t terminal) Confirm(p string, def bool) (bool, error) {
 		Default: def,
 	}
 
-	err := survey.AskOne(q, &rval, survey.WithStdio(t.In, t.Out, t.Err))
+	err := survey.AskOne(q, &rval, survey.WithStdio(t.in, t.out, t.err))
 
 	return rval, err
 }
 
-func (t terminal) IsTTY() bool {
-	return isatty.IsTerminal(t.Out.Fd()) || isatty.IsCygwinTerminal(t.Out.Fd())
+// IsTTY returns true if the terminal is a valid tty
+func (t *DefaultTerminal) IsTTY() bool {
+	return isatty.IsTerminal(t.out.Fd()) || isatty.IsCygwinTerminal(t.out.Fd())
 }
 
-func (t *terminal) Spinner() *Spinner {
+// Spinner returns the terminal spinner
+func (t *DefaultTerminal) Spinner() Spinner {
 	return t.spnr
-}
-
-// Start starts the spinner using the provided string as the prefix
-func (s *Spinner) Start(f string, args ...interface{}) {
-	s.prefix = fmt.Sprintf(f, args...)
-	s.Spinner.Prefix = s.prefix + " "
-	s.Spinner.Start()
-}
-
-// Stop stops the spinner and updates the final status message
-func (s *Spinner) Stop(status SpinnerStatus) {
-	s.Spinner.Suffix = ""
-	s.Spinner.FinalMSG = s.prefix + " " + string(status)
-	s.Spinner.Stop()
-}
-
-// Write implements the io.Writer interface and updates the suffix of the spinner
-func (s *Spinner) Write(v []byte) (n int, err error) {
-	s.Spinner.Suffix = " " + strings.TrimSpace(string(v))
-	return len(v), nil
-}
-
-// OK stops the spinner with ok status
-func (s *Spinner) OK() {
-	s.Stop(SpinnerStatusOK)
-}
-
-// WarnOK stops the spinner with WarnOK status
-func (s *Spinner) WarnOK() {
-	s.Stop(SpinnerStatusWarnOK)
-}
-
-// Warn stops the spinner with Warn status
-func (s *Spinner) Warn() {
-	s.Stop(SpinnerStatusWarn)
-}
-
-// Fail stops the spinner with fail status
-func (s *Spinner) Fail() {
-	s.Stop(SpinnerStatusFail)
 }
 
 // DiscardWriter returns a discard write that direct output to /dev/null
@@ -266,18 +217,15 @@ func DiscardWriter() Writer {
 }
 
 // Context sets the terminal in the context
-func Context(ctx context.Context, term ...Terminal) context.Context {
-	if len(term) > 0 {
-		return context.WithValue(ctx, terminalContext, term[0])
-	}
-	return context.WithValue(ctx, terminalContext, Color())
+func Context(ctx context.Context, term Terminal) context.Context {
+	return context.WithValue(ctx, terminalContext, term)
 }
 
 // Get gets the terminal from the context
 func Get(ctx context.Context) Terminal {
 	t, ok := ctx.Value(terminalContext).(Terminal)
 	if !ok {
-		panic(errors.New("context does not have a terminal"))
+		panic(errors.New("context does not have a DefaultTerminal"))
 	}
 
 	return t
@@ -287,6 +235,7 @@ func (w *colorWriter) Fd() uintptr {
 	return w.fd
 }
 
+// ShowBanner displays welcome banner
 func ShowBanner(ctx context.Context) {
 	term := Get(ctx)
 

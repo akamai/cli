@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -37,7 +36,8 @@ func Run() int {
 		}
 	}
 
-	ctx := terminal.Context(context.TODO())
+	term := terminal.Color()
+	ctx := terminal.Context(context.Background(), term)
 
 	config.SetConfigValue("cli", "cache-path", cachePath)
 	if err := config.SaveConfig(ctx); err != nil {
@@ -45,15 +45,15 @@ func Run() int {
 	}
 	config.ExportConfigEnv(ctx)
 
-	app := app.CreateApp(ctx)
+	cli := app.CreateApp(ctx)
+	ctx = log.SetupContext(ctx, cli.Writer)
 
-	ctx = log.SetupContext(ctx, app.Writer)
 	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
-		fmt.Fprintln(app.ErrWriter, color.RedString("An error occurred initializing commands"))
+		term.WriteError(color.RedString("An error occurred initializing commands"))
 		return 4
 	}
-	app.Commands = cmds
+	cli.Commands = cmds
 
 	if err := firstRun(ctx); err != nil {
 		return 5
@@ -61,7 +61,7 @@ func Run() int {
 	checkUpgrade(ctx)
 	stats.CheckPing(ctx)
 
-	if err := app.RunContext(ctx, os.Args); err != nil {
+	if err := cli.RunContext(ctx, os.Args); err != nil {
 		return 6
 	}
 
