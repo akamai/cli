@@ -32,13 +32,11 @@ import (
 )
 
 var (
-	// ThirdPartyDisclaimer is the message to be used when third party packages are installed
-	ThirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+	thirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
 )
 
 func cmdInstall(git git.Repository) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		logger := log.WithCommand(c.Context, c.Command.Name)
 		if !c.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 		}
@@ -47,7 +45,7 @@ func cmdInstall(git git.Repository) cli.ActionFunc {
 
 		for _, repo := range c.Args().Slice() {
 			repo = tools.Githubize(repo)
-			err := installPackage(c.Context, git, logger, repo, c.Bool("force"))
+			err := installPackage(c.Context, git, repo, c.Bool("force"))
 			if err != nil {
 				// Only track public github repos
 				if isPublicRepo(repo) {
@@ -122,7 +120,7 @@ func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(ctx context.Context, git git.Repository, logger log.Logger, repo string, forceBinary bool) error {
+func installPackage(ctx context.Context, git git.Repository, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
@@ -138,7 +136,7 @@ func installPackage(ctx context.Context, git git.Repository, logger log.Logger, 
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
 		spin.Stop(terminal.SpinnerStatusFail)
-		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
+		return cli.Exit(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
 	_, err = git.Clone(ctx, packageDir, repo, false, spin, 1)
@@ -148,18 +146,22 @@ func installPackage(ctx context.Context, git git.Repository, logger log.Logger, 
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		os.RemoveAll(packageDir)
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
 
-		return cli.NewExitError(color.RedString("Unable to clone repository: "+err.Error()), 1)
+		return cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
-		term.Printf(color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package."))
+		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
 
 	if !installPackageDependencies(ctx, packageDir, forceBinary) {
-		os.RemoveAll(packageDir)
-		return cli.NewExitError("", 1)
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
+		return cli.Exit("", 1)
 	}
 
 	return nil
@@ -219,7 +221,11 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 						return false
 					}
 
-					answer, _ := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+					answer, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+					if err != nil {
+						term.WriteError(err.Error())
+						return false
+					}
 
 					if !answer {
 						return false

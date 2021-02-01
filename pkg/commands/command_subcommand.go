@@ -28,14 +28,12 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/log"
 )
 
 func cmdSubcommand(git git.Repository) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		term := terminal.Get(c.Context)
 
-		logger := log.WithCommand(c.Context, c.Command.Name)
 		commandName := strings.ToLower(c.Command.Name)
 
 		executable, err := findExec(c.Context, commandName)
@@ -63,7 +61,10 @@ func cmdSubcommand(git git.Repository) cli.ActionFunc {
 			}
 
 			if err == nil {
-				answer, _ := term.Confirm("Would you like to reinstall it", true)
+				answer, err := term.Confirm("Would you like to reinstall it", true)
+				if err != nil {
+					return err
+				}
 				if !answer {
 					return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
 				}
@@ -72,7 +73,7 @@ func cmdSubcommand(git git.Repository) cli.ActionFunc {
 					return err
 				}
 
-				if err = installPackage(c.Context, git, logger, commandName, false); err != nil {
+				if err = installPackage(c.Context, git, commandName, false); err != nil {
 					return err
 				}
 			}

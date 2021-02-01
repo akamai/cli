@@ -59,7 +59,9 @@ func Run() int {
 		return 5
 	}
 	checkUpgrade(ctx)
-	stats.CheckPing(ctx)
+	if err := stats.CheckPing(ctx); err != nil {
+		term.WriteError(err.Error())
+	}
 
 	if err := cli.RunContext(ctx, os.Args); err != nil {
 		return 6

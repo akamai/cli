@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -79,14 +80,17 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 			return ""
 		}
 
-		latestVersion := getLatestReleaseVersion()
+		latestVersion := getLatestReleaseVersion(ctx)
 		if version.Compare(version.Version, latestVersion) == 1 {
 			if !force {
-				answer, _ := term.Confirm(fmt.Sprintf(
+				answer, err := term.Confirm(fmt.Sprintf(
 					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 					color.BlueString(latestVersion),
 					color.BlueString(version.Version),
 				), true)
+				if err != nil {
+					return ""
+				}
 
 				if !answer {
 					return ""
@@ -99,7 +103,8 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 	return ""
 }
 
-func getLatestReleaseVersion() string {
+func getLatestReleaseVersion(ctx context.Context) string {
+	logger := log.FromContext(ctx)
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -109,7 +114,11 @@ func getLatestReleaseVersion() string {
 	if err != nil {
 		return "0"
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	if resp.StatusCode != http.StatusFound {
 		return "0"
@@ -124,6 +133,7 @@ func getLatestReleaseVersion() string {
 // UpgradeCli ...
 func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	term := terminal.Get(ctx)
+	logger := log.FromContext(ctx)
 
 	term.Spinner().Start("Upgrading Akamai CLI")
 
@@ -154,7 +164,11 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		term.Writeln(color.RedString("Unable to download release, please try again."))
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	shaResp, err := http.Get(fmt.Sprintf("%v%v", buf.String(), ".sig"))
 	if err != nil || shaResp.StatusCode != http.StatusOK {
@@ -162,7 +176,11 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
-	defer shaResp.Body.Close()
+	defer func() {
+		if err := shaResp.Body.Close(); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	shabody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {

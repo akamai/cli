@@ -54,20 +54,29 @@ func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 		term.Writeln("Examples of data being sent include upgrade statistics, and packages installed and updated.")
 		term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
 
-		answer, _ := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+		answer, err := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+		if err != nil {
+			return bannerShown
+		}
 
 		if answer {
 			TrackEvent(ctx, "first-run", "stats-opt-out", "true")
 			config.SetConfigValue("cli", "enable-cli-statistics", "false")
-			config.SaveConfig(ctx)
+			if err := config.SaveConfig(ctx); err != nil {
+				return false
+			}
 			return bannerShown
 		}
 
 		config.SetConfigValue("cli", "enable-cli-statistics", statsVersion)
 		config.SetConfigValue("cli", "stats-version", statsVersion)
 		config.SetConfigValue("cli", "last-ping", "never")
-		setupUUID(ctx)
-		config.SaveConfig(ctx)
+		if err := setupUUID(ctx); err != nil {
+			return false
+		}
+		if err := config.SaveConfig(ctx); err != nil {
+			return false
+		}
 		TrackEvent(ctx, "first-run", "stats-enabled", statsVersion)
 	} else if config.GetConfigValue("cli", "enable-cli-statistics") != "false" {
 		migrateStats(ctx, bannerShown)
@@ -102,17 +111,24 @@ func migrateStats(ctx context.Context, bannerShown bool) bool {
 	term.Printf("\nTo continue collecting %s statistics, Akamai CLI requires that you re-affirm you decision.\n", anonymous)
 	term.Writeln("Note: if you choose to opt-out, a single anonymous event will be submitted to help track overall usage.\n")
 
-	answer, _ := term.Confirm(fmt.Sprintf("Continue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+	answer, err := term.Confirm(fmt.Sprintf("Continue sending %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+	if err != nil {
+		return bannerShown
+	}
 
 	if answer {
 		TrackEvent(ctx, "first-run", "stats-update-opt-out", statsVersion)
 		config.SetConfigValue("cli", "enable-cli-statistics", "false")
-		config.SaveConfig(ctx)
+		if err := config.SaveConfig(ctx); err != nil {
+			return false
+		}
 		return bannerShown
 	}
 
 	config.SetConfigValue("cli", "stats-version", statsVersion)
-	config.SaveConfig(ctx)
+	if err := config.SaveConfig(ctx); err != nil {
+		return false
+	}
 	TrackEvent(ctx, "first-run", "stats-update-opt-in", statsVersion)
 
 	return bannerShown
@@ -126,7 +142,9 @@ func setupUUID(ctx context.Context) error {
 		}
 
 		config.SetConfigValue("cli", "client-id", uid.String())
-		config.SaveConfig(ctx)
+		if err := config.SaveConfig(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -173,6 +191,9 @@ func TrackEvent(ctx context.Context, category, action, value string) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	res, err := hc.Do(req)
+	if err != nil {
+		return
+	}
 	if debug != "" {
 		body, _ := ioutil.ReadAll(res.Body)
 		term.Writeln(string(body))
@@ -180,9 +201,9 @@ func TrackEvent(ctx context.Context, category, action, value string) {
 }
 
 // CheckPing ...
-func CheckPing(ctx context.Context) {
+func CheckPing(ctx context.Context) error {
 	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
-		return
+		return nil
 	}
 
 	data := strings.TrimSpace(config.GetConfigValue("cli", "last-ping"))
@@ -194,7 +215,7 @@ func CheckPing(ctx context.Context) {
 		configValue := strings.TrimPrefix(strings.TrimSuffix(data, "\""), "\"")
 		lastPing, err := time.Parse(time.RFC3339, configValue)
 		if err != nil {
-			return
+			return err
 		}
 
 		currentTime := time.Now()
@@ -206,6 +227,9 @@ func CheckPing(ctx context.Context) {
 	if doPing {
 		TrackEvent(ctx, "ping", "daily", "pong")
 		config.SetConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
-		config.SaveConfig(ctx)
+		if err := config.SaveConfig(ctx); err != nil {
+			return err
+		}
 	}
+	return nil
 }
