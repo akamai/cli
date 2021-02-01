@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -58,7 +59,7 @@ func cmdSearch(c *cli.Context) error {
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
-	packageList, err := fetchPackageList()
+	packageList, err := fetchPackageList(c.Context)
 	if err != nil {
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
@@ -71,7 +72,8 @@ func cmdSearch(c *cli.Context) error {
 	return nil
 }
 
-func fetchPackageList() (*packageList, error) {
+func fetchPackageList(ctx context.Context) (*packageList, error) {
+	logger := log.FromContext(ctx)
 	var repo string
 	if repo = os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); repo == "" {
 		repo = "https://developer.akamai.com/cli/package-list.json"
@@ -81,7 +83,11 @@ func fetchPackageList() (*packageList, error) {
 		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	result := &packageList{}
 	body, err := ioutil.ReadAll(resp.Body)
@@ -91,7 +97,7 @@ func fetchPackageList() (*packageList, error) {
 
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
 	return result, nil

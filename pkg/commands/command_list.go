@@ -33,7 +33,7 @@ func cmdList(c *cli.Context) error {
 	commands := listInstalledCommands(c.Context, nil, nil)
 
 	if c.IsSet("remote") {
-		packageList, err := fetchPackageList()
+		packageList, err := fetchPackageList(c.Context)
 		if err != nil {
 			return cli.Exit("Unable to fetch remote package list", 1)
 		}

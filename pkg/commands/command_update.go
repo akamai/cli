@@ -146,7 +146,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, logger log.Logge
 
 	if !installPackageDependencies(ctx, repoDir, forceBinary) {
 		logger.Trace("Error updating dependencies")
-		return cli.NewExitError("Unable to update command", 1)
+		return cli.Exit("Unable to update command", 1)
 	}
 
 	return nil

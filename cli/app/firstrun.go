@@ -18,7 +18,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -51,7 +50,10 @@ func firstRun(ctx context.Context) error {
 		return err
 	}
 
-	bannerShown = firstRunCheckUpgrade(ctx, bannerShown)
+	bannerShown, err = firstRunCheckUpgrade(ctx, bannerShown)
+	if err != nil {
+		return err
+	}
 	stats.FirstRunCheckStats(ctx, bannerShown)
 
 	return nil
@@ -74,17 +76,23 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 	sysPath := os.Getenv("PATH")
 	paths := filepath.SplitList(sysPath)
 	inPath := false
-	writablePaths := []string{}
+	writablePaths := make([]string, 0)
 
 	var bannerShown bool
 	if config.GetConfigValue("cli", "install-in-path") == "no" {
 		inPath = true
-		bannerShown = firstRunCheckUpgrade(ctx, !inPath)
+		bannerShown, err = firstRunCheckUpgrade(ctx, !inPath)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if len(paths) == 0 {
 		inPath = true
-		bannerShown = firstRunCheckUpgrade(ctx, !inPath)
+		bannerShown, err = firstRunCheckUpgrade(ctx, !inPath)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	for _, path := range paths {
@@ -104,7 +112,10 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 
 		if path == dirPath {
 			inPath = true
-			bannerShown = firstRunCheckUpgrade(ctx, false)
+			bannerShown, err = firstRunCheckUpgrade(ctx, false)
+			if err != nil {
+				return false, err
+			}
 		}
 	}
 
@@ -113,31 +124,38 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 			terminal.ShowBanner(ctx)
 			bannerShown = true
 		}
-		term.Printf("Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ")
-		answer := ""
-		fmt.Scanln(&answer)
-		if answer != "" && strings.EqualFold(answer, "y") {
+		answer, err := term.Confirm("Akamai CLI is not installed in your PATH, would you like to install it? [Y/n]: ", true)
+		if err != nil {
+			return false, err
+		}
+		if !answer {
 			config.SetConfigValue("cli", "install-in-path", "no")
-			config.SaveConfig(ctx)
-			firstRunCheckUpgrade(ctx, true)
+			if err := config.SaveConfig(ctx); err != nil {
+				return false, err
+			}
+			if _, err = firstRunCheckUpgrade(ctx, true); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 
-		choosePath(ctx, writablePaths, answer, selfPath)
+		choosePath(ctx, writablePaths, selfPath)
 	}
 
 	return bannerShown, nil
 }
 
-func choosePath(ctx context.Context, writablePaths []string, answer, selfPath string) {
+func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 	term := terminal.Get(ctx)
 	term.Writeln(color.YellowString("Choose where you would like to install Akamai CLI:"))
 	answer, err := term.Prompt("Choose where you would like to install Akamai CLI:", writablePaths...)
 	if err != nil {
-		panic(err)
+		term.Spinner().Start(string(terminal.SpinnerStatusFail))
+		term.Writeln(color.RedString(err.Error()))
+		return
 	}
 
-	suffix := ""
+	var suffix string
 	if runtime.GOOS == windowsOS {
 		suffix = ".exe"
 	}
@@ -150,11 +168,12 @@ func choosePath(ctx context.Context, writablePaths []string, answer, selfPath st
 	if err != nil {
 		term.Spinner().Start(string(terminal.SpinnerStatusFail))
 		term.Writeln(color.RedString(err.Error()))
+		return
 	}
 	term.Spinner().Start(string(terminal.SpinnerStatusOK))
 }
 
-func firstRunCheckUpgrade(ctx context.Context, bannerShown bool) bool {
+func firstRunCheckUpgrade(ctx context.Context, bannerShown bool) (bool, error) {
 	term := terminal.Get(ctx)
 
 	if config.GetConfigValue("cli", "last-upgrade-check") == "" {
@@ -162,19 +181,23 @@ func firstRunCheckUpgrade(ctx context.Context, bannerShown bool) bool {
 			bannerShown = true
 			terminal.ShowBanner(ctx)
 		}
-		term.Printf("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ")
-
-		answer := ""
-		fmt.Scanln(&answer)
-		if answer != "" && strings.EqualFold(answer, "y") {
+		answer, err := term.Confirm("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ", true)
+		if err != nil {
+			return false, err
+		}
+		if !answer {
 			config.SetConfigValue("cli", "last-upgrade-check", "ignore")
-			config.SaveConfig(ctx)
-			return bannerShown
+			if err := config.SaveConfig(ctx); err != nil {
+				return false, err
+			}
+			return bannerShown, nil
 		}
 
 		config.SetConfigValue("cli", "last-upgrade-check", "never")
-		config.SaveConfig(ctx)
+		if err := config.SaveConfig(ctx); err != nil {
+			return false, err
+		}
 	}
 
-	return bannerShown
+	return bannerShown, nil
 }

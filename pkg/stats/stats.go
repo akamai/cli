@@ -22,7 +22,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	time "time"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"

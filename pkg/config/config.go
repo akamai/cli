@@ -92,15 +92,15 @@ func SaveConfig(ctx context.Context) error {
 	return nil
 }
 
-func migrateConfig(ctx context.Context) {
+func migrateConfig(ctx context.Context) error {
 	configPath, err := getConfigFilePath()
 	if err != nil {
-		return
+		return err
 	}
 
 	_, err = OpenConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	var currentVersion string
@@ -108,14 +108,17 @@ func migrateConfig(ctx context.Context) {
 		// Do we need to migrate from an older version?
 		currentVersion = GetConfigValue("cli", "config-version")
 		if currentVersion == configVersion {
-			return
+			return nil
 		}
 	}
 
 	switch currentVersion {
 	case "":
 		// Create v1
-		cliPath, _ := tools.GetAkamaiCliPath()
+		cliPath, err := tools.GetAkamaiCliPath()
+		if err != nil {
+			return err
+		}
 
 		var data []byte
 		upgradeFile := filepath.Join(cliPath, ".upgrade-check")
@@ -142,7 +145,9 @@ func migrateConfig(ctx context.Context) {
 				}
 			}
 
-			os.Remove(upgradeFile)
+			if err := os.Remove(upgradeFile); err != nil {
+				return err
+			}
 		}
 
 		SetConfigValue("cli", "config-version", "1")
@@ -154,8 +159,10 @@ func migrateConfig(ctx context.Context) {
 		SetConfigValue("cli", "config-version", "1.1")
 	}
 
-	SaveConfig(ctx)
-	migrateConfig(ctx)
+	if err := SaveConfig(ctx); err != nil {
+		return err
+	}
+	return migrateConfig(ctx)
 }
 
 // GetConfigValue ...
@@ -197,19 +204,24 @@ func UnsetConfigValue(sectionName, key string) {
 }
 
 // ExportConfigEnv ...
-func ExportConfigEnv(ctx context.Context) {
-	migrateConfig(ctx)
+func ExportConfigEnv(ctx context.Context) error {
+	if err := migrateConfig(ctx); err != nil {
+		return err
+	}
 
 	config, err := OpenConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	for _, section := range config.Sections() {
 		for _, key := range section.Keys() {
 			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
 			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
-			os.Setenv(envVar, key.String())
+			if err := os.Setenv(envVar, key.String()); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }

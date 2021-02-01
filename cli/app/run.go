@@ -18,10 +18,13 @@ import (
 
 // Run ...
 func Run() int {
+	term := terminal.Color()
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
+		term.WriteErrorf("Unable to set AKAMAI_CLI: %s", err.Error())
 		return 1
 	}
 	if err := os.Setenv("AKAMAI_CLI_VERSION", version.Version); err != nil {
+		term.WriteErrorf("Unable to set AKAMAI_CLI_VERSION: %s", err.Error())
 		return 1
 	}
 
@@ -30,20 +33,21 @@ func Run() int {
 		cliHome, _ := tools.GetAkamaiCliPath()
 
 		cachePath = filepath.Join(cliHome, "cache")
-		err := os.MkdirAll(cachePath, 0700)
-		if err != nil {
+		if err := os.MkdirAll(cachePath, 0700); err != nil {
+			term.WriteErrorf("Unable to create cache directory: %s", err.Error())
 			return 2
 		}
 	}
 
-	term := terminal.Color()
 	ctx := terminal.Context(context.Background(), term)
 
 	config.SetConfigValue("cli", "cache-path", cachePath)
 	if err := config.SaveConfig(ctx); err != nil {
 		return 3
 	}
-	config.ExportConfigEnv(ctx)
+	if err := config.ExportConfigEnv(ctx); err != nil {
+		term.WriteErrorf("Unable to export required envs: %s", err.Error())
+	}
 
 	cli := app.CreateApp(ctx)
 	ctx = log.SetupContext(ctx, cli.Writer)

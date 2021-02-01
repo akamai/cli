@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -71,7 +70,7 @@ func CreateApp(ctx context.Context) *cli.App {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		return defaultAction(app, c)
+		return defaultAction(c)
 	}
 
 	app.Before = func(c *cli.Context) error {
@@ -109,6 +108,7 @@ func CreateApp(ctx context.Context) *cli.App {
 
 // DefaultAutoComplete ...
 func DefaultAutoComplete(ctx *cli.Context) {
+	term := terminal.Get(ctx.Context)
 	if ctx.Command.Name == "help" {
 		var args []string
 		args = append(args, os.Args[0])
@@ -116,7 +116,9 @@ func DefaultAutoComplete(ctx *cli.Context) {
 			args = append(args, os.Args[2:]...)
 		}
 
-		ctx.App.Run(args)
+		if err := ctx.App.Run(args); err != nil {
+			term.WriteError(err.Error())
+		}
 	}
 
 	commands := make([]*cli.Command, 0)
@@ -141,7 +143,7 @@ func DefaultAutoComplete(ctx *cli.Context) {
 		}
 
 		for _, name := range command.Names() {
-			fmt.Fprintln(ctx.App.Writer, name)
+			term.Writeln(ctx.App.Writer, name)
 		}
 	}
 
@@ -163,9 +165,9 @@ func DefaultAutoComplete(ctx *cli.Context) {
 			switch len(name) {
 			case 0:
 			case 1:
-				fmt.Fprintln(ctx.App.Writer, "-"+name)
+				term.Writeln(ctx.App.Writer, "-"+name)
 			default:
-				fmt.Fprintln(ctx.App.Writer, "--"+name)
+				term.Writeln(ctx.App.Writer, "--"+name)
 			}
 		}
 	}
@@ -249,7 +251,7 @@ func setHelpTemplates() {
 		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
 }
 
-func defaultAction(app *cli.App, c *cli.Context) error {
+func defaultAction(c *cli.Context) error {
 	cmd, err := osext.Executable()
 	if err != nil {
 		cmd = tools.Self()
