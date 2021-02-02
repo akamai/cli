@@ -82,7 +82,7 @@ func TestWithCommand(t *testing.T) {
 		},
 		"output to file": {
 			logFile:  "./testlogs.txt",
-			expected: regexp.MustCompile(`INFO\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] abc[ ]*command=test`),
+			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] INFO abc[ ]*command=test`),
 		},
 	}
 	for name, test := range tests {
