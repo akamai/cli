@@ -17,13 +17,14 @@ package log
 import (
 	"context"
 	"fmt"
-	"github.com/apex/log"
-	"github.com/apex/log/handlers/text"
 	"io"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/text"
 )
 
 var start = time.Now()
@@ -78,6 +79,12 @@ func FromContext(ctx context.Context) Logger {
 func WithCommand(ctx context.Context, command string) Logger {
 	logger := log.FromContext(ctx)
 	return logger.WithField("command", command)
+}
+
+// WithCommandContext returns a context withe a logger and supplied with given 'command' field
+func WithCommandContext(ctx context.Context, command string) context.Context {
+	logger := log.FromContext(ctx)
+	return log.NewContext(ctx, logger.WithField("command", command))
 }
 
 // NewHandler creates a new Handler instance with given parameters

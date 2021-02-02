@@ -19,7 +19,8 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tj/assert v0.0.3
 	github.com/urfave/cli/v2 v2.3.0
+	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/sys v0.0.0-20210110051926-789bb1bd4061
-	gopkg.in/ini.v1 v1.51.1 // indirect
+	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 )

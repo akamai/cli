@@ -16,16 +16,13 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
@@ -35,13 +32,11 @@ import (
 )
 
 var (
-	// ThirdPartyDisclaimer is the message to be used when third party packages are installed
-	ThirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+	thirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
 )
 
 func cmdInstall(git git.Repository) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		logger := log.WithCommand(c.Context, c.Command.Name)
 		if !c.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 		}
@@ -50,27 +45,27 @@ func cmdInstall(git git.Repository) cli.ActionFunc {
 
 		for _, repo := range c.Args().Slice() {
 			repo = tools.Githubize(repo)
-			err := installPackage(c.Context, git, logger, repo, c.Bool("force"))
+			err := installPackage(c.Context, git, repo, c.Bool("force"))
 			if err != nil {
 				// Only track public github repos
 				if isPublicRepo(repo) {
-					stats.TrackEvent("package.install", "failed", repo)
+					stats.TrackEvent(c.Context, "package.install", "failed", repo)
 				}
 				return err
 			}
 
 			if isPublicRepo(repo) {
-				stats.TrackEvent("package.install", "success", repo)
+				stats.TrackEvent(c.Context, "package.install", "success", repo)
 			}
 		}
 
-		packageListDiff(oldCmds)
+		packageListDiff(c.Context, oldCmds)
 
 		return nil
 	}
 }
 
-func packageListDiff(oldcmds []subcommands) {
+func packageListDiff(ctx context.Context, oldcmds []subcommands) {
 	cmds := getCommands()
 
 	var old []command
@@ -118,30 +113,30 @@ func packageListDiff(oldcmds []subcommands) {
 		}
 	}
 
-	listInstalledCommands(added, removed)
+	listInstalledCommands(ctx, added, removed)
 }
 
 func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(ctx context.Context, git git.Repository, logger log.Logger, repo string, forceBinary bool) error {
+func installPackage(ctx context.Context, git git.Repository, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
 	}
 
-	term := terminal.Standard()
+	term := terminal.Get(ctx)
 
 	spin := term.Spinner()
 
-	spin.Start("Attempting to fetch command from %s", repo)
+	spin.Start("Attempting to fetch command from %s...", repo)
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
 		spin.Stop(terminal.SpinnerStatusFail)
-		return cli.NewExitError(color.RedString("Package directory already exists (%s)", packageDir), 1)
+		return cli.Exit(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
 	_, err = git.Clone(ctx, packageDir, repo, false, spin, 1)
@@ -151,16 +146,18 @@ func installPackage(ctx context.Context, git git.Repository, logger log.Logger, 
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
+		if err := os.RemoveAll(packageDir); err != nil {
+			return err
+		}
+
 		return cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 
-	spin.Stop(terminal.SpinnerStatusOK)
-
-	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
-		term.Writef(ThirdPartyDisclaimer)
+	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
+		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
 
-	if !installPackageDependencies(logger, packageDir, forceBinary) {
+	if !installPackageDependencies(ctx, packageDir, forceBinary) {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return err
 		}
@@ -170,18 +167,17 @@ func installPackage(ctx context.Context, git git.Repository, logger log.Logger, 
 	return nil
 }
 
-func installPackageDependencies(logger log.Logger, dir string, forceBinary bool) bool {
-	term := terminal.Standard()
-
-	spin := term.Spinner()
-
-	spin.Start("Installing...")
+func installPackageDependencies(ctx context.Context, dir string, forceBinary bool) bool {
+	logger := log.FromContext(ctx)
 
 	cmdPackage, err := readPackage(dir)
 
+	term := terminal.Get(ctx)
+
+	term.Spinner().Start("Installing...")
 	if err != nil {
-		spin.Stop(terminal.SpinnerStatusFail)
-		fmt.Fprintln(app.App.Writer, err.Error())
+		term.Spinner().Stop(terminal.SpinnerStatusFail)
+		term.Writeln(err.Error())
 		return false
 	}
 
@@ -189,13 +185,13 @@ func installPackageDependencies(logger log.Logger, dir string, forceBinary bool)
 
 	switch lang {
 	case languagePHP:
-		err = packages.InstallPHP(logger, dir, cmdPackage.Requirements.Php)
+		err = packages.InstallPHP(ctx, dir, cmdPackage.Requirements.Php)
 	case languageJavaScript:
-		err = packages.InstallJavaScript(logger, dir, cmdPackage.Requirements.Node)
+		err = packages.InstallJavaScript(ctx, dir, cmdPackage.Requirements.Node)
 	case languageRuby:
-		err = packages.InstallRuby(logger, dir, cmdPackage.Requirements.Ruby)
+		err = packages.InstallRuby(ctx, dir, cmdPackage.Requirements.Ruby)
 	case languagePython:
-		err = packages.InstallPython(logger, dir, cmdPackage.Requirements.Python)
+		err = packages.InstallPython(ctx, dir, cmdPackage.Requirements.Python)
 	case languageGO:
 		var commands []string
 		for _, cmd := range cmdPackage.Commands {
@@ -203,65 +199,61 @@ func installPackageDependencies(logger log.Logger, dir string, forceBinary bool)
 		}
 		err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
 	default:
-		spin.Stop(terminal.SpinnerStatusWarnOK)
-
-		term.Writef(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
-
+		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
+		term.Writeln(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}
 
 	if err == nil {
-		spin.Stop(terminal.SpinnerStatusOK)
+		term.Spinner().OK()
 		return true
 	}
 
 	first := true
 	for _, cmd := range cmdPackage.Commands {
 		if cmd.Bin != "" {
-			if !first {
-				continue
-			}
-			first = false
-			spin.Stop(terminal.SpinnerStatusWarnOK)
-			term.Writef(color.CyanString(err.Error()))
-			if !forceBinary {
-				if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+			if first {
+				first = false
+				term.Spinner().Stop(terminal.SpinnerStatusWarn)
+				term.Writeln(color.CyanString(err.Error()))
+				if !forceBinary {
+					if !term.IsTTY() {
+						return false
+					}
+
+					answer, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
+					if err != nil {
+						term.WriteError(err.Error())
+						return false
+					}
+
+					if !answer {
+						return false
+					}
+				}
+
+				if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
 					return false
 				}
 
-				answer, _ := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
-
-				if !answer {
-					return false
-				}
+				term.Spinner().Start("Downloading binary...")
 			}
 
-			if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
-				return false
-			}
-
-			spin.Start("Downloading binary...")
-
-			if !downloadBin(logger, filepath.Join(dir, "bin"), cmd) {
-				spin.Stop(terminal.SpinnerStatusFail)
-
-				term.Writef(color.RedString("Unable to download binary: " + err.Error()))
+			if !downloadBin(ctx, filepath.Join(dir, "bin"), cmd) {
+				term.Spinner().Stop(terminal.SpinnerStatusFail)
+				term.Writeln(color.RedString("Unable to download binary: " + err.Error()))
 				return false
 			}
 		}
 
 		if first {
 			first = false
-
-			spin.Stop(terminal.SpinnerStatusFail)
-
-			term.Writef(color.RedString(err.Error()))
-
-			return first
+			term.Spinner().Stop(terminal.SpinnerStatusFail)
+			term.Writeln(color.RedString(err.Error()))
+			return false
 		}
 	}
 
-	spin.Stop(terminal.SpinnerStatusOK)
-
+	term.Spinner().Stop(terminal.SpinnerStatusOK)
 	return true
 }

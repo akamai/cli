@@ -15,18 +15,21 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/akamai/cli/pkg/terminal"
+
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"
 )
 
@@ -56,12 +59,12 @@ func cmdSearch(c *cli.Context) error {
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
-	packageList, err := fetchPackageList()
+	packageList, err := fetchPackageList(c.Context)
 	if err != nil {
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
-	err = searchPackages(c.Args().Slice(), packageList)
+	err = searchPackages(c.Context, c.Args().Slice(), packageList)
 	if err != nil {
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
@@ -69,7 +72,8 @@ func cmdSearch(c *cli.Context) error {
 	return nil
 }
 
-func fetchPackageList() (*packageList, error) {
+func fetchPackageList(ctx context.Context) (*packageList, error) {
+	logger := log.FromContext(ctx)
 	var repo string
 	if repo = os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); repo == "" {
 		repo = "https://developer.akamai.com/cli/package-list.json"
@@ -79,7 +83,11 @@ func fetchPackageList() (*packageList, error) {
 		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	result := &packageList{}
 	body, err := ioutil.ReadAll(resp.Body)
@@ -89,14 +97,16 @@ func fetchPackageList() (*packageList, error) {
 
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to fetch remote Package List (%s)", err.Error())
+		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
 	}
 
 	return result, nil
 }
 
-func searchPackages(keywords []string, packageList *packageList) error {
+func searchPackages(ctx context.Context, keywords []string, packageList *packageList) error {
 	results := make(map[int]map[string]packageListPackage)
+
+	term := terminal.Get(ctx)
 
 	var hits int
 	for key, pkg := range packageList.Packages {
@@ -163,13 +173,13 @@ func searchPackages(keywords []string, packageList *packageList) error {
 	sort.Strings(resultPkgs)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	fmt.Fprintf(app.App.Writer, color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
+	term.Printf(color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
-				fmt.Fprintf(app.App.Writer, color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
+				term.Printf(color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
 				for _, cmd := range results[hits][pkgName].Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
@@ -178,16 +188,16 @@ func searchPackages(keywords []string, packageList *packageList) error {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
 
-					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
-					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Version:")+" %s\n", cmd.Version)
-					fmt.Fprintf(app.App.Writer, bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
+					term.Printf(bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
+					term.Printf(bold.Sprintf("  Version:")+" %s\n", cmd.Version)
+					term.Printf(bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
 		}
 	}
 
 	if len(resultHits) > 0 {
-		fmt.Fprintf(app.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
 	}
 
 	return nil

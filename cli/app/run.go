@@ -2,27 +2,29 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/fatih/color"
 
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
+	"github.com/fatih/color"
 )
 
 // Run ...
 func Run() int {
+	term := terminal.Color()
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
+		term.WriteErrorf("Unable to set AKAMAI_CLI: %s", err.Error())
 		return 1
 	}
 	if err := os.Setenv("AKAMAI_CLI_VERSION", version.Version); err != nil {
+		term.WriteErrorf("Unable to set AKAMAI_CLI_VERSION: %s", err.Error())
 		return 1
 	}
 
@@ -31,46 +33,53 @@ func Run() int {
 		cliHome, _ := tools.GetAkamaiCliPath()
 
 		cachePath = filepath.Join(cliHome, "cache")
-		err := os.MkdirAll(cachePath, 0700)
-		if err != nil {
+		if err := os.MkdirAll(cachePath, 0700); err != nil {
+			term.WriteErrorf("Unable to create cache directory: %s", err.Error())
 			return 2
 		}
 	}
 
+	ctx := terminal.Context(context.Background(), term)
+
 	config.SetConfigValue("cli", "cache-path", cachePath)
-	if err := config.SaveConfig(); err != nil {
+	if err := config.SaveConfig(ctx); err != nil {
 		return 3
 	}
-	config.ExportConfigEnv()
+	if err := config.ExportConfigEnv(ctx); err != nil {
+		term.WriteErrorf("Unable to export required envs: %s", err.Error())
+	}
 
-	// TODO return value should be used once App singleton is removed
-	_ = app.CreateApp()
-	ctx := log.SetupContext(context.Background(), app.App.Writer)
+	cli := app.CreateApp(ctx)
+	ctx = log.SetupContext(ctx, cli.Writer)
+
 	cmds, err := commands.CommandLocator(ctx)
 	if err != nil {
-		fmt.Fprintln(app.App.ErrWriter, color.RedString("An error occurred initializing commands"))
+		term.WriteError(color.RedString("An error occurred initializing commands"))
 		return 4
 	}
-	app.App.Commands = cmds
+	cli.Commands = cmds
 
-	if err := firstRun(); err != nil {
+	if err := firstRun(ctx); err != nil {
 		return 5
 	}
-	checkUpgrade()
-	stats.CheckPing()
-	if err := app.App.RunContext(ctx, os.Args); err != nil {
+	checkUpgrade(ctx)
+	if err := stats.CheckPing(ctx); err != nil {
+		term.WriteError(err.Error())
+	}
+
+	if err := cli.RunContext(ctx, os.Args); err != nil {
 		return 6
 	}
 
 	return 0
 }
 
-func checkUpgrade() {
-	if latestVersion := commands.CheckUpgradeVersion(false); latestVersion != "" {
-		if commands.UpgradeCli(latestVersion) {
-			stats.TrackEvent("upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
+func checkUpgrade(ctx context.Context) {
+	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" {
+		if commands.UpgradeCli(ctx, latestVersion) {
+			stats.TrackEvent(ctx, "upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
 			return
 		}
-		stats.TrackEvent("upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
+		stats.TrackEvent(ctx, "upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
 	}
 }

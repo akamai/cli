@@ -1,35 +1,36 @@
 package app
 
 import (
-	"fmt"
-	"github.com/mattn/go-colorable"
-	"github.com/urfave/cli/v2"
+	"context"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
+
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
+	"github.com/urfave/cli/v2"
 )
-
-// App : TODO this singleton instance should be removed once io operations are migrated to new interface so that App.Writer and App.ErrWriter will not be passed globally
-var App *cli.App
 
 const sleepTime24Hours = time.Hour * 24
 
 // CreateApp ...
-func CreateApp() *cli.App {
+func CreateApp(ctx context.Context) *cli.App {
+	term := terminal.Get(ctx)
+
 	appName := "akamai"
 	app := cli.NewApp()
 	app.Name = appName
 	app.HelpName = appName
 	app.Usage = "Akamai CLI"
 	app.Version = version.Version
+	app.Writer = term
+	app.ErrWriter = term.Error()
 	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.Writer = colorable.NewColorableStdout()
-	app.ErrWriter = colorable.NewColorableStderr()
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
 	cli.VersionFlag = &cli.BoolFlag{
@@ -69,10 +70,13 @@ func CreateApp() *cli.App {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		return defaultAction(app, c)
+		return defaultAction(c)
 	}
 
 	app.Before = func(c *cli.Context) error {
+		// Update the log name in the context
+		c.Context = log.WithCommandContext(ctx, c.Command.Name)
+
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
 			if err := os.Setenv("HTTP_PROXY", proxy); err != nil {
@@ -98,12 +102,13 @@ func CreateApp() *cli.App {
 		}
 		return nil
 	}
-	App = app
+
 	return app
 }
 
 // DefaultAutoComplete ...
 func DefaultAutoComplete(ctx *cli.Context) {
+	term := terminal.Get(ctx.Context)
 	if ctx.Command.Name == "help" {
 		var args []string
 		args = append(args, os.Args[0])
@@ -111,7 +116,9 @@ func DefaultAutoComplete(ctx *cli.Context) {
 			args = append(args, os.Args[2:]...)
 		}
 
-		ctx.App.Run(args)
+		if err := ctx.App.Run(args); err != nil {
+			term.WriteError(err.Error())
+		}
 	}
 
 	commands := make([]*cli.Command, 0)
@@ -136,7 +143,7 @@ func DefaultAutoComplete(ctx *cli.Context) {
 		}
 
 		for _, name := range command.Names() {
-			fmt.Fprintln(ctx.App.Writer, name)
+			term.Writeln(ctx.App.Writer, name)
 		}
 	}
 
@@ -158,9 +165,9 @@ func DefaultAutoComplete(ctx *cli.Context) {
 			switch len(name) {
 			case 0:
 			case 1:
-				fmt.Fprintln(ctx.App.Writer, "-"+name)
+				term.Writeln(ctx.App.Writer, "-"+name)
 			default:
-				fmt.Fprintln(ctx.App.Writer, "--"+name)
+				term.Writeln(ctx.App.Writer, "--"+name)
 			}
 		}
 	}
@@ -244,7 +251,7 @@ func setHelpTemplates() {
 		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
 }
 
-func defaultAction(app *cli.App, c *cli.Context) error {
+func defaultAction(c *cli.Context) error {
 	cmd, err := osext.Executable()
 	if err != nil {
 		cmd = tools.Self()
@@ -270,15 +277,17 @@ autoload -U bashcompinit && bashcompinit`
 
 complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
 
+	term := terminal.Get(c.Context)
+
 	if c.Bool("bash") {
-		fmt.Fprintln(app.Writer, bashComments)
-		fmt.Fprintln(app.Writer, bashScript)
+		term.Writeln(bashComments)
+		term.Writeln(bashScript)
 		return nil
 	}
 
 	if c.Bool("zsh") {
-		fmt.Fprintln(app.Writer, zshScript)
-		fmt.Fprintln(app.Writer, bashScript)
+		term.Writeln(zshScript)
+		term.Writeln(bashScript)
 		return nil
 	}
 

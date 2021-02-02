@@ -15,22 +15,25 @@
 package commands
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/akamai/cli/pkg/terminal"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
-	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdList(c *cli.Context) error {
+	term := terminal.Get(c.Context)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	commands := listInstalledCommands(nil, nil)
+	commands := listInstalledCommands(c.Context, nil, nil)
 
 	if c.IsSet("remote") {
-		packageList, err := fetchPackageList()
+		packageList, err := fetchPackageList(c.Context)
 		if err != nil {
 			return cli.Exit("Unable to fetch remote package list", 1)
 		}
@@ -48,7 +51,7 @@ func cmdList(c *cli.Context) error {
 		if foundCommands {
 			return nil
 		}
-		fmt.Fprintln(app.App.Writer, color.YellowString("\nAvailable Commands:\n\n"))
+		term.Writeln(color.YellowString("\nAvailable Commands:\n\n"))
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {
@@ -56,30 +59,32 @@ func cmdList(c *cli.Context) error {
 					continue
 				}
 				bold.Printf("  %s", command.Name)
-				fmt.Fprintf(app.App.Writer, "[package: %s]\n", color.BlueString(remotePackage.Name))
-				fmt.Fprintf(app.App.Writer, "    %s\n", command.Description)
+				term.Writeln(fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
+				term.Printf("    %s\n", command.Description)
 			}
 		}
 
-		fmt.Fprintf(app.App.Writer, "\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
 	}
 
 	return nil
 }
-func listInstalledCommands(added, removed map[string]bool) map[string]bool {
+func listInstalledCommands(ctx context.Context, added map[string]bool, removed map[string]bool) map[string]bool {
 	bold := color.New(color.FgWhite, color.Bold)
 
+	term := terminal.Get(ctx)
+
 	commands := make(map[string]bool)
-	fmt.Fprintln(app.App.Writer, color.YellowString("\nInstalled Commands:\n"))
+	term.Writeln(color.YellowString("\nInstalled Commands:\n"))
 	for _, cmd := range getCommands() {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true
 			if _, ok := added[command.Name]; ok {
-				fmt.Fprint(app.App.Writer, color.GreenString("  %s", command.Name))
+				term.Printf(color.GreenString("  %s", command.Name))
 			} else if _, ok := removed[command.Name]; ok {
-				fmt.Fprint(app.App.Writer, color.RedString("  %s", command.Name))
+				term.Printf(color.RedString("  %s", command.Name))
 			} else {
-				fmt.Fprintf(app.App.Writer, bold.Sprintf("  %s", command.Name))
+				term.Printf(bold.Sprintf("  %s", command.Name))
 			}
 
 			if len(command.Aliases) > 0 {
@@ -91,22 +96,22 @@ func listInstalledCommands(added, removed map[string]bool) map[string]bool {
 					aliases = "aliases"
 				}
 
-				fmt.Fprintf(app.App.Writer, " (%s: ", aliases)
+				term.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
 					bold.Print(alias)
 					if i < len(command.Aliases)-1 {
-						fmt.Fprint(app.App.Writer, ", ")
+						term.Printf(", ")
 					}
 				}
-				fmt.Fprint(app.App.Writer, ")")
+				term.Printf(")")
 			}
 
-			fmt.Fprintln(app.App.Writer)
+			term.Writeln()
 			if len(command.Description) > 0 {
-				fmt.Fprintf(app.App.Writer, "    %s\n", command.Description)
+				term.Printf("    %s\n", command.Description)
 			}
 		}
 	}
-	fmt.Fprintf(app.App.Writer, "\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
+	term.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
 	return commands
 }

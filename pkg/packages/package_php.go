@@ -15,23 +15,27 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
+
 	"github.com/urfave/cli/v2"
 )
 
 // InstallPHP ..
-func InstallPHP(logger log.Logger, dir, cmdReq string) error {
+func InstallPHP(ctx context.Context, dir, cmdReq string) error {
 	bin, err := exec.LookPath("php")
 	if err != nil {
 		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "PHP")
 	}
+
+	logger := log.FromContext(ctx)
 
 	logger.Debugf("PHP binary found: %s", bin)
 
@@ -52,14 +56,16 @@ func InstallPHP(logger log.Logger, dir, cmdReq string) error {
 		}
 	}
 
-	if err := installPHPDepsComposer(logger, bin, dir); err != nil {
+	if err := installPHPDepsComposer(ctx, bin, dir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installPHPDepsComposer(logger log.Logger, phpBin, dir string) error {
+func installPHPDepsComposer(ctx context.Context, phpBin, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "composer.json")); err == nil {
 		logger.Info("composer.json found, running composer package manager")
 

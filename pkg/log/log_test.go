@@ -45,8 +45,12 @@ func TestSetupContext(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for k, v := range test.envs {
 				require.NoError(t, os.Setenv(k, v))
-				defer os.Unsetenv(k)
 			}
+			defer func() {
+				for k := range test.envs {
+					require.NoError(t, os.Unsetenv(k))
+				}
+			}()
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
 			logger := log.FromContext(ctx).(*log.Logger)
@@ -84,7 +88,9 @@ func TestWithCommand(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.NoError(t, os.Setenv("AKAMAI_LOG_PATH", test.logFile))
-			defer os.Unsetenv("AKAMAI_LOG_PATH")
+			defer func() {
+				require.NoError(t, os.Unsetenv("AKAMAI_LOG_PATH"))
+			}()
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
 			logger := WithCommand(ctx, "test")

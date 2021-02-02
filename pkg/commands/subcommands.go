@@ -16,6 +16,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -126,7 +127,8 @@ func determineCommandLanguage(cmdPackage subcommands) string {
 	return ""
 }
 
-func downloadBin(logger log.Logger, dir string, cmd command) bool {
+func downloadBin(ctx context.Context, dir string, cmd command) bool {
+	logger := log.FromContext(ctx)
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS

@@ -15,7 +15,7 @@
 package config
 
 import (
-	"fmt"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-ini/ini"
 
-	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 )
 
@@ -70,7 +70,9 @@ func OpenConfig() (*ini.File, error) {
 }
 
 // SaveConfig ...
-func SaveConfig() error {
+func SaveConfig(ctx context.Context) error {
+
+	term := terminal.Get(ctx)
 	config, err := OpenConfig()
 	if err != nil {
 		return err
@@ -83,22 +85,22 @@ func SaveConfig() error {
 
 	err = config.SaveTo(path)
 	if err != nil {
-		fmt.Fprintln(app.App.Writer, err.Error())
+		term.Writeln(err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func migrateConfig() {
+func migrateConfig(ctx context.Context) error {
 	configPath, err := getConfigFilePath()
 	if err != nil {
-		return
+		return err
 	}
 
 	_, err = OpenConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	var currentVersion string
@@ -106,14 +108,17 @@ func migrateConfig() {
 		// Do we need to migrate from an older version?
 		currentVersion = GetConfigValue("cli", "config-version")
 		if currentVersion == configVersion {
-			return
+			return nil
 		}
 	}
 
 	switch currentVersion {
 	case "":
 		// Create v1
-		cliPath, _ := tools.GetAkamaiCliPath()
+		cliPath, err := tools.GetAkamaiCliPath()
+		if err != nil {
+			return err
+		}
 
 		var data []byte
 		upgradeFile := filepath.Join(cliPath, ".upgrade-check")
@@ -140,7 +145,9 @@ func migrateConfig() {
 				}
 			}
 
-			os.Remove(upgradeFile)
+			if err := os.Remove(upgradeFile); err != nil {
+				return err
+			}
 		}
 
 		SetConfigValue("cli", "config-version", "1")
@@ -152,8 +159,10 @@ func migrateConfig() {
 		SetConfigValue("cli", "config-version", "1.1")
 	}
 
-	SaveConfig()
-	migrateConfig()
+	if err := SaveConfig(ctx); err != nil {
+		return err
+	}
+	return migrateConfig(ctx)
 }
 
 // GetConfigValue ...
@@ -195,19 +204,24 @@ func UnsetConfigValue(sectionName, key string) {
 }
 
 // ExportConfigEnv ...
-func ExportConfigEnv() {
-	migrateConfig()
+func ExportConfigEnv(ctx context.Context) error {
+	if err := migrateConfig(ctx); err != nil {
+		return err
+	}
 
 	config, err := OpenConfig()
 	if err != nil {
-		return
+		return err
 	}
 
 	for _, section := range config.Sections() {
 		for _, key := range section.Keys() {
 			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
 			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
-			os.Setenv(envVar, key.String())
+			if err := os.Setenv(envVar, key.String()); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }

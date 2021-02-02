@@ -15,19 +15,23 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
 // InstallPython ...
-func InstallPython(logger log.Logger, dir, cmdReq string) error {
-	bins, err := FindPythonBins(logger, cmdReq)
+func InstallPython(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
+	bins, err := FindPythonBins(ctx, cmdReq)
 	if err != nil {
 		return err
 	}
@@ -49,7 +53,7 @@ func InstallPython(logger log.Logger, dir, cmdReq string) error {
 		}
 	}
 
-	if err := installPythonDepsPip(logger, bins, dir); err != nil {
+	if err := installPythonDepsPip(ctx, bins, dir); err != nil {
 		return err
 	}
 
@@ -63,8 +67,10 @@ type PythonBins struct {
 }
 
 // FindPythonBins ...
-func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
+func FindPythonBins(ctx context.Context, ver string) (PythonBins, error) {
 	var err error
+
+	logger := log.FromContext(ctx)
 
 	bins := PythonBins{}
 	if ver != "" && ver != "*" {
@@ -141,7 +147,9 @@ func FindPythonBins(logger log.Logger, ver string) (PythonBins, error) {
 	return bins, nil
 }
 
-func installPythonDepsPip(logger log.Logger, bins PythonBins, dir string) error {
+func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err != nil {
 		return nil
 	}

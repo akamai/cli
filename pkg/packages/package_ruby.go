@@ -15,20 +15,24 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
 // InstallRuby ...
-func InstallRuby(logger log.Logger, dir, cmdReq string) error {
+func InstallRuby(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
 	bin, err := exec.LookPath("ruby")
 	if err != nil {
 		return cli.Exit(color.RedString("Unable to locate Ruby runtime"), 1)
@@ -53,14 +57,16 @@ func InstallRuby(logger log.Logger, dir, cmdReq string) error {
 		}
 	}
 
-	if err := installRubyDepsBundler(logger, dir); err != nil {
+	if err := installRubyDepsBundler(ctx, dir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installRubyDepsBundler(logger log.Logger, dir string) error {
+func installRubyDepsBundler(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
 		logger.Debugf("Gemfile found, running yarn package manager")
 		bin, err := exec.LookPath("bundle")

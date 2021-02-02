@@ -15,28 +15,28 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/stats"
+	"github.com/akamai/cli/pkg/terminal"
+
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/stats"
 )
 
 func cmdSubcommand(git git.Repository) cli.ActionFunc {
 	return func(c *cli.Context) error {
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		term := terminal.Get(c.Context)
+
 		commandName := strings.ToLower(c.Command.Name)
 
-		executable, err := findExec(logger, commandName)
+		executable, err := findExec(c.Context, commandName)
 		if err != nil {
 			return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
 		}
@@ -61,19 +61,19 @@ func cmdSubcommand(git git.Repository) cli.ActionFunc {
 			}
 
 			if err == nil {
-				fmt.Fprintln(app.App.Writer, color.CyanString(errors.ErrPackageNeedsReinstall))
-				fmt.Fprint(app.App.Writer, "Would you like to reinstall it? (Y/n): ")
-				answer := ""
-				fmt.Scanln(&answer)
-				if answer != "" && strings.ToLower(answer) != "y" {
+				answer, err := term.Confirm("Would you like to reinstall it", true)
+				if err != nil {
+					return err
+				}
+				if !answer {
 					return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
 				}
 
-				if err = uninstallPackage(logger, commandName); err != nil {
+				if err = uninstallPackage(c.Context, commandName); err != nil {
 					return err
 				}
 
-				if err = installPackage(c.Context, git, logger, commandName, false); err != nil {
+				if err = installPackage(c.Context, git, commandName, false); err != nil {
 					return err
 				}
 			}
@@ -103,7 +103,7 @@ func cmdSubcommand(git git.Repository) cli.ActionFunc {
 		if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
 			return err
 		}
-		stats.TrackEvent("exec", commandName, currentCmd.Version)
+		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
 		return passthruCommand(executable)
 	}
 }

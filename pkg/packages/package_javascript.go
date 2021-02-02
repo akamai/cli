@@ -15,17 +15,21 @@
 package packages
 
 import (
-	"github.com/akamai/cli/pkg/errors"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+
+	"github.com/akamai/cli/pkg/errors"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/version"
 )
 
 // InstallJavaScript ...
-func InstallJavaScript(logger log.Logger, dir, cmdReq string) error {
+func InstallJavaScript(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
 	bin, err := exec.LookPath("node")
 	if err != nil {
 		bin, err = exec.LookPath("nodejs")
@@ -53,18 +57,20 @@ func InstallJavaScript(logger log.Logger, dir, cmdReq string) error {
 		}
 	}
 
-	if err := installNodeDepsYarn(logger, dir); err != nil {
+	if err := installNodeDepsYarn(ctx, dir); err != nil {
 		return err
 	}
 
-	if err := installNodeDepsNpm(logger, dir); err != nil {
+	if err := installNodeDepsNpm(ctx, dir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installNodeDepsYarn(logger log.Logger, dir string) error {
+func installNodeDepsYarn(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "yarn.lock")); err == nil {
 		logger.Info("yarn.lock found, running yarn package manager")
 		bin, err := exec.LookPath("yarn")
@@ -85,7 +91,9 @@ func installNodeDepsYarn(logger log.Logger, dir string) error {
 	return nil
 }
 
-func installNodeDepsNpm(logger log.Logger, dir string) error {
+func installNodeDepsNpm(ctx context.Context, dir string) error {
+	logger := log.FromContext(ctx)
+
 	if _, err := os.Stat(filepath.Join(dir, "package.json")); err == nil {
 		logger.Info("package.json found, running npm package manager")
 

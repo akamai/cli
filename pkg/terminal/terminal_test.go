@@ -15,125 +15,220 @@
 package terminal
 
 import (
+	"context"
+	"github.com/stretchr/testify/require"
+	"github.com/tj/assert"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/tj/assert"
 )
 
 func TestWrite(t *testing.T) {
 	out, err := ioutil.TempFile("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	defer os.Remove(out.Name()) // clean up
+	defer func() {
+		require.NoError(t, os.Remove(out.Name())) // clean up
+	}()
 
 	term := New(out, nil, DiscardWriter())
 
-	term.Writef(t.Name())
+	term.Write([]byte(t.Name()))
 
-	out.Seek(0, 0)
-
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
 	data, err := ioutil.ReadAll(out)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	assert.Contains(t, t.Name()+"\n", string(data), "it should cotain the value")
+	assert.Equal(t, t.Name(), string(data))
 }
 
-func TestWriteErr(t *testing.T) {
+func TestPrintf(t *testing.T) {
 	out, err := ioutil.TempFile("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	defer os.Remove(out.Name()) // clean up
+	defer func() {
+		require.NoError(t, os.Remove(out.Name())) // clean up
+	}()
+
+	term := New(out, nil, DiscardWriter())
+
+	term.Printf("test: %s", "abc")
+
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+	data, err := ioutil.ReadAll(out)
+	require.NoError(t, err)
+
+	assert.Equal(t, "test: abc", string(data))
+}
+
+func TestWriteln(t *testing.T) {
+	out, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+
+	defer func() {
+		require.NoError(t, os.Remove(out.Name())) // clean up
+	}()
+
+	term := New(out, nil, DiscardWriter())
+
+	term.Writeln(t.Name())
+
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+	data, err := ioutil.ReadAll(out)
+	require.NoError(t, err)
+
+	assert.Equal(t, t.Name()+"\n", string(data))
+}
+
+func TestWriteError(t *testing.T) {
+	out, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+
+	defer func() {
+		require.NoError(t, os.Remove(out.Name())) // clean up
+	}()
 
 	term := New(os.Stdin, os.Stdin, out)
 
-	term.WriteErrorf(t.Name())
+	term.WriteError(t.Name())
 
-	out.Seek(0, 0)
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
 
 	data, err := ioutil.ReadAll(out)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, t.Name(), string(data), "they should be equal")
+	assert.Equal(t, t.Name(), string(data))
+}
+
+func TestWriteErrorf(t *testing.T) {
+	out, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+
+	defer func() {
+		require.NoError(t, os.Remove(out.Name())) // clean up
+	}()
+
+	term := New(os.Stdin, os.Stdin, out)
+
+	term.WriteErrorf("test error: %s", "abc")
+
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+
+	data, err := ioutil.ReadAll(out)
+	require.NoError(t, err)
+
+	assert.Equal(t, "test error: abc", string(data))
 }
 
 func TestPrompt(t *testing.T) {
 	content := []byte("Tom\r\n")
 	in, err := ioutil.TempFile("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	defer os.Remove(in.Name()) // clean up
+	defer func() {
+		require.NoError(t, os.Remove(in.Name())) // clean up
+	}()
 
-	if _, err := in.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	in.Seek(0, 0)
+	_, err = in.Write(content)
+	require.NoError(t, err)
+	_, err = in.Seek(0, 0)
+	require.NoError(t, err)
 
 	term := New(DiscardWriter(), in, DiscardWriter())
 
 	name, err := term.Prompt("What is your name")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, "Tom", name, "they should be equal")
+	assert.Equal(t, "Tom", name)
 }
 
 func TestPromptOptions(t *testing.T) {
 	content := []byte("yellow\r\n")
 	in, err := ioutil.TempFile("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	defer os.Remove(in.Name()) // clean up
-
-	if _, err := in.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	in.Seek(0, 0)
+	defer func() {
+		require.NoError(t, os.Remove(in.Name())) // clean up
+	}()
+	_, err = in.Write(content)
+	require.NoError(t, err)
+	_, err = in.Seek(0, 0)
+	require.NoError(t, err)
 
 	term := New(DiscardWriter(), in, DiscardWriter())
 
 	color, err := term.Prompt("What is your favorite color", "yellow", "red", "blue")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, "yellow", color, "they should be equal")
+	assert.Equal(t, "yellow", color)
 }
 
 func TestConfirm(t *testing.T) {
-	content := []byte("yes\r\n")
+	t.Log("we are unable to test Confirm method as underlying survey library uses RuneReader input for which cannot be mocked")
+	t.Skip()
+	content := []byte("y\r\n")
 	in, err := ioutil.TempFile("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	defer os.Remove(in.Name()) // clean up
+	defer func() {
+		require.NoError(t, os.Remove(in.Name())) // clean up
+	}()
 
-	if _, err := in.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	in.Seek(0, 0)
+	_, err = in.Write(content)
+	require.NoError(t, err)
+	_, err = in.Seek(0, 0)
+	require.NoError(t, err)
 
 	term := New(DiscardWriter(), in, DiscardWriter())
 
 	val, err := term.Confirm("Are you here", false)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, true, val, "they should be equal")
+	assert.Equal(t, true, val)
+}
+
+func TestGet(t *testing.T) {
+	tests := map[string]struct {
+		givenTerm   Terminal
+		shouldPanic bool
+	}{
+		"terminal found in context": {
+			givenTerm: Color(),
+		},
+		"terminal not in context": {
+			givenTerm:   nil,
+			shouldPanic: true,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := Context(context.Background(), test.givenTerm)
+			if test.shouldPanic {
+				assert.PanicsWithError(t, "context does not have a DefaultTerminal", func() {
+					Get(ctx)
+				})
+				return
+			}
+			term := Get(ctx)
+			assert.Equal(t, test.givenTerm, term)
+		})
+	}
+}
+
+func TestShowBanner(t *testing.T) {
+	out, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+	term := New(out, nil, DiscardWriter())
+	ctx := Context(context.Background(), term)
+	ShowBanner(ctx)
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+	data, err := ioutil.ReadAll(out)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "Welcome to Akamai CLI v1.1.4")
 }
