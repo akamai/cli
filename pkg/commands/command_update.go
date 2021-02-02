@@ -136,13 +136,13 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, logger log.Logge
 		}
 	} else {
 		logger.Debugf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
-		term.Spinner().Fail()
+		term.Spinner().WarnOK()
 		term.Writeln(color.CyanString("command \"%s\" already up-to-date", cmd))
 		return nil
 	}
 
 	logger.Debug("Repo updated successfully")
-	term.Spinner().Fail()
+	term.Spinner().OK()
 
 	if !installPackageDependencies(ctx, repoDir, forceBinary) {
 		logger.Trace("Error updating dependencies")
