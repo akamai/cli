@@ -3,8 +3,10 @@ package terminal
 import (
 	"fmt"
 	spnr "github.com/briandowns/spinner"
+	"github.com/fatih/color"
 	"io"
 	"strings"
+	"time"
 )
 
 type (
@@ -25,6 +27,18 @@ type (
 		prefix  string
 	}
 )
+
+// SpinnerStatus strings
+var (
+	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.GreenString("OK")))
+	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("OK")))
+	SpinnerStatusWarn   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("WARN")))
+	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.RedString("FAIL")))
+)
+
+func StandardSpinner() *DefaultSpinner {
+	return &DefaultSpinner{spinner: spnr.New(spnr.CharSets[33], 500*time.Millisecond)}
+}
 
 // Start starts the spinner using the provided string as the prefix
 func (s *DefaultSpinner) Start(f string, args ...interface{}) {

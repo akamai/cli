@@ -25,7 +25,6 @@ import (
 	"os"
 
 	"github.com/akamai/cli/pkg/version"
-	spnr "github.com/briandowns/spinner"
 	"github.com/fatih/color"
 
 	"github.com/mattn/go-colorable"
@@ -91,15 +90,7 @@ type (
 	contextType string
 )
 
-// SpinnerStatus strings
-var (
-	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.GreenString("OK")))
-	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("OK")))
-	SpinnerStatusWarn   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("WARN")))
-	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.RedString("FAIL")))
-
-	terminalContext contextType = "terminal"
-)
+var terminalContext contextType = "terminal"
 
 // Color returns a colorable terminal
 func Color() *DefaultTerminal {
@@ -118,7 +109,7 @@ func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 		err:   err,
 		in:    in,
 		start: time.Now(),
-		spnr:  &DefaultSpinner{spinner: spnr.New(spnr.CharSets[33], 500*time.Millisecond)},
+		spnr:  StandardSpinner(),
 	}
 
 	t.spnr.spinner.Writer = &t
@@ -133,22 +124,22 @@ func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
 
 // Writeln writes a line to the terminal
 func (t *DefaultTerminal) Writeln(args ...interface{}) (int, error) {
-	return fmt.Fprintln(t, args...)
+	return fmt.Fprintln(t.out, args...)
 }
 
 func (t *DefaultTerminal) Write(v []byte) (n int, err error) {
 	msg := string(v)
-	return t.out.Write([]byte(msg))
+	return fmt.Fprint(t.out, msg)
 }
 
 // WriteErrorf writes a formatted message to the error stream
 func (t *DefaultTerminal) WriteErrorf(f string, args ...interface{}) {
-	t.err.Write([]byte(fmt.Sprintf(f, args...)))
+	fmt.Fprintf(t.err, f, args...)
 }
 
 // WriteError write a message to the error stream
 func (t *DefaultTerminal) WriteError(v interface{}) {
-	t.err.Write([]byte(fmt.Sprint(v)))
+	fmt.Fprintf(t.err, fmt.Sprint(v))
 }
 
 // Error return the error writer
