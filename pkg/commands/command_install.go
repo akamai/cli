@@ -152,6 +152,7 @@ func installPackage(ctx context.Context, git git.Repository, repo string, forceB
 
 		return cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
+	spin.OK()
 
 	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
 		term.Printf(color.CyanString(thirdPartyDisclaimer))
