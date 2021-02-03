@@ -75,7 +75,7 @@ func CreateApp(ctx context.Context) *cli.App {
 
 	app.Before = func(c *cli.Context) error {
 		// Update the log name in the context
-		c.Context = log.WithCommandContext(ctx, c.Command.Name)
+		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
