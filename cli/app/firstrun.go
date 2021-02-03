@@ -41,6 +41,7 @@ const (
 
 func firstRun(ctx context.Context) error {
 	term := terminal.Get(ctx)
+	cfg := config.Get(ctx)
 	if !term.IsTTY() {
 		return nil
 	}
@@ -50,7 +51,7 @@ func firstRun(ctx context.Context) error {
 		return err
 	}
 
-	bannerShown, err = firstRunCheckUpgrade(ctx, bannerShown)
+	bannerShown, err = firstRunCheckUpgrade(ctx, cfg, bannerShown)
 	if err != nil {
 		return err
 	}
@@ -61,6 +62,7 @@ func firstRun(ctx context.Context) error {
 
 func firstRunCheckInPath(ctx context.Context) (bool, error) {
 	term := terminal.Get(ctx)
+	cfg := config.Get(ctx)
 
 	selfPath, err := osext.Executable()
 	if err != nil {
@@ -79,9 +81,9 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 	writablePaths := make([]string, 0)
 
 	var bannerShown bool
-	if config.GetConfigValue("cli", "install-in-path") == "no" {
+	if val, _ := cfg.GetValue("cli", "install-in-path"); val == "no" {
 		inPath = true
-		bannerShown, err = firstRunCheckUpgrade(ctx, !inPath)
+		bannerShown, err = firstRunCheckUpgrade(ctx, cfg, !inPath)
 		if err != nil {
 			return false, err
 		}
@@ -89,7 +91,7 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 
 	if len(paths) == 0 {
 		inPath = true
-		bannerShown, err = firstRunCheckUpgrade(ctx, !inPath)
+		bannerShown, err = firstRunCheckUpgrade(ctx, cfg, !inPath)
 		if err != nil {
 			return false, err
 		}
@@ -112,7 +114,7 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 
 		if path == dirPath {
 			inPath = true
-			bannerShown, err = firstRunCheckUpgrade(ctx, false)
+			bannerShown, err = firstRunCheckUpgrade(ctx, cfg, false)
 			if err != nil {
 				return false, err
 			}
@@ -129,11 +131,11 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 			return false, err
 		}
 		if !answer {
-			config.SetConfigValue("cli", "install-in-path", "no")
-			if err := config.SaveConfig(ctx); err != nil {
+			cfg.SetValue("cli", "install-in-path", "no")
+			if err := cfg.Save(ctx); err != nil {
 				return false, err
 			}
-			if _, err = firstRunCheckUpgrade(ctx, true); err != nil {
+			if _, err = firstRunCheckUpgrade(ctx, cfg, true); err != nil {
 				return false, err
 			}
 			return true, nil
@@ -173,30 +175,31 @@ func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 	term.Spinner().Start(string(terminal.SpinnerStatusOK))
 }
 
-func firstRunCheckUpgrade(ctx context.Context, bannerShown bool) (bool, error) {
+func firstRunCheckUpgrade(ctx context.Context, cfg config.Config, bannerShown bool) (bool, error) {
 	term := terminal.Get(ctx)
-
-	if config.GetConfigValue("cli", "last-upgrade-check") == "" {
-		if !bannerShown {
-			bannerShown = true
-			terminal.ShowBanner(ctx)
-		}
-		answer, err := term.Confirm("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ", true)
-		if err != nil {
+	_, ok := cfg.GetValue("cli", "last-upgrade-check")
+	if ok {
+		return bannerShown, nil
+	}
+	if !bannerShown {
+		bannerShown = true
+		terminal.ShowBanner(ctx)
+	}
+	answer, err := term.Confirm("Akamai CLI can auto-update itself, would you like to enable daily checks? [Y/n]: ", true)
+	if err != nil {
+		return false, err
+	}
+	if !answer {
+		cfg.SetValue("cli", "last-upgrade-check", "ignore")
+		if err := cfg.Save(ctx); err != nil {
 			return false, err
 		}
-		if !answer {
-			config.SetConfigValue("cli", "last-upgrade-check", "ignore")
-			if err := config.SaveConfig(ctx); err != nil {
-				return false, err
-			}
-			return bannerShown, nil
-		}
+		return bannerShown, nil
+	}
 
-		config.SetConfigValue("cli", "last-upgrade-check", "never")
-		if err := config.SaveConfig(ctx); err != nil {
-			return false, err
-		}
+	cfg.SetValue("cli", "last-upgrade-check", "never")
+	if err := cfg.Save(ctx); err != nil {
+		return false, err
 	}
 
 	return bannerShown, nil

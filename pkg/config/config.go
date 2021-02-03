@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -32,7 +33,116 @@ const (
 	configVersion string = "1.1"
 )
 
-var config = make(map[string]*ini.File)
+type (
+	Config interface {
+		Save(context.Context) error
+		Values() map[string]map[string]string
+		GetValue(string, string) (string, bool)
+		SetValue(string, string, string)
+		UnsetValue(string, string)
+		ExportEnv(context.Context) error
+	}
+
+	IniConfig struct {
+		path string
+		file *ini.File
+	}
+
+	contextType string
+)
+
+var configContext contextType = "config"
+
+func NewIni() (*IniConfig, error) {
+	path, err := getConfigFilePath()
+	if err != nil {
+		return nil, err
+	}
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		iniFile := ini.Empty()
+		return &IniConfig{path: path, file: iniFile}, nil
+	}
+	iniFile, err := ini.Load(path)
+	if err != nil {
+		return nil, err
+	}
+	return &IniConfig{path: path, file: iniFile}, nil
+}
+
+// Context sets the terminal in the context
+func Context(ctx context.Context, cfg Config) context.Context {
+	return context.WithValue(ctx, configContext, cfg)
+}
+
+// Get gets the terminal from the context
+func Get(ctx context.Context) Config {
+	t, ok := ctx.Value(configContext).(Config)
+	if !ok {
+		panic(errors.New("context does not have a Config"))
+	}
+
+	return t
+}
+
+func (c *IniConfig) Values() map[string]map[string]string {
+	sections := make(map[string]map[string]string)
+	for _, section := range c.file.Sections() {
+		values := make(map[string]string)
+		for _, key := range section.Keys() {
+			values[key.Name()] = key.String()
+		}
+		sections[section.Name()] = values
+	}
+	return sections
+}
+
+func (c *IniConfig) Save(ctx context.Context) error {
+	term := terminal.Get(ctx)
+	if err := c.file.SaveTo(c.path); err != nil {
+		term.Writeln(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (c *IniConfig) GetValue(section, key string) (string, bool) {
+	s := c.file.Section(section)
+	k := s.Key(key)
+	if k != nil {
+		return k.String(), true
+	}
+	return "", false
+}
+
+func (c *IniConfig) SetValue(section, key, value string) {
+	s := c.file.Section(section)
+	s.Key(key).SetValue(value)
+}
+
+func (c *IniConfig) UnsetValue(section, key string) {
+	s := c.file.Section(section)
+	s.DeleteKey(key)
+}
+
+func (c *IniConfig) ExportEnv(ctx context.Context) error {
+	if err := migrateConfig(ctx, c); err != nil {
+		return err
+	}
+
+	for _, section := range c.file.Sections() {
+		for _, key := range section.Keys() {
+			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
+			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
+			if err := os.Setenv(envVar, key.String()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+//var config = make(map[string]*ini.File)
 
 func getConfigFilePath() (string, error) {
 	cliPath, err := tools.GetAkamaiCliPath()
@@ -43,70 +153,60 @@ func getConfigFilePath() (string, error) {
 	return filepath.Join(cliPath, "config"), nil
 }
 
-// OpenConfig ..
-func OpenConfig() (*ini.File, error) {
-	path, err := getConfigFilePath()
-	if err != nil {
-		return nil, err
-	}
+//// OpenConfig ..
+//func OpenConfig() (*ini.File, error) {
+//	path, err := getConfigFilePath()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if config[path] != nil {
+//		return config[path], nil
+//	}
+//
+//	if _, err = os.Stat(path); os.IsNotExist(err) {
+//		iniFile := ini.Empty()
+//		config[path] = iniFile
+//		return config[path], nil
+//	}
+//
+//	iniFile, err := ini.Load(path)
+//	if err != nil {
+//		return nil, err
+//	}
+//	config[path] = iniFile
+//
+//	return config[path], nil
+//}
+//
+//// SaveConfig ...
+//func SaveConfig(ctx context.Context) error {
+//
+//	term := terminal.Get(ctx)
+//	config, err := OpenConfig()
+//	if err != nil {
+//		return err
+//	}
+//
+//	path, err := getConfigFilePath()
+//	if err != nil {
+//		return err
+//	}
+//
+//	err = config.SaveTo(path)
+//	if err != nil {
+//		term.Writeln(err.Error())
+//		return err
+//	}
+//
+//	return nil
+//}
 
-	if config[path] != nil {
-		return config[path], nil
-	}
-
-	if _, err = os.Stat(path); os.IsNotExist(err) {
-		iniFile := ini.Empty()
-		config[path] = iniFile
-		return config[path], nil
-	}
-
-	iniFile, err := ini.Load(path)
-	if err != nil {
-		return nil, err
-	}
-	config[path] = iniFile
-
-	return config[path], nil
-}
-
-// SaveConfig ...
-func SaveConfig(ctx context.Context) error {
-
-	term := terminal.Get(ctx)
-	config, err := OpenConfig()
-	if err != nil {
-		return err
-	}
-
-	path, err := getConfigFilePath()
-	if err != nil {
-		return err
-	}
-
-	err = config.SaveTo(path)
-	if err != nil {
-		term.Writeln(err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func migrateConfig(ctx context.Context) error {
-	configPath, err := getConfigFilePath()
-	if err != nil {
-		return err
-	}
-
-	_, err = OpenConfig()
-	if err != nil {
-		return err
-	}
-
+func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 	var currentVersion string
-	if _, err = os.Stat(configPath); err == nil {
+	if _, err := os.Stat(cfg.path); err == nil {
 		// Do we need to migrate from an older version?
-		currentVersion = GetConfigValue("cli", "config-version")
+		currentVersion, _ = cfg.GetValue("cli", "config-version")
 		if currentVersion == configVersion {
 			return nil
 		}
@@ -134,14 +234,14 @@ func migrateConfig(ctx context.Context) error {
 		if len(data) != 0 {
 			date := string(data)
 			if date == "never" || date == "ignore" {
-				SetConfigValue("cli", "last-upgrade-check", date)
+				cfg.SetValue("cli", "last-upgrade-check", date)
 			} else {
 				if m := strings.LastIndex(date, "m="); m != -1 {
 					date = date[0 : m-1]
 				}
 				lastUpgrade, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", date)
 				if err == nil {
-					SetConfigValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
+					cfg.SetValue("cli", "last-upgrade-check", lastUpgrade.Format(time.RFC3339))
 				}
 			}
 
@@ -150,78 +250,78 @@ func migrateConfig(ctx context.Context) error {
 			}
 		}
 
-		SetConfigValue("cli", "config-version", "1")
+		cfg.SetValue("cli", "config-version", "1")
 	case "1":
 		// Upgrade to v1.1
-		if GetConfigValue("cli", "enable-cli-statistics") == "true" {
-			SetConfigValue("cli", "stats-version", "1.0")
+		if val, _ := cfg.GetValue("cli", "enable-cli-statistics"); val == "true" {
+			cfg.SetValue("cli", "stats-version", "1.0")
 		}
-		SetConfigValue("cli", "config-version", "1.1")
+		cfg.SetValue("cli", "config-version", "1.1")
 	}
 
-	if err := SaveConfig(ctx); err != nil {
+	if err := cfg.Save(ctx); err != nil {
 		return err
 	}
-	return migrateConfig(ctx)
+	return migrateConfig(ctx, cfg)
 }
 
 // GetConfigValue ...
-func GetConfigValue(sectionName, keyName string) string {
-	config, err := OpenConfig()
-	if err != nil {
-		return ""
-	}
-
-	section := config.Section(sectionName)
-	key := section.Key(keyName)
-	if key != nil {
-		return key.String()
-	}
-
-	return ""
-}
-
-// SetConfigValue ...
-func SetConfigValue(sectionName, key, value string) {
-	config, err := OpenConfig()
-	if err != nil {
-		return
-	}
-
-	section := config.Section(sectionName)
-	section.Key(key).SetValue(value)
-}
-
-// UnsetConfigValue ...
-func UnsetConfigValue(sectionName, key string) {
-	config, err := OpenConfig()
-	if err != nil {
-		return
-	}
-
-	section := config.Section(sectionName)
-	section.DeleteKey(key)
-}
-
-// ExportConfigEnv ...
-func ExportConfigEnv(ctx context.Context) error {
-	if err := migrateConfig(ctx); err != nil {
-		return err
-	}
-
-	config, err := OpenConfig()
-	if err != nil {
-		return err
-	}
-
-	for _, section := range config.Sections() {
-		for _, key := range section.Keys() {
-			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
-			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
-			if err := os.Setenv(envVar, key.String()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+//func GetConfigValue(sectionName, keyName string) string {
+//	config, err := OpenConfig()
+//	if err != nil {
+//		return ""
+//	}
+//
+//	section := config.Section(sectionName)
+//	key := section.Key(keyName)
+//	if key != nil {
+//		return key.String()
+//	}
+//
+//	return ""
+//}
+//
+//// SetConfigValue ...
+//func SetConfigValue(sectionName, key, value string) {
+//	config, err := OpenConfig()
+//	if err != nil {
+//		return
+//	}
+//
+//	section := config.Section(sectionName)
+//	section.Key(key).SetValue(value)
+//}
+//
+//// UnsetConfigValue ...
+//func UnsetConfigValue(sectionName, key string) {
+//	config, err := OpenConfig()
+//	if err != nil {
+//		return
+//	}
+//
+//	section := config.Section(sectionName)
+//	section.DeleteKey(key)
+//}
+//
+//// ExportConfigEnv ...
+//func ExportConfigEnv(ctx context.Context) error {
+//	if err := migrateConfig(ctx); err != nil {
+//		return err
+//	}
+//
+//	config, err := OpenConfig()
+//	if err != nil {
+//		return err
+//	}
+//
+//	for _, section := range config.Sections() {
+//		for _, key := range section.Keys() {
+//			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
+//			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
+//			if err := os.Setenv(envVar, key.String()); err != nil {
+//				return err
+//			}
+//		}
+//	}
+//	return nil
+//}

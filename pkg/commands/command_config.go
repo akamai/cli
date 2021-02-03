@@ -24,52 +24,50 @@ import (
 )
 
 func cmdConfigSet(c *cli.Context) error {
+	cfg := config.Get(c.Context)
 	section, key := parseConfigPath(c)
-
 	value := strings.Join(c.Args().Tail(), " ")
-
-	config.SetConfigValue(section, key, value)
-	return config.SaveConfig(c.Context)
+	cfg.SetValue(section, key, value)
+	return cfg.Save(c.Context)
 }
 
 func cmdConfigGet(c *cli.Context) error {
+	cfg := config.Get(c.Context)
 	section, key := parseConfigPath(c)
-
-	terminal.
-		Get(c.Context).
-		Writeln(config.GetConfigValue(section, key))
-
+	val, _ := cfg.GetValue(section, key)
+	terminal.Get(c.Context).Writeln(val)
 	return nil
 }
 
 func cmdConfigUnset(c *cli.Context) error {
+	cfg := config.Get(c.Context)
 	section, key := parseConfigPath(c)
 
-	config.UnsetConfigValue(section, key)
-	return config.SaveConfig(c.Context)
+	cfg.UnsetValue(section, key)
+	return cfg.Save(c.Context)
 }
 
 func cmdConfigList(c *cli.Context) error {
-	conf, err := config.OpenConfig()
-	if err != nil {
-		return err
-	}
-
+	cfg := config.Get(c.Context)
 	term := terminal.Get(c.Context)
 
+	allValues := cfg.Values()
 	if c.NArg() > 0 {
 		sectionName := c.Args().First()
-		section := conf.Section(sectionName)
-		for _, key := range section.Keys() {
-			term.Printf("%s.%s = %s\n", sectionName, key.Name(), key.Value())
+		section, ok := allValues[sectionName]
+		if !ok {
+			return nil
+		}
+		for key, value := range section {
+			term.Printf("%s.%s = %s\n", sectionName, key, value)
 		}
 
 		return nil
 	}
 
-	for _, section := range conf.Sections() {
-		for _, key := range section.Keys() {
-			term.Printf("%s.%s = %s\n", section.Name(), key.Name(), key.Value())
+	for sectionName, section := range allValues {
+		for key, value := range section {
+			term.Printf("%s.%s = %s\n", sectionName, key, value)
 		}
 	}
 	return nil

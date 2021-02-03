@@ -43,12 +43,14 @@ import (
 // CheckUpgradeVersion ...
 func CheckUpgradeVersion(ctx context.Context, force bool) string {
 	term := terminal.Get(ctx)
+	cfg := config.Get(ctx)
 
 	if !term.IsTTY() {
 		return ""
 	}
 
-	data := strings.TrimSpace(config.GetConfigValue("cli", "last-upgrade-check"))
+	data, _ := cfg.GetValue("cli", "last-upgrade-check")
+	data = strings.TrimSpace(data)
 
 	if data == "ignore" {
 		return ""
@@ -74,8 +76,8 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 	}
 
 	if checkForUpgrade {
-		config.SetConfigValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
-		err := config.SaveConfig(ctx)
+		cfg.SetValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
+		err := cfg.Save(ctx)
 		if err != nil {
 			return ""
 		}

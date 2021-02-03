@@ -18,6 +18,7 @@ import (
 
 // Run ...
 func Run() int {
+	ctx := context.Background()
 	term := terminal.Color()
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
 		term.WriteErrorf("Unable to set AKAMAI_CLI: %s", err.Error())
@@ -27,9 +28,15 @@ func Run() int {
 		term.WriteErrorf("Unable to set AKAMAI_CLI_VERSION: %s", err.Error())
 		return 1
 	}
+	cfg, err := config.NewIni()
+	if err != nil {
+		term.WriteErrorf("Unable to open cli config: %s", err.Error())
+		return 2
+	}
+	ctx = config.Context(ctx, cfg)
 
-	cachePath := config.GetConfigValue("cli", "cache-path")
-	if cachePath == "" {
+	cachePath, ok := cfg.GetValue("cli", "cache-path")
+	if !ok {
 		cliHome, _ := tools.GetAkamaiCliPath()
 
 		cachePath = filepath.Join(cliHome, "cache")
@@ -39,13 +46,13 @@ func Run() int {
 		}
 	}
 
-	ctx := terminal.Context(context.Background(), term)
+	ctx = terminal.Context(ctx, term)
 
-	config.SetConfigValue("cli", "cache-path", cachePath)
-	if err := config.SaveConfig(ctx); err != nil {
+	cfg.SetValue("cli", "cache-path", cachePath)
+	if err := cfg.Save(ctx); err != nil {
 		return 3
 	}
-	if err := config.ExportConfigEnv(ctx); err != nil {
+	if err := cfg.ExportEnv(ctx); err != nil {
 		term.WriteErrorf("Unable to export required envs: %s", err.Error())
 	}
 

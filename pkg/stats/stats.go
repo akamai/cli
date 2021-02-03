@@ -43,52 +43,56 @@ const (
 // FirstRunCheckStats ...
 func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 	term := terminal.Get(ctx)
+	cfg := config.Get(ctx)
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 
-	if config.GetConfigValue("cli", "enable-cli-statistics") == "" {
-		if !bannerShown {
-			bannerShown = true
-			terminal.ShowBanner(ctx)
+	val, ok := cfg.GetValue("cli", "enable-cli-statistics")
+	if ok {
+		if val != "false" {
+			migrateStats(ctx, bannerShown)
 		}
-		term.Printf("Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-		term.Writeln("Examples of data being sent include upgrade statistics, and packages installed and updated.")
-		term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
-
-		answer, err := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
-		if err != nil {
-			return bannerShown
-		}
-
-		if answer {
-			TrackEvent(ctx, "first-run", "stats-opt-out", "true")
-			config.SetConfigValue("cli", "enable-cli-statistics", "false")
-			if err := config.SaveConfig(ctx); err != nil {
-				return false
-			}
-			return bannerShown
-		}
-
-		config.SetConfigValue("cli", "enable-cli-statistics", statsVersion)
-		config.SetConfigValue("cli", "stats-version", statsVersion)
-		config.SetConfigValue("cli", "last-ping", "never")
-		if err := setupUUID(ctx); err != nil {
-			return false
-		}
-		if err := config.SaveConfig(ctx); err != nil {
-			return false
-		}
-		TrackEvent(ctx, "first-run", "stats-enabled", statsVersion)
-	} else if config.GetConfigValue("cli", "enable-cli-statistics") != "false" {
-		migrateStats(ctx, bannerShown)
+		return bannerShown
 	}
+	if !bannerShown {
+		bannerShown = true
+		terminal.ShowBanner(ctx)
+	}
+	term.Printf("Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
+	term.Writeln("Examples of data being sent include upgrade statistics, and packages installed and updated.")
+	term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
+
+	answer, err := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+	if err != nil {
+		return bannerShown
+	}
+
+	if answer {
+		TrackEvent(ctx, "first-run", "stats-opt-out", "true")
+		cfg.SetValue("cli", "enable-cli-statistics", "false")
+		if err := cfg.Save(ctx); err != nil {
+			return false
+		}
+		return bannerShown
+	}
+
+	cfg.SetValue("cli", "enable-cli-statistics", statsVersion)
+	cfg.SetValue("cli", "stats-version", statsVersion)
+	cfg.SetValue("cli", "last-ping", "never")
+	if err := setupUUID(ctx, cfg); err != nil {
+		return false
+	}
+	if err := cfg.Save(ctx); err != nil {
+		return false
+	}
+	TrackEvent(ctx, "first-run", "stats-enabled", statsVersion)
 
 	return bannerShown
 }
 
 func migrateStats(ctx context.Context, bannerShown bool) bool {
 	term := terminal.Get(ctx)
-
-	currentVersion := config.GetConfigValue("cli", "stats-version")
+	cfg := config.Get(ctx)
+	currentVersion, _ := cfg.GetValue("cli", "stats-version")
 	if currentVersion == statsVersion {
 		return bannerShown
 	}
@@ -118,15 +122,15 @@ func migrateStats(ctx context.Context, bannerShown bool) bool {
 
 	if answer {
 		TrackEvent(ctx, "first-run", "stats-update-opt-out", statsVersion)
-		config.SetConfigValue("cli", "enable-cli-statistics", "false")
-		if err := config.SaveConfig(ctx); err != nil {
+		cfg.SetValue("cli", "enable-cli-statistics", "false")
+		if err := cfg.Save(ctx); err != nil {
 			return false
 		}
 		return bannerShown
 	}
 
-	config.SetConfigValue("cli", "stats-version", statsVersion)
-	if err := config.SaveConfig(ctx); err != nil {
+	cfg.SetValue("cli", "stats-version", statsVersion)
+	if err := cfg.Save(ctx); err != nil {
 		return false
 	}
 	TrackEvent(ctx, "first-run", "stats-update-opt-in", statsVersion)
@@ -134,32 +138,33 @@ func migrateStats(ctx context.Context, bannerShown bool) bool {
 	return bannerShown
 }
 
-func setupUUID(ctx context.Context) error {
-	if config.GetConfigValue("cli", "client-id") == "" {
-		uid, err := uuid.NewRandom()
-		if err != nil {
-			return err
-		}
-
-		config.SetConfigValue("cli", "client-id", uid.String())
-		if err := config.SaveConfig(ctx); err != nil {
-			return err
-		}
+func setupUUID(ctx context.Context, cfg config.Config) error {
+	if _, ok := cfg.GetValue("cli", "client-id"); ok {
+		return nil
+	}
+	uid, err := uuid.NewRandom()
+	if err != nil {
+		return err
 	}
 
+	cfg.SetValue("cli", "client-id", uid.String())
+	if err := cfg.Save(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
 // TrackEvent ...
 func TrackEvent(ctx context.Context, category, action, value string) {
-	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
+	cfg := config.Get(ctx)
+	if val, _ := cfg.GetValue("cli", "enable-cli-statistics"); val == "false" {
 		return
 	}
 
 	term := terminal.Get(ctx)
 
 	clientID := "anonymous"
-	if val := config.GetConfigValue("cli", "client-id"); val != "" {
+	if val, ok := cfg.GetValue("cli", "client-id"); ok {
 		clientID = val
 	}
 
@@ -202,14 +207,16 @@ func TrackEvent(ctx context.Context, category, action, value string) {
 
 // CheckPing ...
 func CheckPing(ctx context.Context) error {
-	if config.GetConfigValue("cli", "enable-cli-statistics") == "false" {
+	cfg := config.Get(ctx)
+	if val, _ := cfg.GetValue("cli", "enable-cli-statistics"); val == "false" {
 		return nil
 	}
 
-	data := strings.TrimSpace(config.GetConfigValue("cli", "last-ping"))
+	data, ok := cfg.GetValue("cli", "last-ping")
+	data = strings.TrimSpace(data)
 
 	doPing := false
-	if data == "" || data == "never" {
+	if !ok || data == "never" {
 		doPing = true
 	} else {
 		configValue := strings.TrimPrefix(strings.TrimSuffix(data, "\""), "\"")
@@ -226,8 +233,8 @@ func CheckPing(ctx context.Context) error {
 
 	if doPing {
 		TrackEvent(ctx, "ping", "daily", "pong")
-		config.SetConfigValue("cli", "last-ping", time.Now().Format(time.RFC3339))
-		if err := config.SaveConfig(ctx); err != nil {
+		cfg.SetValue("cli", "last-ping", time.Now().Format(time.RFC3339))
+		if err := cfg.Save(ctx); err != nil {
 			return err
 		}
 	}
