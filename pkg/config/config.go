@@ -84,6 +84,16 @@ func Get(ctx context.Context) Config {
 	return t
 }
 
+func (c *IniConfig) Save(ctx context.Context) error {
+	term := terminal.Get(ctx)
+	if err := c.file.SaveTo(c.path); err != nil {
+		term.Writeln(err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func (c *IniConfig) Values() map[string]map[string]string {
 	sections := make(map[string]map[string]string)
 	for _, section := range c.file.Sections() {
@@ -96,23 +106,12 @@ func (c *IniConfig) Values() map[string]map[string]string {
 	return sections
 }
 
-func (c *IniConfig) Save(ctx context.Context) error {
-	term := terminal.Get(ctx)
-	if err := c.file.SaveTo(c.path); err != nil {
-		term.Writeln(err.Error())
-		return err
-	}
-
-	return nil
-}
-
 func (c *IniConfig) GetValue(section, key string) (string, bool) {
 	s := c.file.Section(section)
-	k := s.Key(key)
-	if k != nil {
-		return k.String(), true
+	if !s.HasKey(key) {
+		return "", false
 	}
-	return "", false
+	return s.Key(key).String(), true
 }
 
 func (c *IniConfig) SetValue(section, key, value string) {
@@ -142,8 +141,6 @@ func (c *IniConfig) ExportEnv(ctx context.Context) error {
 	return nil
 }
 
-//var config = make(map[string]*ini.File)
-
 func getConfigFilePath() (string, error) {
 	cliPath, err := tools.GetAkamaiCliPath()
 	if err != nil {
@@ -152,55 +149,6 @@ func getConfigFilePath() (string, error) {
 
 	return filepath.Join(cliPath, "config"), nil
 }
-
-//// OpenConfig ..
-//func OpenConfig() (*ini.File, error) {
-//	path, err := getConfigFilePath()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	if config[path] != nil {
-//		return config[path], nil
-//	}
-//
-//	if _, err = os.Stat(path); os.IsNotExist(err) {
-//		iniFile := ini.Empty()
-//		config[path] = iniFile
-//		return config[path], nil
-//	}
-//
-//	iniFile, err := ini.Load(path)
-//	if err != nil {
-//		return nil, err
-//	}
-//	config[path] = iniFile
-//
-//	return config[path], nil
-//}
-//
-//// SaveConfig ...
-//func SaveConfig(ctx context.Context) error {
-//
-//	term := terminal.Get(ctx)
-//	config, err := OpenConfig()
-//	if err != nil {
-//		return err
-//	}
-//
-//	path, err := getConfigFilePath()
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = config.SaveTo(path)
-//	if err != nil {
-//		term.Writeln(err.Error())
-//		return err
-//	}
-//
-//	return nil
-//}
 
 func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 	var currentVersion string
@@ -264,64 +212,3 @@ func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 	}
 	return migrateConfig(ctx, cfg)
 }
-
-// GetConfigValue ...
-//func GetConfigValue(sectionName, keyName string) string {
-//	config, err := OpenConfig()
-//	if err != nil {
-//		return ""
-//	}
-//
-//	section := config.Section(sectionName)
-//	key := section.Key(keyName)
-//	if key != nil {
-//		return key.String()
-//	}
-//
-//	return ""
-//}
-//
-//// SetConfigValue ...
-//func SetConfigValue(sectionName, key, value string) {
-//	config, err := OpenConfig()
-//	if err != nil {
-//		return
-//	}
-//
-//	section := config.Section(sectionName)
-//	section.Key(key).SetValue(value)
-//}
-//
-//// UnsetConfigValue ...
-//func UnsetConfigValue(sectionName, key string) {
-//	config, err := OpenConfig()
-//	if err != nil {
-//		return
-//	}
-//
-//	section := config.Section(sectionName)
-//	section.DeleteKey(key)
-//}
-//
-//// ExportConfigEnv ...
-//func ExportConfigEnv(ctx context.Context) error {
-//	if err := migrateConfig(ctx); err != nil {
-//		return err
-//	}
-//
-//	config, err := OpenConfig()
-//	if err != nil {
-//		return err
-//	}
-//
-//	for _, section := range config.Sections() {
-//		for _, key := range section.Keys() {
-//			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
-//			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
-//			if err := os.Setenv(envVar, key.String()); err != nil {
-//				return err
-//			}
-//		}
-//	}
-//	return nil
-//}
