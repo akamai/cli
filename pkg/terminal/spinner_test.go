@@ -17,10 +17,12 @@ func TestStart(t *testing.T) {
 	s.Start("spinner %s", "test")
 	for i := 0; i < 10; i++ {
 		time.Sleep(100 * time.Millisecond)
+		s.spinner.Lock()
 		if wr.Len() > 0 {
 			assert.Contains(t, wr.String(), "spinner test .")
 			return
 		}
+		s.spinner.Unlock()
 	}
 	t.Fatal("no input on writer")
 }

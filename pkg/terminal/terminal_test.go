@@ -230,5 +230,5 @@ func TestShowBanner(t *testing.T) {
 	require.NoError(t, err)
 	data, err := ioutil.ReadAll(out)
 	require.NoError(t, err)
-	assert.Contains(t, string(data), "Welcome to Akamai CLI v1.1.4")
+	assert.Contains(t, string(data), "Welcome to Akamai CLI")
 }
