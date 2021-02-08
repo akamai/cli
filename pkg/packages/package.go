@@ -4,17 +4,16 @@ import (
 	"context"
 	"errors"
 	"github.com/akamai/cli/pkg/log"
-	"os/exec"
 )
 
 type (
+	// LangManager allows operations on different programming languages
 	LangManager interface {
 		Install(ctx context.Context, dir string, requirements LanguageRequirements, commands []string) error
 		FindExec(ctx context.Context, requirements LanguageRequirements, cmdExec string) ([]string, error)
 	}
 
-	Language string
-
+	// LanguageRequirements contains version requirements for all supported programming languages
 	LanguageRequirements struct {
 		Go     string `json:"go"`
 		Php    string `json:"php"`
@@ -24,42 +23,58 @@ type (
 	}
 )
 
+// language constants
 const (
-	Undefined  Language = ""
-	PHP        Language = "php"
-	Javascript Language = "javascript"
-	Ruby       Language = "ruby"
-	Python     Language = "python"
-	Go         Language = "go"
+	Undefined  = ""
+	PHP        = "php"
+	Javascript = "javascript"
+	Ruby       = "ruby"
+	Python     = "python"
+	Go         = "go"
 )
 
+// Defined errors
 var (
-	ErrUnknownLang = errors.New("command language is not defined")
+	ErrUnknownLang                   = errors.New("command language is not defined")
+	ErrRuntimeNotFound               = errors.New("unable to locate runtime")
+	ErrRuntimeNoVersionFound         = errors.New("unable to determine installed version, minimum version required")
+	ErrRuntimeMinimumVersionRequired = errors.New("higher version is required to install this command")
+	ErrPackageManagerNotFound        = errors.New("unable to locate package manager in PATH")
+	ErrPackageManagerExec            = errors.New("unable to execute package manager")
+	ErrPackageNeedsReinstall         = errors.New("you must reinstall this package to continue")
+	ErrPackageCompileFailure         = errors.New("unable to build binary")
 )
 
-type langManager struct{}
-
-func NewLangManager() LangManager {
-	return &langManager{}
+type langManager struct {
+	commandExecutor executor
 }
 
+// NewLangManager returns a default language manager
+func NewLangManager() LangManager {
+	return &langManager{
+		&defaultExecutor{},
+	}
+}
+
+// Install builds and installs contents of a directory based on provided language requirements
 func (l *langManager) Install(ctx context.Context, dir string, reqs LanguageRequirements, commands []string) error {
 	lang, requirements := determineLangAndRequirements(reqs)
 	switch lang {
 	case PHP:
-		return installPHP(ctx, dir, requirements)
+		return l.installPHP(ctx, dir, requirements)
 	case Javascript:
-		return installJavaScript(ctx, dir, requirements)
+		return l.installJavaScript(ctx, dir, requirements)
 	case Ruby:
-		return installRuby(ctx, dir, requirements)
+		return l.installRuby(ctx, dir, requirements)
 	case Python:
-		return installPython(ctx, dir, requirements)
+		return l.installPython(ctx, dir, requirements)
 	case Go:
-		return installGolang(ctx, dir, requirements, commands)
+		return l.installGolang(ctx, dir, requirements, commands)
 	}
 	return ErrUnknownLang
 }
 
+// FindExec locates language's CLI executable
 func (l *langManager) FindExec(ctx context.Context, reqs LanguageRequirements, cmdExec string) ([]string, error) {
 	logger := log.FromContext(ctx)
 	lang, requirements := determineLangAndRequirements(reqs)
@@ -68,13 +83,13 @@ func (l *langManager) FindExec(ctx context.Context, reqs LanguageRequirements, c
 	case Go:
 		return []string{cmdExec}, nil
 	case Javascript:
-		bin, err := exec.LookPath("node")
+		bin, err := l.commandExecutor.LookPath("node")
 		if err != nil {
-			bin, err = exec.LookPath("nodejs")
+			bin, err = l.commandExecutor.LookPath("nodejs")
 		}
 		return []string{bin, cmdExec}, nil
 	case Python:
-		bin, err := findPythonBin(ctx, requirements)
+		bin, err := findPythonBin(ctx, l.commandExecutor, requirements)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +102,7 @@ func (l *langManager) FindExec(ctx context.Context, reqs LanguageRequirements, c
 	}
 }
 
-func determineLangAndRequirements(reqs LanguageRequirements) (Language, string) {
+func determineLangAndRequirements(reqs LanguageRequirements) (string, string) {
 	if reqs.Php != "" {
 		return PHP, reqs.Php
 	}

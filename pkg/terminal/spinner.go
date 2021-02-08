@@ -36,6 +36,7 @@ var (
 	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.RedString("FAIL")))
 )
 
+// StandardSpinner returns a default spinner for Akamai CLI
 func StandardSpinner() *DefaultSpinner {
 	return &DefaultSpinner{spinner: spnr.New(spnr.CharSets[33], 500*time.Millisecond)}
 }

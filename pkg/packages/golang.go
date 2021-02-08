@@ -16,6 +16,7 @@ package packages
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -26,36 +27,34 @@ import (
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
-	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 )
 
-// installGolang ...
-func installGolang(ctx context.Context, dir, cmdReq string, commands []string) error {
+func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands []string) error {
 	logger := log.FromContext(ctx)
-	bin, err := exec.LookPath("go")
+	bin, err := l.commandExecutor.LookPath("go")
 	if err != nil {
-		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "go")
+		return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "go")
 	}
 
 	logger.Debugf("Go binary found: %s", bin)
 
-	if cmdReq != "" && cmdReq != "*" {
+	if ver != "" && ver != "*" {
 		cmd := exec.Command(bin, "version")
-		output, _ := cmd.Output()
+		output, _ := l.commandExecutor.ExecCommand(cmd)
 		logger.Debugf("%s version: %s", bin, output)
 		r := regexp.MustCompile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Go", cmdReq)
+			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "go", ver)
 		}
 
-		if version.Compare(cmdReq, matches[1]) == -1 {
+		if version.Compare(ver, matches[1]) == -1 {
 			logger.Debugf("Go Version found: %s", matches[1])
-			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Go", cmdReq, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "go", ver, matches[1])
 		}
 	}
 
@@ -69,10 +68,10 @@ func installGolang(ctx context.Context, dir, cmdReq string, commands []string) e
 	if err := os.Setenv("GOPATH", cliPath); err != nil {
 		return err
 	}
-	if err = installGolangModules(logger, dir); err != nil {
+	if err = installGolangModules(logger, l.commandExecutor, dir); err != nil {
 		logger.Info("go.sum not found, running glide package manager[WARN: Usage of Glide is DEPRECTED]")
 
-		if err = installGolangDepsGlide(logger, dir); err != nil {
+		if err = installGolangDepsGlide(logger, l.commandExecutor, dir); err != nil {
 			return err
 		}
 	}
@@ -88,53 +87,64 @@ func installGolang(ctx context.Context, dir, cmdReq string, commands []string) e
 		}
 
 		cmd.Dir = dir
-		_, err = cmd.Output()
+		_, err = l.commandExecutor.ExecCommand(cmd)
 		if err != nil {
-			logger.Debugf("Unable to build binary (%s): \n%s", execName, err.(*exec.ExitError).Stderr)
-			return errors.NewExitErrorf(1, errors.ErrPackageCompileFailure, command)
-		}
-	}
-
-	return nil
-}
-
-func installGolangDepsGlide(logger log.Logger, dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "glide.lock")); err == nil {
-		logger.Info("glide.lock found, running glide package manager")
-		bin, err := exec.LookPath("glide")
-		if err == nil {
-			cmd := exec.Command(bin, "install")
-			cmd.Dir = dir
-			_, err = cmd.Output()
-			if err != nil {
-				logger.Debugf("Unable execute package manager (glide install): \n %s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "glide")
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				logger.Debugf("Unable to build binary (%s): \n%s", execName, exitErr.Stderr)
 			}
-		} else {
-			logger.Debugf(errors.ErrPackageManagerNotFound, "glide")
-			return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "glide")
+			return fmt.Errorf("%w: %s", ErrPackageCompileFailure, command)
 		}
 	}
 
 	return nil
 }
 
-func installGolangModules(logger log.Logger, dir string) error {
-	if _, err := os.Stat(filepath.Join(dir, "go.sum")); err != nil {
+func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string) error {
+	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "glide.lock")); !ok {
+		return nil
+	}
+	logger.Info("glide.lock found, running glide package manager")
+	bin, err := cmdExecutor.LookPath("glide")
+	if err == nil {
+		cmd := exec.Command(bin, "install")
+		cmd.Dir = dir
+		_, err = cmdExecutor.ExecCommand(cmd)
+		if err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				logger.Debugf("Unable execute package manager (glide install): \n %s", exitErr.Stderr)
+			}
+			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "glide")
+		}
+	} else {
+		err = fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "glide")
+		logger.Debug(err.Error())
+		return err
+	}
+	return nil
+}
+
+func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) error {
+	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "go.sum")); !ok {
 		return fmt.Errorf("go.sum not found")
 	}
 	logger.Info("go.sum found, running go module package manager")
-	bin, err := exec.LookPath("go")
+	bin, err := cmdExecutor.LookPath("go")
 	if err != nil {
-		logger.Debugf(errors.ErrRuntimeNotFound, "go")
-		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "go")
+		err = fmt.Errorf("%w: %s", ErrRuntimeNotFound, "go")
+		logger.Debug(err.Error())
+		return err
 	}
 	cmd := exec.Command(bin, "mod", "tidy")
 	cmd.Dir = dir
-	_, err = cmd.Output()
+	_, err = cmdExecutor.ExecCommand(cmd)
 	if err != nil {
-		logger.Debugf("Unable execute 'go mod tidy': \n %s", err.(*exec.ExitError).Stderr)
-		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "go mod")
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			logger.Debugf("Unable execute 'go mod tidy': \n %s", exitErr.Stderr)
+		}
+		return fmt.Errorf("%w: %s", ErrPackageManagerExec, "go mod")
 	}
 	return nil
 }

@@ -21,7 +21,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 
@@ -67,7 +66,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 					return err
 				}
 				if !answer {
-					return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
+					return cli.Exit(color.RedString(packages.ErrPackageNeedsReinstall.Error()), -1)
 				}
 
 				if err = uninstallPackage(c.Context, langManager, commandName); err != nil {

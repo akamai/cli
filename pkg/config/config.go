@@ -34,6 +34,7 @@ const (
 )
 
 type (
+	// Config contains methods to operate on CLI config
 	Config interface {
 		Save(context.Context) error
 		Values() map[string]map[string]string
@@ -43,6 +44,7 @@ type (
 		ExportEnv(context.Context) error
 	}
 
+	// IniConfig represents a config stored in ini file
 	IniConfig struct {
 		path string
 		file *ini.File
@@ -53,6 +55,7 @@ type (
 
 var configContext contextType = "config"
 
+// NewIni finds an existing ini file with config or creates new one and returns IniConfig
 func NewIni() (*IniConfig, error) {
 	path, err := getConfigFilePath()
 	if err != nil {
@@ -69,12 +72,12 @@ func NewIni() (*IniConfig, error) {
 	return &IniConfig{path: path, file: iniFile}, nil
 }
 
-// Context sets the terminal in the context
+// Context sets the config in the context
 func Context(ctx context.Context, cfg Config) context.Context {
 	return context.WithValue(ctx, configContext, cfg)
 }
 
-// Get gets the terminal from the context
+// Get gets the config from the context
 func Get(ctx context.Context) Config {
 	t, ok := ctx.Value(configContext).(Config)
 	if !ok {
@@ -84,6 +87,7 @@ func Get(ctx context.Context) Config {
 	return t
 }
 
+// Save stores the ini file in filesystem
 func (c *IniConfig) Save(ctx context.Context) error {
 	term := terminal.Get(ctx)
 	if err := c.file.SaveTo(c.path); err != nil {
@@ -94,6 +98,7 @@ func (c *IniConfig) Save(ctx context.Context) error {
 	return nil
 }
 
+// Values returns a map containing sections from the config. Each section contans a key-value map of its contents
 func (c *IniConfig) Values() map[string]map[string]string {
 	sections := make(map[string]map[string]string)
 	for _, section := range c.file.Sections() {
@@ -106,6 +111,7 @@ func (c *IniConfig) Values() map[string]map[string]string {
 	return sections
 }
 
+// GetValue fetches a value from provided section under provided key
 func (c *IniConfig) GetValue(section, key string) (string, bool) {
 	s := c.file.Section(section)
 	if !s.HasKey(key) {
@@ -114,16 +120,20 @@ func (c *IniConfig) GetValue(section, key string) (string, bool) {
 	return s.Key(key).String(), true
 }
 
+// SetValue sets a key in provided section
 func (c *IniConfig) SetValue(section, key, value string) {
 	s := c.file.Section(section)
 	s.Key(key).SetValue(value)
 }
 
+// UnsetValue unsets a key in provided section
 func (c *IniConfig) UnsetValue(section, key string) {
 	s := c.file.Section(section)
 	s.DeleteKey(key)
 }
 
+// ExportEnv exports values from config file as environmental variables, prefixing each with AKAMAI_<SECTION_NAME>
+// It also attempts migration from previous config versions
 func (c *IniConfig) ExportEnv(ctx context.Context) error {
 	if err := migrateConfig(ctx, c); err != nil {
 		return err

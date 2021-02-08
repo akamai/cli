@@ -16,74 +16,74 @@ package packages
 
 import (
 	"context"
-	"os"
+	"errors"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 
-	"github.com/akamai/cli/pkg/errors"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/version"
-
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
 )
 
 // installRuby ...
-func installRuby(ctx context.Context, dir, cmdReq string) error {
+func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error {
 	logger := log.FromContext(ctx)
 
-	bin, err := exec.LookPath("ruby")
+	bin, err := l.commandExecutor.LookPath("ruby")
 	if err != nil {
-		return cli.Exit(color.RedString("Unable to locate Ruby runtime"), 1)
+		return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "ruby")
 	}
 
 	logger.Debugf("Ruby binary found: %s", bin)
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
-		output, _ := cmd.Output()
+		output, _ := l.commandExecutor.ExecCommand(cmd)
 		logger.Debugf("%s -v: %s", bin, output)
 		r := regexp.MustCompile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
-			return errors.NewExitErrorf(1, errors.ErrRuntimeNoVersionFound, "Ruby", cmdReq)
+			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "ruby", cmdReq)
 		}
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Ruby Version found: %s", matches[1])
-			return errors.NewExitErrorf(1, errors.ErrRuntimeMinimumVersionRequired, "Ruby", cmdReq, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "ruby", cmdReq, matches[1])
 		}
 	}
 
-	if err := installRubyDepsBundler(ctx, dir); err != nil {
+	if err := installRubyDepsBundler(ctx, l.commandExecutor, dir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installRubyDepsBundler(ctx context.Context, dir string) error {
+func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir string) error {
 	logger := log.FromContext(ctx)
 
-	if _, err := os.Stat(filepath.Join(dir, "Gemfile")); err == nil {
-		logger.Debugf("Gemfile found, running yarn package manager")
-		bin, err := exec.LookPath("bundle")
-		if err == nil {
-			cmd := exec.Command(bin, "install")
-			cmd.Dir = dir
-			_, err = cmd.Output()
-			if err != nil {
-				logger.Debugf("Unable execute package manager (bundle install): \n%s", err.(*exec.ExitError).Stderr)
-				return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "bundler")
+	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "Gemfile")); !ok {
+		return nil
+	}
+	logger.Debugf("Gemfile found, running yarn package manager")
+	bin, err := cmdExecutor.LookPath("bundle")
+	if err == nil {
+		cmd := exec.Command(bin, "install")
+		cmd.Dir = dir
+		_, err = cmdExecutor.ExecCommand(cmd)
+		if err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				logger.Debugf("Unable execute package manager (bundle install): \n%s", exitErr.Stderr)
 			}
-			return nil
+			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "bundler")
 		}
-
-		logger.Debugf(errors.ErrPackageManagerNotFound, "bundler")
-		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "bundler")
+		return nil
 	}
 
-	return nil
+	err = fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "bundler")
+	logger.Debug(err.Error())
+	return err
 }
