@@ -16,6 +16,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +25,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
@@ -35,7 +35,7 @@ var (
 	thirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
 )
 
-func cmdInstall(git git.Repository) cli.ActionFunc {
+func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		if !c.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
@@ -45,7 +45,7 @@ func cmdInstall(git git.Repository) cli.ActionFunc {
 
 		for _, repo := range c.Args().Slice() {
 			repo = tools.Githubize(repo)
-			err := installPackage(c.Context, git, repo, c.Bool("force"))
+			err := installPackage(c.Context, git, langManager, repo, c.Bool("force"))
 			if err != nil {
 				// Only track public github repos
 				if isPublicRepo(repo) {
@@ -120,7 +120,7 @@ func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(ctx context.Context, git git.Repository, repo string, forceBinary bool) error {
+func installPackage(ctx context.Context, git git.Repository, langManager packages.LangManager, repo string, forceBinary bool) error {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func installPackage(ctx context.Context, git git.Repository, repo string, forceB
 		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
 
-	if !installPackageDependencies(ctx, packageDir, forceBinary) {
+	if !installPackageDependencies(ctx, langManager, packageDir, forceBinary) {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return err
 		}
@@ -168,9 +168,7 @@ func installPackage(ctx context.Context, git git.Repository, repo string, forceB
 	return nil
 }
 
-func installPackageDependencies(ctx context.Context, dir string, forceBinary bool) bool {
-	logger := log.FromContext(ctx)
-
+func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, forceBinary bool) bool {
 	cmdPackage, err := readPackage(dir)
 
 	term := terminal.Get(ctx)
@@ -182,25 +180,14 @@ func installPackageDependencies(ctx context.Context, dir string, forceBinary boo
 		return false
 	}
 
-	lang := determineCommandLanguage(cmdPackage)
+	var commands []string
+	for _, cmd := range cmdPackage.Commands {
+		commands = append(commands, cmd.Name)
+	}
 
-	switch lang {
-	case languagePHP:
-		err = packages.InstallPHP(ctx, dir, cmdPackage.Requirements.Php)
-	case languageJavaScript:
-		err = packages.InstallJavaScript(ctx, dir, cmdPackage.Requirements.Node)
-	case languageRuby:
-		err = packages.InstallRuby(ctx, dir, cmdPackage.Requirements.Ruby)
-	case languagePython:
-		err = packages.InstallPython(ctx, dir, cmdPackage.Requirements.Python)
-	case languageGO:
-		var commands []string
-		for _, cmd := range cmdPackage.Commands {
-			commands = append(commands, cmd.Name)
-		}
-		err = packages.InstallGolang(logger, dir, cmdPackage.Requirements.Go, commands)
-	default:
-		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
+	err = langManager.Install(ctx, dir, cmdPackage.Requirements, commands)
+	if errors.Is(err, packages.ErrUnknownLang) {
+		term.Spinner().WarnOK()
 		term.Writeln(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
 		return true
 	}

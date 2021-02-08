@@ -17,6 +17,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/akamai/cli/pkg/packages"
 	"path/filepath"
 	"strings"
 
@@ -29,7 +30,7 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 )
 
-func cmdUpdate(gitRepo git.Repository) cli.ActionFunc {
+func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		logger := log.WithCommand(c.Context, c.Command.Name)
 		if !c.Args().Present() {
@@ -41,7 +42,7 @@ func cmdUpdate(gitRepo git.Repository) cli.ActionFunc {
 			for _, cmd := range getCommands() {
 				for _, command := range cmd.Commands {
 					if _, ok := builtinCmds[command.Name]; !ok {
-						if err := updatePackage(c.Context, gitRepo, logger, command.Name, c.Bool("force")); err != nil {
+						if err := updatePackage(c.Context, gitRepo, langManager, logger, command.Name, c.Bool("force")); err != nil {
 							return err
 						}
 					}
@@ -52,7 +53,7 @@ func cmdUpdate(gitRepo git.Repository) cli.ActionFunc {
 		}
 
 		for _, cmd := range c.Args().Slice() {
-			if err := updatePackage(c.Context, gitRepo, logger, cmd, c.Bool("force")); err != nil {
+			if err := updatePackage(c.Context, gitRepo, langManager, logger, cmd, c.Bool("force")); err != nil {
 				return err
 			}
 		}
@@ -61,9 +62,9 @@ func cmdUpdate(gitRepo git.Repository) cli.ActionFunc {
 	}
 }
 
-func updatePackage(ctx context.Context, gitRepo git.Repository, logger log.Logger, cmd string, forceBinary bool) error {
+func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger log.Logger, cmd string, forceBinary bool) error {
 	term := terminal.Get(ctx)
-	exec, err := findExec(ctx, cmd)
+	exec, err := findExec(ctx, langManager, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
@@ -144,7 +145,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, logger log.Logge
 	logger.Debug("Repo updated successfully")
 	term.Spinner().OK()
 
-	if !installPackageDependencies(ctx, repoDir, forceBinary) {
+	if !installPackageDependencies(ctx, langManager, repoDir, forceBinary) {
 		logger.Trace("Error updating dependencies")
 		return cli.Exit("Unable to update command", 1)
 	}

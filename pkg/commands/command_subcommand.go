@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,13 +31,13 @@ import (
 	"github.com/akamai/cli/pkg/git"
 )
 
-func cmdSubcommand(git git.Repository) cli.ActionFunc {
+func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		term := terminal.Get(c.Context)
 
 		commandName := strings.ToLower(c.Command.Name)
 
-		executable, err := findExec(c.Context, commandName)
+		executable, err := findExec(c.Context, langManager, commandName)
 		if err != nil {
 			return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
 		}
@@ -69,11 +70,11 @@ func cmdSubcommand(git git.Repository) cli.ActionFunc {
 					return cli.Exit(color.RedString(errors.ErrPackageNeedsReinstall), -1)
 				}
 
-				if err = uninstallPackage(c.Context, commandName); err != nil {
+				if err = uninstallPackage(c.Context, langManager, commandName); err != nil {
 					return err
 				}
 
-				if err = installPackage(c.Context, git, commandName, false); err != nil {
+				if err = installPackage(c.Context, git, langManager, commandName, false); err != nil {
 					return err
 				}
 			}

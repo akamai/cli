@@ -15,6 +15,7 @@
 package packages
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -31,8 +32,9 @@ import (
 	"github.com/akamai/cli/pkg/version"
 )
 
-// InstallGolang ...
-func InstallGolang(logger log.Logger, dir, cmdReq string, commands []string) error {
+// installGolang ...
+func installGolang(ctx context.Context, dir, cmdReq string, commands []string) error {
+	logger := log.FromContext(ctx)
 	bin, err := exec.LookPath("go")
 	if err != nil {
 		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "go")
@@ -131,7 +133,7 @@ func installGolangModules(logger log.Logger, dir string) error {
 	cmd.Dir = dir
 	_, err = cmd.Output()
 	if err != nil {
-		logger.Debugf("Unable execute 'go mod tidy'': \n %s", err.(*exec.ExitError).Stderr)
+		logger.Debugf("Unable execute 'go mod tidy': \n %s", err.(*exec.ExitError).Stderr)
 		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "go mod")
 	}
 	return nil

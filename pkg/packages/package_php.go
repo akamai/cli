@@ -28,8 +28,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// InstallPHP ..
-func InstallPHP(ctx context.Context, dir, cmdReq string) error {
+// installPHP ..
+func installPHP(ctx context.Context, dir, cmdReq string) error {
 	bin, err := exec.LookPath("php")
 	if err != nil {
 		return errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "PHP")

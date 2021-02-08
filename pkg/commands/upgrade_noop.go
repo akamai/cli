@@ -16,8 +16,6 @@
 
 package commands
 
-import "github.com/akamai/cli/pkg/packages"
-
 func CheckUpgradeVersion(force bool) string {
 	return ""
 }
@@ -30,6 +28,6 @@ func UpgradeCli(latestVersion string) bool {
 	return false
 }
 
-func getUpgradeCommand() *packages.commandPackage {
+func getUpgradeCommand() *subcommands {
 	return nil
 }

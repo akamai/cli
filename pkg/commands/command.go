@@ -55,6 +55,7 @@ type command struct {
 func getBuiltinCommands() []subcommands {
 	// initialize git repo.
 	gitRepo := git.NewRepository()
+	langManager := packages.NewLangManager()
 
 	commands := []subcommands{
 		{
@@ -119,7 +120,7 @@ func getBuiltinCommands() []subcommands {
 						"akamai install https://github.com/akamai/cli-property.git"),
 				},
 			},
-			Action: cmdInstall(gitRepo),
+			Action: cmdInstall(gitRepo, langManager),
 		},
 		{
 			Commands: []command{
@@ -155,7 +156,7 @@ func getBuiltinCommands() []subcommands {
 					Description: "Uninstall package containing <command>",
 				},
 			},
-			Action: cmdUninstall,
+			Action: cmdUninstall(langManager),
 		},
 		{
 			Commands: []command{
@@ -171,7 +172,7 @@ func getBuiltinCommands() []subcommands {
 					},
 				},
 			},
-			Action: cmdUpdate(gitRepo),
+			Action: cmdUpdate(gitRepo, langManager),
 		},
 	}
 
@@ -221,6 +222,8 @@ func getCommands() []subcommands {
 func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 	commands := make([]*cli.Command, 0)
 	builtinCmds := make(map[string]bool)
+	gitRepo := git.NewRepository()
+	langManager := packages.NewLangManager()
 	for _, cmd := range getBuiltinCommands() {
 		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
 		commands = append(
@@ -247,8 +250,6 @@ func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 				continue
 			}
 
-			gitRepo := git.NewRepository()
-
 			commands = append(
 				commands,
 				&cli.Command{
@@ -256,12 +257,12 @@ func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 					Aliases:     command.Aliases,
 					Description: command.Description,
 
-					Action:          cmdSubcommand(gitRepo),
+					Action:          cmdSubcommand(gitRepo, langManager),
 					Category:        color.YellowString("Installed Commands:"),
 					SkipFlagParsing: true,
 					BashComplete: func(c *cli.Context) {
 						if command.AutoComplete {
-							executable, err := findExec(ctx, c.Command.Name)
+							executable, err := findExec(ctx, langManager, c.Command.Name)
 							if err != nil {
 								return
 							}
@@ -280,7 +281,7 @@ func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
 	return commands, nil
 }
 
-func findExec(ctx context.Context, cmd string) ([]string, error) {
+func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, error) {
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
 	cmdName := "akamai"
@@ -349,37 +350,7 @@ func findExec(ctx context.Context, cmd string) ([]string, error) {
 			return nil, err
 		}
 
-		language := determineCommandLanguage(cmdPackage)
-		var (
-			cmd []string
-			bin string
-		)
-		switch {
-		// Compiled Languages
-		case language == languageGO || language == languageC || language == languageCSharp:
-			err = nil
-			cmd = []string{cmdFile}
-		case language == languageJavaScript:
-			bin, err = exec.LookPath("node")
-			if err != nil {
-				bin, err = exec.LookPath("nodejs")
-			}
-			cmd = []string{bin, cmdFile}
-		case language == languagePython:
-			var bins packages.PythonBins
-			bins, err = packages.FindPythonBins(ctx, cmdPackage.Requirements.Python)
-			if err != nil {
-				return nil, err
-			}
-			bin = bins.Python
-
-			cmd = []string{bin, cmdFile}
-			// Other languages (php, perl, ruby, etc.)
-		default:
-			bin, err = exec.LookPath(language)
-			cmd = []string{bin, cmdFile}
-		}
-
+		cmd, err := langManager.FindExec(ctx, cmdPackage.Requirements, cmdFile)
 		if err != nil {
 			return nil, err
 		}

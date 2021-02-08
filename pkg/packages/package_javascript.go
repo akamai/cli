@@ -26,8 +26,8 @@ import (
 	"github.com/akamai/cli/pkg/version"
 )
 
-// InstallJavaScript ...
-func InstallJavaScript(ctx context.Context, dir, cmdReq string) error {
+// installJavaScript ...
+func installJavaScript(ctx context.Context, dir, cmdReq string) error {
 	logger := log.FromContext(ctx)
 
 	bin, err := exec.LookPath("node")

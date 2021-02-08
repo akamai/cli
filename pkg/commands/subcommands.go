@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/akamai/cli/pkg/packages"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -34,17 +35,9 @@ import (
 )
 
 type subcommands struct {
-	Commands []command `json:"commands"`
-
-	Requirements struct {
-		Go     string `json:"go"`
-		Php    string `json:"php"`
-		Node   string `json:"node"`
-		Ruby   string `json:"ruby"`
-		Python string `json:"python"`
-	} `json:"requirements"`
-
-	Action cli.ActionFunc `json:"-"`
+	Commands     []command                     `json:"commands"`
+	Requirements packages.LanguageRequirements `json:"requirements"`
+	Action       cli.ActionFunc                `json:"-"`
 }
 
 func readPackage(dir string) (subcommands, error) {
@@ -101,30 +94,6 @@ func findPackageDir(dir string) string {
 	}
 
 	return dir
-}
-
-func determineCommandLanguage(cmdPackage subcommands) string {
-	if cmdPackage.Requirements.Php != "" {
-		return languagePHP
-	}
-
-	if cmdPackage.Requirements.Node != "" {
-		return languageJavaScript
-	}
-
-	if cmdPackage.Requirements.Ruby != "" {
-		return languageRuby
-	}
-
-	if cmdPackage.Requirements.Go != "" {
-		return languageGO
-	}
-
-	if cmdPackage.Requirements.Python != "" {
-		return languagePython
-	}
-
-	return ""
 }
 
 func downloadBin(ctx context.Context, dir string, cmd command) bool {

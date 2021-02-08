@@ -27,19 +27,23 @@ import (
 	"github.com/akamai/cli/pkg/version"
 )
 
-// InstallPython ...
-func InstallPython(ctx context.Context, dir, cmdReq string) error {
+// installPython ...
+func installPython(ctx context.Context, dir, cmdReq string) error {
 	logger := log.FromContext(ctx)
 
-	bins, err := FindPythonBins(ctx, cmdReq)
+	pythonBin, err := findPythonBin(ctx, cmdReq)
+	if err != nil {
+		return err
+	}
+	pipBin, err := findPipBin(ctx, cmdReq)
 	if err != nil {
 		return err
 	}
 
 	if cmdReq != "" && cmdReq != "*" {
-		cmd := exec.Command(bins.Python, "--version")
+		cmd := exec.Command(pythonBin, "--version")
 		output, _ := cmd.CombinedOutput()
-		logger.Debugf("%s --version: %s", bins.Python, output)
+		logger.Debugf("%s --version: %s", pythonBin, output)
 		r := regexp.MustCompile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))
 
@@ -53,101 +57,78 @@ func InstallPython(ctx context.Context, dir, cmdReq string) error {
 		}
 	}
 
-	if err := installPythonDepsPip(ctx, bins, dir); err != nil {
+	if err := installPythonDepsPip(ctx, pipBin, dir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// PythonBins ...
-type PythonBins struct {
-	Python string
-	Pip    string
-}
-
-// FindPythonBins ...
-func FindPythonBins(ctx context.Context, ver string) (PythonBins, error) {
-	var err error
-
+// findPythonBin ...
+func findPythonBin(ctx context.Context, ver string) (string, error) {
 	logger := log.FromContext(ctx)
 
-	bins := PythonBins{}
-	if ver != "" && ver != "*" {
-		if version.Compare("3.0.0", ver) != -1 {
-			bins.Python, err = exec.LookPath("python3")
-			if err != nil {
-				bins.Python, err = exec.LookPath("python")
-				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python 3")
-				}
-			}
-		} else {
-			bins.Python, err = exec.LookPath("python2")
-			if err != nil {
-				bins.Python, err = exec.LookPath("python")
-				if err != nil {
-					// Even though the command specified Python 2.x, try using python3 as a last resort
-					bins.Python, err = exec.LookPath("python3")
-					if err != nil {
-						return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
-					}
-				}
-			}
-		}
-	} else {
-		bins.Python, err = exec.LookPath("python3")
-		if err != nil {
-			bins.Python, err = exec.LookPath("python2")
-			if err != nil {
-				bins.Python, err = exec.LookPath("python")
-				if err != nil {
-					return bins, errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
-				}
-			}
-		}
-	}
+	var err error
+	var bin string
 
-	if ver != "" && ver != "*" {
-		if version.Compare("3.0.0", ver) != -1 {
-			bins.Pip, err = exec.LookPath("pip3")
-			if err != nil {
-				bins.Pip, err = exec.LookPath("pip")
-				if err != nil {
-					return bins, nil
-				}
-			}
-		} else {
-			bins.Pip, err = exec.LookPath("pip2")
-			if err != nil {
-				bins.Pip, err = exec.LookPath("pip")
-				if err != nil {
-					bins.Pip, err = exec.LookPath("pip3")
-					if err != nil {
-						return bins, nil
-					}
-				}
-			}
+	defer func() {
+		if err == nil {
+			logger.Debugf("Pip binary found: %s", bin)
 		}
-	} else {
-		bins.Pip, err = exec.LookPath("pip3")
+	}()
+	if ver == "" || ver == "*" {
+		bin, err = lookForBins("python3", "python2", "python")
 		if err != nil {
-			bins.Pip, err = exec.LookPath("pip2")
-			if err != nil {
-				bins.Pip, err = exec.LookPath("pip")
-				if err != nil {
-					return bins, nil
-				}
-			}
+			return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
 		}
+		return bin, nil
 	}
-
-	logger.Debugf("Python binary found: %s", bins.Python)
-	logger.Debugf("Pip binary found: %s", bins.Pip)
-	return bins, nil
+	if version.Compare("3.0.0", ver) != -1 {
+		bin, err = lookForBins("python3", "python3")
+		if err != nil {
+			return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python 3")
+		}
+		return bin, nil
+	}
+	bin, err = lookForBins("python2", "python", "python3")
+	if err != nil {
+		return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Python")
+	}
+	return bin, nil
 }
 
-func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) error {
+func findPipBin(ctx context.Context, ver string) (string, error) {
+	logger := log.FromContext(ctx)
+
+	var bin string
+	var err error
+	defer func() {
+		if err == nil {
+			logger.Debugf("Pip binary found: %s", bin)
+		}
+	}()
+	if ver == "" || ver == "*" {
+		bin, err = lookForBins("pip3", "pip2", "pip")
+		if err != nil {
+			return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Pip")
+		}
+		return bin, nil
+	}
+	if version.Compare("3.0.0", ver) != -1 {
+		bin, err = lookForBins("pip3", "pip")
+		if err != nil {
+			return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Pip")
+		}
+		return bin, nil
+	}
+	bin, err = lookForBins("pip2", "pip", "pip3")
+	if err != nil {
+		return "", errors.NewExitErrorf(1, errors.ErrRuntimeNotFound, "Pip")
+	}
+	return bin, nil
+}
+
+func installPythonDepsPip(ctx context.Context, bin string, dir string) error {
 	logger := log.FromContext(ctx)
 
 	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err != nil {
@@ -155,7 +136,7 @@ func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) erro
 	}
 	logger.Info("requirements.txt found, running pip package manager")
 
-	if bins.Pip == "" {
+	if bin == "" {
 		logger.Debugf(errors.ErrPackageManagerNotFound, "pip")
 		return errors.NewExitErrorf(1, errors.ErrPackageManagerNotFound, "pip")
 	}
@@ -163,7 +144,7 @@ func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) erro
 	if err := os.Setenv("PYTHONUSERBASE", dir); err != nil {
 		return err
 	}
-	args := []string{bins.Pip, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
+	args := []string{bin, "install", "--user", "--ignore-installed", "-r", "requirements.txt"}
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = dir
 	if _, err := cmd.Output(); err != nil {
@@ -171,5 +152,15 @@ func installPythonDepsPip(ctx context.Context, bins PythonBins, dir string) erro
 		return errors.NewExitErrorf(1, errors.ErrPackageManagerExec, "pip")
 	}
 	return nil
+}
 
+func lookForBins(bins ...string) (string, error) {
+	var err error
+	for _, binName := range bins {
+		bin, err := exec.LookPath(binName)
+		if err == nil {
+			return bin, nil
+		}
+	}
+	return "", err
 }

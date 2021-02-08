@@ -29,8 +29,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// InstallRuby ...
-func InstallRuby(ctx context.Context, dir, cmdReq string) error {
+// installRuby ...
+func installRuby(ctx context.Context, dir, cmdReq string) error {
 	logger := log.FromContext(ctx)
 
 	bin, err := exec.LookPath("ruby")

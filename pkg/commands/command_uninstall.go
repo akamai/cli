@@ -17,6 +17,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
 
@@ -28,22 +29,24 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func cmdUninstall(c *cli.Context) error {
-	for _, cmd := range c.Args().Slice() {
-		if err := uninstallPackage(c.Context, cmd); err != nil {
-			stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)
-			return err
+func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
+	return func(c *cli.Context) error {
+		for _, cmd := range c.Args().Slice() {
+			if err := uninstallPackage(c.Context, langManager, cmd); err != nil {
+				stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)
+				return err
+			}
+			stats.TrackEvent(c.Context, "package.uninstall", "success", cmd)
 		}
-		stats.TrackEvent(c.Context, "package.uninstall", "success", cmd)
-	}
 
-	return nil
+		return nil
+	}
 }
 
-func uninstallPackage(ctx context.Context, cmd string) error {
+func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string) error {
 	term := terminal.Get(ctx)
 
-	exec, err := findExec(ctx, cmd)
+	exec, err := findExec(ctx, langManager, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
