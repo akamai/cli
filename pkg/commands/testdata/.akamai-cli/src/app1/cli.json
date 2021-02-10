@@ -1,0 +1,12 @@
+{
+  "requirements": {
+    "go": "1.14.0"
+  },
+  "commands": [
+    {
+      "name": "app-1-cmd-1",
+      "aliases": ["ac1", "apcmd1"],
+      "description": "First command from app 1"
+    }
+  ]
+}

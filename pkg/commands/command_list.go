@@ -58,7 +58,7 @@ func cmdList(c *cli.Context) error {
 				if _, ok := commands[command.Name]; ok {
 					continue
 				}
-				bold.Printf("  %s", command.Name)
+				term.Printf(bold.Sprintf("  %s", command.Name))
 				term.Writeln(fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
 				term.Printf("    %s\n", command.Description)
 			}
@@ -76,7 +76,8 @@ func listInstalledCommands(ctx context.Context, added map[string]bool, removed m
 
 	commands := make(map[string]bool)
 	term.Writeln(color.YellowString("\nInstalled Commands:\n"))
-	for _, cmd := range getCommands() {
+	cmds := getCommands()
+	for _, cmd := range cmds {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true
 			if _, ok := added[command.Name]; ok {
@@ -98,7 +99,7 @@ func listInstalledCommands(ctx context.Context, added map[string]bool, removed m
 
 				term.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
-					bold.Print(alias)
+					term.Printf(bold.Sprintf(alias))
 					if i < len(command.Aliases)-1 {
 						term.Printf(", ")
 					}

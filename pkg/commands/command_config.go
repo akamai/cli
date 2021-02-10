@@ -15,6 +15,8 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/fatih/color"
 	"strings"
 
 	"github.com/akamai/cli/pkg/config"
@@ -25,15 +27,24 @@ import (
 
 func cmdConfigSet(c *cli.Context) error {
 	cfg := config.Get(c.Context)
-	section, key := parseConfigPath(c)
+	section, key, err := parseConfigPath(c)
+	if err != nil {
+		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+	}
 	value := strings.Join(c.Args().Tail(), " ")
 	cfg.SetValue(section, key, value)
-	return cfg.Save(c.Context)
+	if err := cfg.Save(c.Context); err != nil {
+		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+	}
+	return nil
 }
 
 func cmdConfigGet(c *cli.Context) error {
 	cfg := config.Get(c.Context)
-	section, key := parseConfigPath(c)
+	section, key, err := parseConfigPath(c)
+	if err != nil {
+		return cli.Exit(color.RedString(fmt.Sprintf("Unable to get config value: %s", err)), 1)
+	}
 	val, _ := cfg.GetValue(section, key)
 	terminal.Get(c.Context).Writeln(val)
 	return nil
@@ -41,10 +52,16 @@ func cmdConfigGet(c *cli.Context) error {
 
 func cmdConfigUnset(c *cli.Context) error {
 	cfg := config.Get(c.Context)
-	section, key := parseConfigPath(c)
+	section, key, err := parseConfigPath(c)
+	if err != nil {
+		return cli.Exit(color.RedString(fmt.Sprintf("Unable to unset config value: %s", err)), 1)
+	}
 
 	cfg.UnsetValue(section, key)
-	return cfg.Save(c.Context)
+	if err := cfg.Save(c.Context); err != nil {
+		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+	}
+	return nil
 }
 
 func cmdConfigList(c *cli.Context) error {
@@ -73,9 +90,12 @@ func cmdConfigList(c *cli.Context) error {
 	return nil
 }
 
-func parseConfigPath(c *cli.Context) (section, key string) {
+func parseConfigPath(c *cli.Context) (string, string, error) {
 	path := strings.Split(c.Args().First(), ".")
-	section = path[0]
-	key = strings.Join(path[1:], "-")
-	return section, key
+	if len(path) < 2 {
+		return "", "", fmt.Errorf("section key has to be provided in <section>.<key> format")
+	}
+	section := path[0]
+	key := strings.Join(path[1:], "-")
+	return section, key, nil
 }

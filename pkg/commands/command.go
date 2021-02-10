@@ -220,10 +220,12 @@ func getCommands() []subcommands {
 
 // CommandLocator ...
 func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
-	commands := make([]*cli.Command, 0)
 	builtinCmds := make(map[string]bool)
 	gitRepo := git.NewRepository()
 	langManager := packages.NewLangManager()
+	commands := []*cli.Command{
+		{},
+	}
 	for _, cmd := range getBuiltinCommands() {
 		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
 		commands = append(

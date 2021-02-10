@@ -1,0 +1,12 @@
+{
+  "requirements": {
+    "go": "1.14.0"
+  },
+  "commands": [
+    {
+      "name": "app-2-cmd-2",
+      "aliases": ["ac2"],
+      "description": "Test command from app 2"
+    }
+  ]
+}

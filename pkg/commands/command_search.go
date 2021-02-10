@@ -75,9 +75,11 @@ func cmdSearch(c *cli.Context) error {
 func fetchPackageList(ctx context.Context) (*packageList, error) {
 	logger := log.FromContext(ctx)
 	var repo string
-	if repo = os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); repo == "" {
-		repo = "https://developer.akamai.com/cli/package-list.json"
+	repo = "https://developer.akamai.com"
+	if customRepo := os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); customRepo != "" {
+		repo = customRepo
 	}
+	repo = fmt.Sprintf("%s/cli/package-list.json", repo)
 	resp, err := http.Get(repo)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
