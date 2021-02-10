@@ -47,7 +47,7 @@ func CreateApp(ctx context.Context) *cli.App {
 		Usage: "show help",
 	}
 
-	setHelpTemplates()
+	SetHelpTemplates()
 	app.Flags = []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "bash",
@@ -173,7 +173,7 @@ func DefaultAutoComplete(ctx *cli.Context) {
 	}
 }
 
-func setHelpTemplates() {
+func SetHelpTemplates() {
 	cli.AppHelpTemplate = "" +
 		color.YellowString("Usage: \n") +
 		color.BlueString("	{{if .UsageText}}"+
