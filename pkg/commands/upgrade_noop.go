@@ -16,6 +16,8 @@
 
 package commands
 
+import "github.com/urfave/cli/v2"
+
 func CheckUpgradeVersion(force bool) string {
 	return ""
 }
@@ -28,6 +30,6 @@ func UpgradeCli(latestVersion string) bool {
 	return false
 }
 
-func getUpgradeCommand() *subcommands {
+func getUpgradeCommand() *cli.Command {
 	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/akamai/cli/pkg/log"
+	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -233,14 +234,10 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	return true
 }
 
-func getUpgradeCommand() *subcommands {
-	return &subcommands{
-		Commands: []command{
-			{
-				Name:        "upgrade",
-				Description: "Upgrade Akamai CLI to the latest version",
-			},
-		},
-		Action: cmdUpgrade,
+func getUpgradeCommand() *cli.Command {
+	return &cli.Command{
+		Name:        "upgrade",
+		Description: "Upgrade Akamai CLI to the latest version",
+		Action:      cmdUpgrade,
 	}
 }

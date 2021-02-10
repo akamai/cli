@@ -24,7 +24,7 @@ func cmdHelp(c *cli.Context) error {
 	if c.Args().Present() {
 		cmd := c.Args().First()
 
-		builtinCmds := getBuiltinCommands()
+		builtinCmds := getBuiltinCommands(c)
 		for _, builtInCmd := range builtinCmds {
 			if builtInCmd.Commands[0].Name == cmd {
 				return cli.ShowCommandHelp(c, cmd)

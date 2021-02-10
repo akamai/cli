@@ -52,235 +52,217 @@ type command struct {
 	Subcommands []*cli.Command `json:"-"`
 }
 
-func getBuiltinCommands() []subcommands {
-	// initialize git repo.
-	gitRepo := git.NewRepository()
-	langManager := packages.NewLangManager()
-
-	commands := []subcommands{
-		{
-			Commands: []command{
-				{
-					Name:        "config",
-					Arguments:   "<action> <setting> [value]",
-					Description: "Manage configuration",
-					Subcommands: []*cli.Command{
-						{
-							Name:      "get",
-							ArgsUsage: "<setting>",
-							Action:    cmdConfigGet,
-						},
-						{
-							Name:      "set",
-							ArgsUsage: "<setting> <value>",
-							Action:    cmdConfigSet,
-						},
-						{
-							Name:      "list",
-							ArgsUsage: "[section]",
-							Action:    cmdConfigList,
-						},
-						{
-							Name:      "unset",
-							Aliases:   []string{"rm"},
-							ArgsUsage: "<setting>",
-							Action:    cmdConfigUnset,
-						},
-					},
-				},
-			},
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "help",
-					Description: "Displays help information",
-					Arguments:   "[command] [sub-command]",
-				},
-			},
-			Action: cmdHelp,
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "install",
-					Arguments:   "<package name or repository URL>...",
-					Description: "Fetch and install packages from a Git repository.",
-					Flags: []cli.Flag{
-						&cli.BoolFlag{
-							Name:  "force",
-							Usage: "Force binary installation if available when source installation fails",
-						},
-					},
-					Aliases: []string{"get"},
-					Docs: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
-						"akamai install property purge",
-						"akamai install akamai/cli-property",
-						"akamai install git@github.com:akamai/cli-property.git",
-						"akamai install https://github.com/akamai/cli-property.git"),
-				},
-			},
-			Action: cmdInstall(gitRepo, langManager),
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "list",
-					Description: "Displays available commands",
-					Flags: []cli.Flag{
-						&cli.BoolFlag{
-							Name:  "remote",
-							Usage: "Display all available packages",
-						},
-					},
-				},
-			},
-			Action: cmdList,
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "search",
-					Arguments:   "<keyword>...",
-					Description: "Search for packages in the official Akamai CLI package repository",
-					Docs:        "Examples:\n\n   akamai search property",
-				},
-			},
-			Action: cmdSearch,
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "uninstall",
-					Arguments:   "<command>...",
-					Description: "Uninstall package containing <command>",
-				},
-			},
-			Action: cmdUninstall(langManager),
-		},
-		{
-			Commands: []command{
-				{
-					Name:        "update",
-					Arguments:   "[<command>...]",
-					Description: "Update one or more commands. If no command is specified, all commands are updated",
-					Flags: []cli.Flag{
-						&cli.BoolFlag{
-							Name:  "force",
-							Usage: "Force binary installation if available when source installation fails",
-						},
-					},
-				},
-			},
-			Action: cmdUpdate(gitRepo, langManager),
-		},
+func getBuiltinCommands(c *cli.Context) []subcommands {
+	commands := make([]subcommands, 0)
+	for _, cmd := range c.App.Commands {
+		// builtin commands do not have Category set
+		if cmd.Category != "" {
+			continue
+		}
+		commands = append(commands, cliCommandToSubcommand(cmd))
 	}
-
-	upgradeCommand := getUpgradeCommand()
-	if upgradeCommand != nil {
-		commands = append(commands, *upgradeCommand)
-	}
-
 	return commands
 }
 
-func getCommands() []subcommands {
-	var (
-		commandMap   = make(map[string]subcommands)
-		commandOrder = make([]string, 0)
-		commands     = make([]subcommands, 0)
-	)
-	for _, pkg := range getBuiltinCommands() {
-		for _, command := range pkg.Commands {
-			commandMap[command.Name] = pkg
-			commandOrder = append(commandOrder, command.Name)
-		}
+func getCommands(c *cli.Context) []subcommands {
+	commands := make([]subcommands, 0)
+	for _, cmd := range c.App.Commands {
+		commands = append(commands, cliCommandToSubcommand(cmd))
 	}
+	return commands
+}
 
-	packagePaths := getPackagePaths()
-	for _, dir := range packagePaths {
-		pkg, err := readPackage(dir)
-		if err == nil {
-			for key, command := range pkg.Commands {
-				commandPkg := pkg
-				commandPkg.Commands = commandPkg.Commands[key : key+1]
-				commandMap[command.Name] = commandPkg
-				commandOrder = append(commandOrder, command.Name)
-			}
-		}
+func cliCommandToSubcommand(from *cli.Command) subcommands {
+	return subcommands{
+		Commands: []command{
+			{
+				Name:        from.Name,
+				Aliases:     from.Aliases,
+				Description: from.Description,
+				Usage:       from.Usage,
+				Arguments:   from.ArgsUsage,
+				Flags:       from.Flags,
+				Docs:        from.UsageText,
+				Subcommands: from.Subcommands,
+			},
+		},
+		Action: from.Action,
 	}
+}
 
-	sort.Strings(commandOrder)
-	for _, key := range commandOrder {
-		commands = append(commands, commandMap[key])
+func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+	commands := make([]*cli.Command, 0)
+	for key, command := range from.Commands {
+		commandPkg := from
+		commandPkg.Commands = commandPkg.Commands[key : key+1]
+		commands = append(commands, &cli.Command{
+			Name:        strings.ToLower(command.Name),
+			Aliases:     command.Aliases,
+			Description: command.Description,
+
+			Action:          cmdSubcommand(gitRepo, langManager),
+			Category:        color.YellowString("Installed Commands:"),
+			SkipFlagParsing: true,
+			BashComplete: func(c *cli.Context) {
+				if command.AutoComplete {
+					executable, err := findExec(c.Context, langManager, c.Command.Name)
+					if err != nil {
+						return
+					}
+
+					executable = append(executable, os.Args[2:]...)
+					if err = passthruCommand(executable); err != nil {
+						return
+					}
+				}
+			},
+		})
 	}
-
 	return commands
 }
 
 // CommandLocator ...
 func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
-	builtinCmds := make(map[string]bool)
+	gitRepo := git.NewRepository()
+	langManager := packages.NewLangManager()
+	commands := createBuiltinCommands()
+	commands = append(commands, createInstalledCommands(ctx, gitRepo, langManager)...)
+
+	sortCommands(commands)
+	return commands, nil
+}
+
+func sortCommands(commands []*cli.Command) {
+	sort.Slice(commands, func(i, j int) bool {
+		cmp := strings.Compare(commands[i].Name, commands[j].Name)
+		return cmp < 0
+	})
+}
+
+func createBuiltinCommands() []*cli.Command {
 	gitRepo := git.NewRepository()
 	langManager := packages.NewLangManager()
 	commands := []*cli.Command{
-		{},
-	}
-	for _, cmd := range getBuiltinCommands() {
-		builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
-		commands = append(
-			commands,
-			&cli.Command{
-				Name:         strings.ToLower(cmd.Commands[0].Name),
-				Aliases:      cmd.Commands[0].Aliases,
-				Usage:        cmd.Commands[0].Usage,
-				ArgsUsage:    cmd.Commands[0].Arguments,
-				Description:  cmd.Commands[0].Description,
-				Action:       cmd.Action,
-				UsageText:    cmd.Commands[0].Docs,
-				Flags:        cmd.Commands[0].Flags,
-				Subcommands:  cmd.Commands[0].Subcommands,
-				HideHelp:     true,
-				BashComplete: app.DefaultAutoComplete,
-			},
-		)
-	}
-
-	for _, cmd := range getCommands() {
-		for _, command := range cmd.Commands {
-			if _, ok := builtinCmds[command.Name]; ok {
-				continue
-			}
-
-			commands = append(
-				commands,
-				&cli.Command{
-					Name:        strings.ToLower(command.Name),
-					Aliases:     command.Aliases,
-					Description: command.Description,
-
-					Action:          cmdSubcommand(gitRepo, langManager),
-					Category:        color.YellowString("Installed Commands:"),
-					SkipFlagParsing: true,
-					BashComplete: func(c *cli.Context) {
-						if command.AutoComplete {
-							executable, err := findExec(ctx, langManager, c.Command.Name)
-							if err != nil {
-								return
-							}
-
-							executable = append(executable, os.Args[2:]...)
-							if err = passthruCommand(executable); err != nil {
-								return
-							}
-						}
-					},
+		{
+			Name:        "config",
+			ArgsUsage:   "<action> <setting> [value]",
+			Description: "Manage configuration",
+			Subcommands: []*cli.Command{
+				{
+					Name:      "get",
+					ArgsUsage: "<setting>",
+					Action:    cmdConfigGet,
 				},
-			)
+				{
+					Name:      "set",
+					ArgsUsage: "<setting> <value>",
+					Action:    cmdConfigSet,
+				},
+				{
+					Name:      "list",
+					ArgsUsage: "[section]",
+					Action:    cmdConfigList,
+				},
+				{
+					Name:      "unset",
+					Aliases:   []string{"rm"},
+					ArgsUsage: "<setting>",
+					Action:    cmdConfigUnset,
+				},
+			},
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:         "help",
+			ArgsUsage:    "[command] [sub-command]",
+			Description:  "Displays help information",
+			Action:       cmdHelp,
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:        "install",
+			Aliases:     []string{"get"},
+			ArgsUsage:   "<package name or repository URL>...",
+			Description: "Fetch and install packages from a Git repository.",
+			Action:      cmdInstall(gitRepo, langManager),
+			UsageText: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
+				"akamai install property purge",
+				"akamai install akamai/cli-property",
+				"akamai install git@github.com:akamai/cli-property.git",
+				"akamai install https://github.com/akamai/cli-property.git"),
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "force",
+					Usage: "Force binary installation if available when source installation fails",
+				},
+			},
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:        "list",
+			Description: "Displays available commands",
+			Action:      cmdList,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "remote",
+					Usage: "Display all available packages",
+				},
+			},
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:         "search",
+			ArgsUsage:    "<keyword>...",
+			Description:  "Search for packages in the official Akamai CLI package repository",
+			Action:       cmdSearch,
+			UsageText:    "Examples:\n\n   akamai search property",
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:         "uninstall",
+			ArgsUsage:    "<command>...",
+			Description:  "Uninstall package containing <command>",
+			Action:       cmdUninstall(langManager),
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+		{
+			Name:        "update",
+			ArgsUsage:   "[<command>...]",
+			Description: "Update one or more commands. If no command is specified, all commands are updated",
+			Action:      cmdUpdate(gitRepo, langManager),
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "force",
+					Usage: "Force binary installation if available when source installation fails",
+				},
+			},
+			HideHelp:     true,
+			BashComplete: app.DefaultAutoComplete,
+		},
+	}
+	upgradeCommand := getUpgradeCommand()
+	if upgradeCommand != nil {
+		commands = append(commands, upgradeCommand)
+	}
+	return commands
+}
+
+func createInstalledCommands(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+	commands := make([]*cli.Command, 0)
+	packagePaths := getPackagePaths()
+	for _, dir := range packagePaths {
+		pkg, err := readPackage(dir)
+		if err == nil {
+			commands = append(commands, subcommandToCliCommands(pkg, gitRepo, langManager)...)
 		}
 	}
-
-	return commands, nil
+	return commands
 }
 
 func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, error) {

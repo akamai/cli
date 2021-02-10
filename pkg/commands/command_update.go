@@ -35,11 +35,11 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 		logger := log.WithCommand(c.Context, c.Command.Name)
 		if !c.Args().Present() {
 			var builtinCmds = make(map[string]bool)
-			for _, cmd := range getBuiltinCommands() {
+			for _, cmd := range getBuiltinCommands(c) {
 				builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
 			}
 
-			for _, cmd := range getCommands() {
+			for _, cmd := range getCommands(c) {
 				for _, command := range cmd.Commands {
 					if _, ok := builtinCmds[command.Name]; !ok {
 						if err := updatePackage(c.Context, gitRepo, langManager, logger, command.Name, c.Bool("force")); err != nil {
@@ -145,7 +145,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	logger.Debug("Repo updated successfully")
 	term.Spinner().OK()
 
-	if !installPackageDependencies(ctx, langManager, repoDir, forceBinary) {
+	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, forceBinary); !ok {
 		logger.Trace("Error updating dependencies")
 		return cli.Exit("Unable to update command", 1)
 	}

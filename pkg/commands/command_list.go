@@ -15,7 +15,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/akamai/cli/pkg/terminal"
@@ -30,7 +29,7 @@ func cmdList(c *cli.Context) error {
 	term := terminal.Get(c.Context)
 	bold := color.New(color.FgWhite, color.Bold)
 
-	commands := listInstalledCommands(c.Context, nil, nil)
+	commands := listInstalledCommands(c, nil, nil)
 
 	if c.IsSet("remote") {
 		packageList, err := fetchPackageList(c.Context)
@@ -69,14 +68,14 @@ func cmdList(c *cli.Context) error {
 
 	return nil
 }
-func listInstalledCommands(ctx context.Context, added map[string]bool, removed map[string]bool) map[string]bool {
+func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[string]bool) map[string]bool {
 	bold := color.New(color.FgWhite, color.Bold)
 
-	term := terminal.Get(ctx)
+	term := terminal.Get(c.Context)
 
 	commands := make(map[string]bool)
 	term.Writeln(color.YellowString("\nInstalled Commands:\n"))
-	cmds := getCommands()
+	cmds := getCommands(c)
 	for _, cmd := range cmds {
 		for _, command := range cmd.Commands {
 			commands[command.Name] = true

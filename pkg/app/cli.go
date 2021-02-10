@@ -102,9 +102,6 @@ func CreateApp(ctx context.Context) *cli.App {
 		}
 		return nil
 	}
-	app.ExitErrHandler = func(context *cli.Context, err error) {
-
-	}
 
 	return app
 }
