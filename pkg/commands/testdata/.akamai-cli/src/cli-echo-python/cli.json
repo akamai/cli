@@ -1,0 +1,12 @@
+{
+  "requirements": {
+    "python": "3.0.0"
+  },
+  "commands": [
+    {
+      "name": "echo-python",
+      "aliases": ["e"],
+      "description": "echo command"
+    }
+  ]
+}

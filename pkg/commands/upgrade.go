@@ -113,7 +113,11 @@ func getLatestReleaseVersion(ctx context.Context) string {
 			return http.ErrUseLastResponse
 		},
 	}
-	resp, err := client.Head("https://github.com/akamai/cli/releases/latest")
+	repo := "https://github.com/akamai/cli"
+	if r := os.Getenv("CLI_REPOSITORY"); r != "" {
+		repo = r
+	}
+	resp, err := client.Head(fmt.Sprintf("%s/releases/latest", repo))
 	if err != nil {
 		return "0"
 	}
@@ -140,9 +144,13 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 
 	term.Spinner().Start("Upgrading Akamai CLI")
 
+	repo := "https://github.com/akamai/cli"
+	if r := os.Getenv("CLI_REPOSITORY"); r != "" {
+		repo = r
+	}
 	cmd := command{
 		Version: latestVersion,
-		Bin:     "https://github.com/akamai/cli/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}",
+		Bin:     fmt.Sprintf("%s/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}", repo),
 		Arch:    runtime.GOARCH,
 		OS:      runtime.GOOS,
 	}
@@ -227,9 +235,10 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	}
 	err = passthruCommand(os.Args)
 	if err != nil {
-		os.Exit(1)
+		cli.OsExiter(1)
+		return false
 	}
-	os.Exit(0)
+	cli.OsExiter(0)
 
 	return true
 }

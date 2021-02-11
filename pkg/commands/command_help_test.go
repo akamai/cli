@@ -51,7 +51,7 @@ func TestCmdHelp(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			wr := bytes.Buffer{}
 			testApp, ctx := setupTestApp(test.cmd, m)
 			testApp.Commands = append(testApp.Commands, &cli.Command{

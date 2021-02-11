@@ -85,7 +85,7 @@ func findPackageDir(dir string) string {
 
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		if os.IsNotExist(err) {
-			if filepath.Dir(dir) == "" {
+			if filepath.Dir(dir) == "" || filepath.Dir(dir) == "." {
 				return ""
 			}
 

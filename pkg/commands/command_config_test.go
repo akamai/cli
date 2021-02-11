@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
@@ -11,11 +10,6 @@ import (
 	"os"
 	"testing"
 )
-
-type mocked struct {
-	term *terminal.Mock
-	cfg  *config.Mock
-}
 
 func TestCmdConfigSet(t *testing.T) {
 	tests := map[string]struct {
@@ -47,7 +41,7 @@ func TestCmdConfigSet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -99,7 +93,7 @@ func TestCmdConfigGet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -159,7 +153,7 @@ func TestCmdConfigUnset(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -229,7 +223,7 @@ func TestCmdConfigList(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -256,13 +250,4 @@ func TestCmdConfigList(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
-}
-
-func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {
-	cli.OsExiter = func(rc int) {}
-	ctx := terminal.Context(context.Background(), m.term)
-	ctx = config.Context(ctx, m.cfg)
-	app := cli.NewApp()
-	app.Commands = []*cli.Command{command}
-	return app, ctx
 }

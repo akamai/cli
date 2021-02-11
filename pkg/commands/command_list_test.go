@@ -62,10 +62,10 @@ func TestCmdListWithRemote(t *testing.T) {
 			assert.NoError(t, err)
 		}))
 		defer srv.Close()
-		os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL)
-		os.Setenv("AKAMAI_CLI_HOME", "./testdata")
+		require.NoError(t, os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL))
+		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name: "list",
 				Flags: []cli.Flag{

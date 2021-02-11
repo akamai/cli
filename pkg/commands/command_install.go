@@ -122,7 +122,7 @@ func isPublicRepo(repo string) bool {
 	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
 }
 
-func installPackage(ctx context.Context, git git.Repository, langManager packages.LangManager, repo string, forceBinary bool) (*subcommands, error) {
+func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string, forceBinary bool) (*subcommands, error) {
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return nil, err
@@ -141,22 +141,18 @@ func installPackage(ctx context.Context, git git.Repository, langManager package
 		return nil, cli.Exit(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
-	_, err = git.Clone(ctx, packageDir, repo, false, spin, 1)
+	err = gitRepo.Clone(ctx, packageDir, repo, false, spin, 1)
 	if err != nil {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return nil, err
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		if err := os.RemoveAll(packageDir); err != nil {
-			return nil, err
-		}
-
 		return nil, cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
 	}
 	spin.OK()
 
-	if strings.HasPrefix(repo, "https://github.com/akamai/cli-") != true && strings.HasPrefix(repo, "git@github.com:akamai/cli-") != true {
+	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
 		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
 

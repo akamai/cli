@@ -1,0 +1,12 @@
+{
+  "requirements": {
+    "go": "1.14.0"
+  },
+  "commands": [
+    {
+      "name": "echo",
+      "aliases": ["e"],
+      "description": "echo command"
+    }
+  ]
+}

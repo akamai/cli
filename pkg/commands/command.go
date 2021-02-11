@@ -122,14 +122,14 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 }
 
 // CommandLocator ...
-func CommandLocator(ctx context.Context) ([]*cli.Command, error) {
+func CommandLocator(ctx context.Context) []*cli.Command {
 	gitRepo := git.NewRepository()
 	langManager := packages.NewLangManager()
 	commands := createBuiltinCommands()
 	commands = append(commands, createInstalledCommands(ctx, gitRepo, langManager)...)
 
 	sortCommands(commands)
-	return commands, nil
+	return commands
 }
 
 func sortCommands(commands []*cli.Command) {
@@ -253,7 +253,7 @@ func createBuiltinCommands() []*cli.Command {
 	return commands
 }
 
-func createInstalledCommands(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+func createInstalledCommands(_ context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
 	commands := make([]*cli.Command, 0)
 	packagePaths := getPackagePaths()
 	for _, dir := range packagePaths {

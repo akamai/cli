@@ -61,7 +61,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 
 			if err == nil {
-				answer, err := term.Confirm("Would you like to reinstall it", true)
+				answer, err := term.Confirm("Would y>>/dev/stderrou like to reinstall it", true)
 				if err != nil {
 					return err
 				}

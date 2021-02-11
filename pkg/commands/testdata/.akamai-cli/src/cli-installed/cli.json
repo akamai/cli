@@ -4,9 +4,9 @@
   },
   "commands": [
     {
-      "name": "app-2-cmd-2",
+      "name": "installed",
       "aliases": ["ac2"],
-      "description": "Test command from app 2"
+      "description": "Test command"
     }
   ]
 }

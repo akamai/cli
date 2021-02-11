@@ -72,3 +72,27 @@ func (m *Mock) IsTTY() bool {
 	args := m.Called()
 	return args.Bool(0)
 }
+
+func (m *Mock) Start(f string, args ...interface{}) {
+	_ = m.Called(f, args)
+}
+
+func (m *Mock) Stop(status SpinnerStatus) {
+	_ = m.Called(status)
+}
+
+func (m *Mock) OK() {
+	m.Called()
+}
+
+func (m *Mock) WarnOK() {
+	m.Called()
+}
+
+func (m *Mock) Warn() {
+	m.Called()
+}
+
+func (m *Mock) Fail() {
+	m.Called()
+}

@@ -13,7 +13,6 @@ import (
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 )
 
 // Run ...
@@ -59,11 +58,7 @@ func Run() int {
 	cli := app.CreateApp(ctx)
 	ctx = log.SetupContext(ctx, cli.Writer)
 
-	cmds, err := commands.CommandLocator(ctx)
-	if err != nil {
-		term.WriteError(color.RedString("An error occurred initializing commands"))
-		return 4
-	}
+	cmds := commands.CommandLocator(ctx)
 	cli.Commands = cmds
 
 	if err := firstRun(ctx); err != nil {

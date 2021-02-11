@@ -16,7 +16,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"github.com/akamai/cli/pkg/packages"
 	"path/filepath"
 	"strings"
@@ -71,7 +70,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 
 	logger.Debugf("Command found: %s", filepath.Join(exec...))
 
-	term.Spinner().Start(fmt.Sprintf("Attempting to update \"%s\" command...", cmd))
+	term.Spinner().Start("Attempting to update \"%s\" command...", cmd)
 
 	var repoDir string
 	logger.Debug("Searching for package repo")
@@ -88,20 +87,22 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 
 	logger.Debugf("Repo found: %s", repoDir)
 
-	repo, err := gitRepo.Open(repoDir)
+	err = gitRepo.Open(repoDir)
 	if err != nil {
 		logger.Debug("Unable to open repo")
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
 
-	w, err := repo.Worktree()
+	w, err := gitRepo.Worktree()
 	if err != nil {
 		logger.Debug("Unable to open repo")
+		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
-	refBeforePull, errBeforePull := repo.Head()
+	refBeforePull, errBeforePull := gitRepo.Head()
 	logger.Debugf("Fetching from remote: %s", git.DefaultRemoteName)
 	logger.Debugf("Using ref: %s", refName)
 
@@ -118,7 +119,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
-	ref, err := repo.Head()
+	ref, err := gitRepo.Head()
 	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
 		logger.Debugf("Fetch error: %s", err.Error())
 		term.Spinner().Fail()
@@ -126,7 +127,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	}
 
 	if refBeforePull.Hash() != ref.Hash() {
-		commit, err := repo.CommitObject(ref.Hash())
+		commit, err := gitRepo.CommitObject(ref.Hash())
 		logger.Debugf("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		logger.Debugf("Latest commit: %s", commit)
 
