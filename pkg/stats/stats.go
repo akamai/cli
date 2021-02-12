@@ -66,7 +66,7 @@ func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 		return bannerShown
 	}
 
-	if answer {
+	if !answer {
 		TrackEvent(ctx, "first-run", "stats-opt-out", "true")
 		cfg.SetValue("cli", "enable-cli-statistics", "false")
 		if err := cfg.Save(ctx); err != nil {
@@ -78,7 +78,7 @@ func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 	cfg.SetValue("cli", "enable-cli-statistics", statsVersion)
 	cfg.SetValue("cli", "stats-version", statsVersion)
 	cfg.SetValue("cli", "last-ping", "never")
-	if err := setupUUID(ctx, cfg); err != nil {
+	if err := setupUUID(cfg); err != nil {
 		return false
 	}
 	if err := cfg.Save(ctx); err != nil {
@@ -120,7 +120,7 @@ func migrateStats(ctx context.Context, bannerShown bool) bool {
 		return bannerShown
 	}
 
-	if answer {
+	if !answer {
 		TrackEvent(ctx, "first-run", "stats-update-opt-out", statsVersion)
 		cfg.SetValue("cli", "enable-cli-statistics", "false")
 		if err := cfg.Save(ctx); err != nil {
@@ -138,7 +138,7 @@ func migrateStats(ctx context.Context, bannerShown bool) bool {
 	return bannerShown
 }
 
-func setupUUID(ctx context.Context, cfg config.Config) error {
+func setupUUID(cfg config.Config) error {
 	if _, ok := cfg.GetValue("cli", "client-id"); ok {
 		return nil
 	}
@@ -148,13 +148,10 @@ func setupUUID(ctx context.Context, cfg config.Config) error {
 	}
 
 	cfg.SetValue("cli", "client-id", uid.String())
-	if err := cfg.Save(ctx); err != nil {
-		return err
-	}
 	return nil
 }
 
-// TrackEvent ...
+// TrackEvent sends statistics to google analytics service
 func TrackEvent(ctx context.Context, category, action, value string) {
 	cfg := config.Get(ctx)
 	if val, _ := cfg.GetValue("cli", "enable-cli-statistics"); val == "false" {
@@ -183,10 +180,14 @@ func TrackEvent(ctx context.Context, category, action, value string) {
 	var req *http.Request
 	var err error
 
+	analyticsURL := "https://www.google-analytics.com"
+	if customURL := os.Getenv("AKAMAI_CLI_ANALYTICS_URL"); customURL != "" {
+		analyticsURL = customURL
+	}
 	if debug != "" {
-		req, err = http.NewRequest(http.MethodPost, "https://www.google-analytics.com/debug/collect", strings.NewReader(form.Encode()))
+		req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/debug/collect", analyticsURL), strings.NewReader(form.Encode()))
 	} else {
-		req, err = http.NewRequest(http.MethodPost, "https://www.google-analytics.com/collect", strings.NewReader(form.Encode()))
+		req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/collect", analyticsURL), strings.NewReader(form.Encode()))
 	}
 
 	if err != nil {
