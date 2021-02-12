@@ -153,8 +153,13 @@ func TestLangManager_FindExec(t *testing.T) {
 	}
 }
 
-func (m *mocked) ExecCommand(cmd *exec.Cmd) ([]byte, error) {
-	args := m.Called(cmd)
+func (m *mocked) ExecCommand(cmd *exec.Cmd, withCombinedOutput ...bool) ([]byte, error) {
+	var args mock.Arguments
+	if len(withCombinedOutput) > 0 {
+		args = m.Called(cmd, withCombinedOutput[0])
+	} else {
+		args = m.Called(cmd)
+	}
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

@@ -7,7 +7,7 @@ import (
 
 type (
 	executor interface {
-		ExecCommand(cmd *exec.Cmd) ([]byte, error)
+		ExecCommand(cmd *exec.Cmd, withCombinedOutput ...bool) ([]byte, error)
 		LookPath(string) (string, error)
 		FileExists(string) (bool, error)
 	}
@@ -15,7 +15,10 @@ type (
 	defaultExecutor struct{}
 )
 
-func (d *defaultExecutor) ExecCommand(cmd *exec.Cmd) ([]byte, error) {
+func (d *defaultExecutor) ExecCommand(cmd *exec.Cmd, withCombinedOutput ...bool) ([]byte, error) {
+	if len(withCombinedOutput) > 0 {
+		return cmd.CombinedOutput()
+	}
 	return cmd.Output()
 }
 

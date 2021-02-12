@@ -26,7 +26,7 @@ func TestInstallPython(t *testing.T) {
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/python3",
 					Args: []string{"/test/python3", "--version"},
-				}).Return([]byte("Python 3.1.0"), nil).Once()
+				}, true).Return([]byte("Python 3.1.0"), nil).Once()
 				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/pip3",
@@ -44,7 +44,7 @@ func TestInstallPython(t *testing.T) {
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/python2",
 					Args: []string{"/test/python2", "--version"},
-				}).Return([]byte("Python 2.1.0"), nil).Once()
+				}, true).Return([]byte("Python 2.1.0"), nil).Once()
 				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/pip2",
@@ -100,7 +100,7 @@ func TestInstallPython(t *testing.T) {
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/python3",
 					Args: []string{"/test/python3", "--version"},
-				}).Return([]byte(""), nil).Once()
+				}, true).Return([]byte(""), nil).Once()
 			},
 			withError: ErrRuntimeNoVersionFound,
 		},
@@ -113,7 +113,7 @@ func TestInstallPython(t *testing.T) {
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/python3",
 					Args: []string{"/test/python3", "--version"},
-				}).Return([]byte("Python 3.0.1"), nil).Once()
+				}, true).Return([]byte("Python 3.0.1"), nil).Once()
 			},
 			withError: ErrRuntimeMinimumVersionRequired,
 		},
