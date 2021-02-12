@@ -60,7 +60,7 @@ func TestCmdUninstall(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
-			withError: fmt.Sprintf(`Command "invalid" not found. Try "%s help".`, tools.Self()),
+			withError: fmt.Sprintf(`command "invalid" not found. Try "%s help"`, tools.Self()),
 		},
 	}
 

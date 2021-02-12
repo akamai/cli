@@ -48,7 +48,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 
 	exec, err := findExec(ctx, langManager, cmd)
 	if err != nil {
-		return fmt.Errorf("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self())
+		return fmt.Errorf("command \"%s\" not found. Try \"%s help\"", cmd, tools.Self())
 	}
 
 	term.Spinner().Start(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))

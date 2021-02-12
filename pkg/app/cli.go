@@ -173,6 +173,7 @@ func DefaultAutoComplete(ctx *cli.Context) {
 	}
 }
 
+// SetHelpTemplates sets up custom help outputs for app, commands and subcommands
 func SetHelpTemplates() {
 	cli.AppHelpTemplate = "" +
 		color.YellowString("Usage: \n") +

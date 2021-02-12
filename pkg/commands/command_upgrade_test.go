@@ -18,7 +18,7 @@ import (
 )
 
 func TestCmdUpgrade(t *testing.T) {
-	binUrlRx := regexp.MustCompile(`/releases/download/[0-9]+\.[0-9]+\.[0-9]+/akamai-[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$`)
+	binURLRegexp := regexp.MustCompile(`/releases/download/[0-9]+\.[0-9]+\.[0-9]+/akamai-[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$`)
 	tests := map[string]struct {
 		args              []string
 		respLatestVersion string
@@ -26,35 +26,35 @@ func TestCmdUpgrade(t *testing.T) {
 		expectedExitCode  int
 		withError         string
 	}{
-		//"set config no error": {
-		//	args:              []string{"cli.testKey", "testValue"},
-		//	respLatestVersion: "10.0.0",
-		//	init: func(m *mocked) {
-		//
-		//		m.term.On("Spinner").Return(m.term).Once()
-		//		m.term.On("Start", "Checking for upgrades...", []interface{}(nil)).Return().Once()
-		//
-		//		// Checking if cli should be upgraded
-		//		m.term.On("IsTTY").Return(true).Once()
-		//		m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("never", true).Once()
-		//		m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
-		//		m.cfg.On("Save").Return(nil).Once()
-		//
-		//		m.term.On("Spinner").Return(m.term).Once()
-		//		m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-		//		m.term.On("Printf", "Found new version: %s (current version: %s)\n", []interface{}{color.BlueString("v10.0.0"), color.BlueString("v" + version.Version)})
-		//
-		//		// start upgrade
-		//		m.term.On("Spinner").Return(m.term).Once()
-		//		m.term.On("Start", "Upgrading Akamai CLI", []interface{}(nil)).Return().Once()
-		//
-		//		m.term.On("Spinner").Return(m.term).Once()
-		//		m.term.On("OK").Return().Once()
-		//
-		//		m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
-		//	},
-		//	expectedExitCode: 1,
-		//},
+		"set config no error": {
+			args:              []string{"cli.testKey", "testValue"},
+			respLatestVersion: "10.0.0",
+			init: func(m *mocked) {
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Checking for upgrades...", []interface{}(nil)).Return().Once()
+
+				// Checking if cli should be upgraded
+				m.term.On("IsTTY").Return(true).Once()
+				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("never", true).Once()
+				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
+				m.cfg.On("Save").Return(nil).Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
+				m.term.On("Printf", "Found new version: %s (current version: %s)\n", []interface{}{color.BlueString("v10.0.0"), color.BlueString("v" + version.Version)})
+
+				// start upgrade
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Upgrading Akamai CLI", []interface{}(nil)).Return().Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+
+				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+			},
+			expectedExitCode: 1,
+		},
 		"24 hours passed, upgrade": {
 			args:              []string{"cli.testKey", "testValue"},
 			respLatestVersion: "10.0.0",
@@ -93,7 +93,7 @@ func TestCmdUpgrade(t *testing.T) {
 				if url == "/releases/latest" {
 					w.Header().Set("Location", test.respLatestVersion)
 					w.WriteHeader(http.StatusFound)
-				} else if binUrlRx.MatchString(url) {
+				} else if binURLRegexp.MatchString(url) {
 					_, err := w.Write([]byte("binary file"))
 					require.NoError(t, err)
 				} else if strings.HasSuffix(url, ".sig") {
