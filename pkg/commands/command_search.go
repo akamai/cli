@@ -55,6 +55,7 @@ type packageListPackage struct {
 }
 
 func cmdSearch(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	if !c.Args().Present() {
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}

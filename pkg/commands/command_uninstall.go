@@ -17,6 +17,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
@@ -31,6 +32,7 @@ import (
 
 func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		for _, cmd := range c.Args().Slice() {
 			if err := uninstallPackage(c.Context, langManager, cmd); err != nil {
 				stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)

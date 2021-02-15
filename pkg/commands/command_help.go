@@ -15,12 +15,14 @@
 package commands
 
 import (
+	"github.com/akamai/cli/pkg/log"
 	"os"
 
 	"github.com/urfave/cli/v2"
 )
 
 func cmdHelp(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	if c.Args().Present() {
 		cmd := c.Args().First()
 

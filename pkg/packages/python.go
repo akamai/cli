@@ -42,8 +42,7 @@ func (l *langManager) installPython(ctx context.Context, dir, cmdReq string) err
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(pythonBin, "--version")
-		output, err := l.commandExecutor.ExecCommand(cmd, true)
-		fmt.Println(err)
+		output, _ := l.commandExecutor.ExecCommand(cmd, true)
 		logger.Debugf("%s --version: %s", pythonBin, output)
 		r := regexp.MustCompile(`Python (\d+\.\d+\.\d+).*`)
 		matches := r.FindStringSubmatch(string(output))

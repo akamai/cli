@@ -16,6 +16,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 
 	"github.com/akamai/cli/pkg/terminal"
 
@@ -26,6 +27,7 @@ import (
 )
 
 func cmdList(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	term := terminal.Get(c.Context)
 	bold := color.New(color.FgWhite, color.Bold)
 

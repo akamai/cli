@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"github.com/akamai/cli/pkg/log"
 	"os"
 
 	"github.com/akamai/cli/pkg/stats"
@@ -26,6 +27,7 @@ import (
 )
 
 func cmdUpgrade(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	term := terminal.Get(c.Context)
 
 	term.Spinner().Start("Checking for upgrades...")

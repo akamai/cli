@@ -15,6 +15,7 @@
 package commands
 
 import (
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
@@ -32,6 +33,7 @@ import (
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		term := terminal.Get(c.Context)
 
 		commandName := strings.ToLower(c.Command.Name)

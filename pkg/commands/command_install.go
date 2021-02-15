@@ -17,6 +17,7 @@ package commands
 import (
 	"context"
 	"errors"
+	"github.com/akamai/cli/pkg/log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,7 @@ var (
 
 func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		if !c.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 		}

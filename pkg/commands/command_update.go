@@ -31,6 +31,7 @@ import (
 
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
+		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		logger := log.WithCommand(c.Context, c.Command.Name)
 		if !c.Args().Present() {
 			var builtinCmds = make(map[string]bool)

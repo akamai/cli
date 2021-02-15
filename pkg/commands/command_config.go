@@ -16,6 +16,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/fatih/color"
 	"strings"
 
@@ -26,6 +27,7 @@ import (
 )
 
 func cmdConfigSet(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -40,6 +42,7 @@ func cmdConfigSet(c *cli.Context) error {
 }
 
 func cmdConfigGet(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -51,6 +54,7 @@ func cmdConfigGet(c *cli.Context) error {
 }
 
 func cmdConfigUnset(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -65,6 +69,7 @@ func cmdConfigUnset(c *cli.Context) error {
 }
 
 func cmdConfigList(c *cli.Context) error {
+	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	cfg := config.Get(c.Context)
 	term := terminal.Get(c.Context)
 
