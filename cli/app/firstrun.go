@@ -23,8 +23,6 @@ import (
 	"runtime"
 	"strings"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 
@@ -107,7 +105,7 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 		}
 
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			if err := checkAccess(path, unix.W_OK); err == nil {
+			if err := checkWriteAccess(path); err == nil {
 				writablePaths = append(writablePaths, path)
 			}
 		}
