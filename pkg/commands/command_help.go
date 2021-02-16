@@ -35,7 +35,7 @@ func cmdHelp(c *cli.Context) error {
 
 		// The arg mangling ensures that aliases are handled
 		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
-		err := c.App.Run(os.Args)
+		err := c.App.RunContext(c.Context, os.Args)
 		return err
 	}
 
