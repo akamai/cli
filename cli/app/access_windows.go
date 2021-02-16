@@ -14,6 +14,6 @@
 
 package app
 
-func checkAccess(path string, perm int) error {
+func checkWriteAccess(path string) error {
 	return nil
 }

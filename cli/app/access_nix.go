@@ -18,6 +18,6 @@ package app
 
 import "golang.org/x/sys/unix"
 
-func checkAccess(path string, perm uint32) error {
-	return unix.Access(path, perm)
+func checkWriteAccess(path string) error {
+	return unix.Access(path, unix.W_OK)
 }
