@@ -17,7 +17,7 @@ import (
 
 const sleepTime24Hours = time.Hour * 24
 
-// CreateApp ...
+// CreateApp creates and sets up *cli.App
 func CreateApp(ctx context.Context) *cli.App {
 	term := terminal.Get(ctx)
 
