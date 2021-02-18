@@ -246,7 +246,7 @@ func createBuiltinCommands() []*cli.Command {
 			BashComplete: app.DefaultAutoComplete,
 		},
 	}
-	upgradeCommand := getUpgradeCommand()
+	upgradeCommand := getUpgradeCommand(langManager)
 	if upgradeCommand != nil {
 		commands = append(commands, upgradeCommand)
 	}
