@@ -4,22 +4,16 @@
 #####
 
 FROM golang:1.14
-ARG SOURCE_BRANCH="master"
-ENV SOURCE_BRANCH="$SOURCE_BRANCH" AKAMAI_CLI_HOME=/cli
+ENV AKAMAI_CLI_HOME=/cli
 COPY . /go/src/github.com/akamai/cli
 RUN /bin/bash -c 'mkdir /cli && \
     apt update && \
     apt install -y python-pip python3 python3-pip jq libssl-dev npm && \
     pip2 install --upgrade pip && \
     pip3 install --upgrade pip && \
-    if [[ $SOURCE_BRANCH == "master" ]]; then \
-        cd $GOPATH/src/github.com/akamai/cli && \
-        go mod tidy && \
-        go build -o akamai-master-linuxamd64 cli/main.go; \
-    else \
-        echo apud && \
-        wget `curl https://api.github.com/repos/akamai/cli/releases/latest | jq .assets[].browser_download_url | grep linuxamd64 | grep -v sig | sed s/\"//g`; \
-    fi && \
+    cd $GOPATH/src/github.com/akamai/cli && \
+    go mod tidy && \
+    go build -o akamai-master-linuxamd64 cli/main.go; \
     mv akamai-*-linuxamd64 /usr/local/bin/akamai && chmod +x /usr/local/bin/akamai && \
     mkdir -p /cli/.akamai-cli && \
     curl -A "" https://developer.akamai.com/cli/package-list.json | jq .packages[].name | sed s/\"//g | xargs akamai install --force'
@@ -33,7 +27,6 @@ RUN echo "[cli]" > /cli/.akamai-cli/config && \
     echo "install-in-path       =" >> /cli/.akamai-cli/config && \
     echo "last-upgrade-check    = ignore" >> /cli/.akamai-cli/config
 
-ENV AKAMAI_CLI_HOME=/cli
 VOLUME /root/.edgerc
 VOLUME /cli
 ENTRYPOINT ["/usr/local/bin/akamai"]
