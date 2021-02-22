@@ -8,61 +8,60 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/akamai/cli)](https://goreportcard.com/report/github.com/akamai/cli) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_shield)
 
 
-Akamai CLI is an ever-growing CLI toolkit for working with Akamai's API from the command line.
+Akamai CLI is an ever-growing CLI toolkit that lets you configure Akamai platform and products directly from the command line. You can install ready-to-use product packages or build your own custom solutions to manage from the CLI.
 
-## Goals
+#### Benefits
 
-- Simplicity
-- Feature-full
-- Consistent UX
+- Simple and task-oriented interface
+- Consistent user experience across all Akamai products
+- Wide range of supported packages and capabilities
+- Ability to extend or build your own CLI packages with nine supported programming languages, including Golang, Python, Javascript, PHP, and Ruby
 
-## Available Packages
+#### Available Packages
 
-A list of available packages can be found [here](https://developer.akamai.com/cli).
+Browse the list of available packages [here](https://developer.akamai.com/cli).
 
-## Installation
+## Install Akamai CLI
 
-Akamai CLI itself has no dependencies, but may rely on packages that can be written using any language and may require additional runtimes.
+Akamai CLI doesn't have any dependencies and is quick to install. However, you may need additional runtime for the packages as they can be based on different programming languages.
 
-### Download a Release Binary
+Install Akamai CLI by downloading an applicable [release binary](https://github.com/akamai/cli/releases). Follow the detailed instructions for various operating systems below.
 
-The easiest way to install Akamai CLI is to download a [release binary](https://github.com/akamai/cli/releases) for your platform and follow the instructions for your platform below. There are _no additional requirements_.
+You can also use [Docker](#UsingDocker) or compile the CLI from [source](#compile).
 
 #### Linux and macOS
 
-Once you have downloaded the appropriate binary for your system, you must make it executable, and optionally move it somewhere within your path.
+Once you download the appropriate binary for your system, make it executable, and optionally move it to `$PATH`. In your Linux command line or in macOS terminal, run the following commands:
 
 ```sh
 $ chmod +x ~/Downloads/akamai-<VERSION>-<PLATFORM>
 $ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
 ```
 
-#### Windows
-
-Once you have downloaded the appropriate binary for your system, no further actions
-are required on your part, simply execute the binary from the command line.
-
-### Using Homebrew
-
-If you are using macOS, you can also install using the [Homebrew](https://brew.sh) package manager:
+You can also install Akamai CLI using [Homebrew](https://brew.sh) package manager:
 
 ```sh
 $ brew install akamai
 ```
 
-This will install all necessary dependencies, compile, and install the binary — which will then be available globally.
+This command compiles and globally installs the binary with all necessary dependencies.
 
-### Using Docker
+#### Windows
 
-If you use (or want to use) [docker](http://docker.com), we have created a container with Akamai CLI, and all public packages (at the time of creation) pre-installed. You can execute a command using:
+Once you download the appropriate binary for your system, simply execute the binary from the command line.
+
+
+#### Install with Docker
+
+A container with Akamai CLI and pre-installed public packages is also available in [Docker](http://docker.com). To start, run the following command:
 
 ```sh
 $ docker run -ti -v $HOME/.edgerc:/root/.edgerc akamaiopen/cli [arguments]
 ```
 
-> **Note:** This will mount your local `$HOME/.edgerc`, and `$HOME/.akamai-cli-docker` into the container. To change the local path, update the `-v` arguments.
+> **Note:** This mounts your local `$HOME/.edgerc`, and `$HOME/.akamai-cli-docker` into the container. To change the local path, modify the `-v` arguments.
 
-If you want to transparently use docker when calling the `akamai` command, you can add the following to your `.bashrc`, `.bash_profile`, or `.zshrc`:
+If you want to transparently use docker when calling the `akamai` command, add the following code block to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
 
 ```bash
 function akamai {
@@ -78,129 +77,129 @@ function akamai {
 }
 ```
 
-You can then run `akamai [arguments]` and it will automatically create or re-use a "persistent" container.
+You can then run `akamai [arguments]` command and it automatically creates or re-uses a "persistent" container.
 
+Docker containers are ephemeral and run for as long as the command (PID 1) inside them stays running. To let you re-use the same container, Akamai uses `akamai --daemon` command that runs indefinitely inside the container.
 
-#### Persistance
+To restart the container created by the function above, you can safely run `docker stop akamai-cli` followed by `docker start akamai-cli`.
 
-Docker containers are ephemeral and will only run for as long as the command (PID 1) inside them stays running. To allow you to re-use the same container we use `akamai --daemon` to ensure it continues running indefinitely inside the container.
+The script above persists your Akamai CLI installation with configuration and packages in the `$HOME/.akamai-cli-docker` directory.
 
-You can safely run `docker stop akamai-cli` followed by `docker start akamai-cli` to stop and start the container created by the function above at any time. 
+#### Compile from Source
 
-The script above will persist your Akamai CLI installation (including configuration and packages) in the `$HOME/.akamai-cli-docker` directory.
+**Prerequisite:** Make sure you install Go 1.7 or later, and the [Glide](https://glide.sh) package manager.
 
-### Compiling from Source
-
-If you want to compile it from source, you will need Go 1.7 or later, and the [Glide](https://glide.sh) package manager installed:
+To compile Akamai CLI from source:
 
 1. Fetch the package:  
   `go get github.com/akamai/cli`
-2. Change to the package directory:  
+2. Go to the package directory:  
   `cd $GOPATH/src/github.com/akamai/cli`
 3. Install dependencies using Glide:  
   `glide install`
 4. Compile the binary:  
-  - Linux/macOS/*nix: `go build -o akamai`
-  - Windows: `go build -o akamai.exe`
-5. Move the binary (`akamai` or `akamai.exe`) in to your `PATH`
+  - For Linux/macOS/*nix, run: `go build -o akamai`
+  - For Windows, run: `go build -o akamai.exe`
+5. Move the binary (`akamai` or `akamai.exe`) in to your `$PATH`
 
-### Credentials
+#### Credentials File
 
-Akamai CLI uses the standard Akamai OPEN credentials file, `.edgerc`. By default, it will look for credentials in your `HOME` directory.
+Akamai CLI uses the standard EdgeGrid credentials file, `.edgerc`, to authenticate to the Akamai platform.
 
-You can override both the credentials file location, or the section, by passing the the `--edgerc` or `--section` flags to each command.
+To set up your credential file, see [Create an API Client](https://developer.akamai.com/api/getting-started#createanapiclient) and [Add credential to .edgerc file](https://developer.akamai.com/api/getting-started#addcred).
 
-To set up your credential file, see the [authorization](https://developer.akamai.com/introduction/Prov_Creds.html) and [credentials](https://developer.akamai.com/introduction/Conf_Client.html) sections of the Get Started guide.
+The default location for the credentials file is your `HOME` directory. To override both the default credentials file location and the section with your client tokens, pass the the `--edgerc` or `--section` flags to each command.
 
-## Upgrading
+## Upgrade to a newer version
 
-Akamai CLI can automatically check for newer versions (at most, once per day). You will be prompted to enable this feature the first time you run Akamai CLI v0.3.0 or later.
+You can enable automatic check for updates when you run Akamai CLI v0.3.0 or later for the first time. Akamai CLI also checks the `SHA256` signature of the new version to verify it's valid.
 
-If a new version is found, you will be prompted to upgrade. Choosing to do so will download the latest version in-place, and your original command will then be executed using the _new_ version.
+If a new version is available, CLI prompts you to download it. After the update, your original command is executed using the _new_ version.
 
-Akamai CLI _automatically_ checks the SHA256 signature of the new version to verify it's validity.
+To perform manual upgrade, see `akamai upgrade`
 
-To manually upgrade, see `akamai upgrade`
+## How to use Akamai CLI
 
-## Usage
-
-All commands start with the `akamai` binary, followed by a `command`, and optionally an action or other arguments.
+All CLI commands start with the `akamai` binary, followed by a `command`, and optionally an action or other arguments.
 
 ```
-akamai [command] [action] [arguments...]
+akamai [command] [action] [arguments]
 ```
 
-### Built-in commands
+#### Built-in commands
 
-#### Help
+Use the following commands to manage the packages and the toolkit itself:
 
-Calling `akamai help` will show basic usage info, and available commands. To learn more about a specific command, use `akamai help <command> [sub-command]`.
+- `help`
 
-#### List
+    `akamai help` shows basic usage info, and available commands. To learn more about a specific command, run `akamai help <command> [sub-command]`
 
-Calling `akamai list` will show you a list of available commands. If a command is not shown, ensure that the binary is executable, and in your `PATH`.
+- `list`
 
-#### Install
+    `akamai list` shows you a list of available commands. If a command doesn't display, ensure the binary is executable, and in your `PATH`.
 
-The `install` command allows you to easily install new packages from a git repository.
+- `install`
 
-Calling `akamai install <package name or repository URL>` will download and install the command repository to the `$HOME/.akamai-cli` directory.
+    The `install` command lets you install new packages from a git repository.
 
-For Github repositories, you can pass in `user/repo` or `organization/repo`. For official Akamai packages, you can  omit the `akamai/cli-` prefix, so to install `akamai/cli-property` you can specify `property`.
+    `akamai install <package name or repository URL>` downloads and installs the command repository to the `$HOME/.akamai-cli` directory.
 
-For example, all of the following will install Akamai CLI for Property Manager from Github using various aliases:
+    For Github repositories, specify `user/repo` or `organization/repo`. For official Akamai packages, you can omit the `akamai/cli-` prefix, so to install `akamai/cli-property` it's enough to run `property`.
 
-```
-akamai install property
-akamai install akamai/cli-property
-akamai install https://github.com/akamai/cli-property.git
-```
+    The following example installs Akamai CLI for Property Manager from Github using various aliases:
 
-You can specify _multiple_ packages to install at once.
+    ```
+    akamai install property
+    akamai install akamai/cli-property
+    akamai install https://github.com/akamai/cli-property.git
+    ```
 
-#### Uninstall
+    You can specify _multiple_ packages to install at once.
 
-To uninstall a package installed with `akamai install`, you call `akamai uninstall <command>`, where `<command>` is any command within that package.
+- `uninstall`
 
-You can specify _multiple_ packages to uninstall at once.
+    To uninstall a package you installed with `akamai install`, run `akamai uninstall <command>`, where `<command>` is any command within that package.
 
-#### Update
+    You can specify _multiple_ packages to uninstall at once.
 
-To update a package installed with `akamai install`, you call `akamai update <command>`, where `<command>` is any command within that package.
+- `update`
 
-You can specify _multiple_ packages to update at once.
+    To update a package you installed with `akamai install`, run `akamai update <command>`, where `<command>` is any command within that package.
 
-Calling `akamai update` with no arguments will update _all_ packages installed using `akamai install`
+    You can specify _multiple_ packages to update at once.
 
-#### Upgrade
+    If you don't specify additional arguments, `akamai update` updates _all_ packages installed with `akamai install`
 
-Manually upgrade Akamai CLI to the latest version.
+- `upgrade`
 
-### Installed Commands
+  Manually upgrade Akamai CLI to the latest version.
 
-To call an installed command, use `akamai <command> [args]`, e.g.
+#### Installed commands
+
+This type of commands depends on the packages you installed. To use an installed command, run `akamai <command> [arguments]`, e.g.
 
 ```sh
 akamai property create example.org
 ```
+For the list of supported commands, see the [documentation](https://developer.akamai.com/cli-packages) for your package.
 
-### Custom commands
+#### Custom commands
 
-Akamai CLI also provides a framework for writing custom CLI commands. These commands are contained in packages, which may have one or more commands within it.
+Akamai CLI provides a framework for writing custom CLI commands. These commands are contained in packages, which may include one or more commands.
 
-There are a few requirements:
+Before you start building your own commands, make sure you meet the following prerequisites:
 
-1. The package must be available via a Git repository (standard SSH public key authentication is supported)
+1. The package must be available through a Git repository that supports standard SSH public key authentication.
 2. The executable must be named `akamai-<command>` or `akamai<Command>`
-3. Help must be visible when you run: `akamai-command help` and ideally, should allow for `akamai-command help <sub-command>`
-4. If using OPEN APIs, it must support the `.edgerc` format, and must support both `--edgerc` and `--section` flags
+3. Verify that `akamai-command help` works for you. Ideally, CLI should allow for `akamai-command help <sub-command>`
+4. If you're using OPEN APIs, the executable must support the `.edgerc` format, and must support both `--edgerc` and `--section` flags
 5. If an action fails to complete, the executable should exit with a non-zero status code (however, `akamai` will only return `0` on success or `1` on failure)
 
-You can use _any_ language to build commands, so long as the result is executable — this includes PHP, Python, Ruby, Perl, Java, Golang, JavaScript, and C#.
+As long as the result is executable, you can use _any_ of the supported languages to build your commands, including **PHP, Python, Ruby, Perl, Java, Golang, JavaScript,** and **C#**.
 
-### Debugging
+#### Debugging
 
-You can prepend `AKAMAI_LOG=<debug-level>` to the CLI command to see extra information, where debug-level is one of the following (use trace for full logging):
+To see additional debug information, prepend `AKAMAI_LOG=<debug-level>` to any CLI command. You can specify one of the following debug levels:
 
 - panic
 - fatal
@@ -208,16 +207,16 @@ You can prepend `AKAMAI_LOG=<debug-level>` to the CLI command to see extra infor
 - warn
 - info
 - debug
-- trace
+- trace (for full logging)
 
-For example to see extra debug information while trying to update the property package use:
+For example, to see extra debug information while updating the property package, run:
 ```sh
 AKAMAI_LOG=trace akamai update property
 ```
 
-### Dependencies
+## Dependencies
 
-Currently Akamai CLI supports automatically installing package dependencies using the following package managers:
+Akamai CLI supports the following package managers that help you automatically install package dependencies:
 
 - PHP: composer
 - Python: pip (using requirements.txt)
@@ -225,13 +224,11 @@ Currently Akamai CLI supports automatically installing package dependencies usin
 - Golang: Glide
 - JavaScript: npm and yarn
 
-For other languages or package managers, all dependencies must be included in the package repository (i.e. by vendoring).
+If you want to use other languages or package managers, make sure you include all dependencies in the package repository.
 
-### Command Package Metadata
+## Command package metadata
 
-You *must* include a `cli.json` file to inform Akamai CLI about the command package and it's included commands.
-
-`cli.json` allows you specify the command language runtime version, as well as define all commands included in package.
+The package you install *must* include a `cli.json` file. This is where you specify the command language runtime version and define all commands included in package.
 
 ##### Example
 
@@ -253,29 +250,26 @@ You *must* include a `cli.json` file to inform Akamai CLI about the command pack
 
 ##### Format
 
-- `requirements` — specify runtime requirements. You may specify a minimum version number or use `*` for any version. Possible requirements are:
+- `requirements`: Specifies runtime requirements. You may specify a minimum version number or use `*` for any version. Possible requirements are:
   - `go`
   - `php`
   - `ruby`
   - `node`
   - `python`
-- `commands` — A list of commands included in the package
-  - `name` — The command name (used as the executable name)
-  - `aliases` - An array of aliases that can be used to invoke the command
-  - `version` — The command version
-  - `description` - A short description of the command
-  - `bin` — A url to fetch a binary package from if it cannot be installed from source
+- `commands`: Lists commands included in the package.
+  - `name`: The command name (used as the executable name).
+  - `aliases`: An array of aliases that can be used to invoke the command.
+  - `version`: The command version.
+  - `description`: A short description for the command.
+  - `bin`: A url to fetch a binary package from if it cannot be installed from source.
 
-The `bin` URL may contain the following placeholders:
+    The `bin` URL may contain the following placeholders:
 
-- `{{.Version}}` — The command version
-- `{{.Name}}` — The command name
-- `{{.OS}}` — The current operating system
-  - Possible values are: `windows`, `mac`, or `linux`
-- `{{.Arch}}` — The current OS architecture
-  - Possible values are: `386`, `amd64`
-- `{{.BinSuffix}}` — The binary suffix for the current OS
-  - Possible values are: `.exe` for windows
+    - `{{.Version}}`: The command version.
+    - `{{.Name}}`: The command name
+    - `{{.OS}}`: The current operating system, either `windows`, `mac`, or `linux`
+    - `{{.Arch}}`: The current OS architecture, either `386` or `amd64`
+    - `{{.BinSuffix}}`: The binary suffix for the current OS: `.exe` for `windows`
 
 
 ## License
