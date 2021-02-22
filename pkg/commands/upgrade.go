@@ -86,22 +86,25 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 		}
 
 		latestVersion := getLatestReleaseVersion(ctx)
-		if version.Compare(version.Version, latestVersion) == 1 {
-			if !force {
-				answer, err := term.Confirm(fmt.Sprintf(
-					"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
-					color.BlueString(latestVersion),
-					color.BlueString(version.Version),
-				), true)
-				if err != nil {
-					return ""
-				}
+		comp := version.Compare(version.Version, latestVersion)
+		if comp == 1 {
+			term.Spinner().Stop(terminal.SpinnerStatusOK)
+			answer, err := term.Confirm(fmt.Sprintf(
+				"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
+				color.BlueString(latestVersion),
+				color.BlueString(version.Version),
+			), true)
+			if err != nil {
+				return ""
+			}
 
-				if !answer {
-					return ""
-				}
+			if !answer {
+				return ""
 			}
 			return latestVersion
+		}
+		if comp == 0 {
+			return version.Version
 		}
 	}
 

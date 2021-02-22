@@ -78,7 +78,10 @@ func Run() int {
 }
 
 func checkUpgrade(ctx context.Context, langManager packages.LangManager) {
-	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" {
+	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
+		return
+	}
+	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" && latestVersion != version.Version {
 		if commands.UpgradeCli(ctx, latestVersion, langManager) {
 			stats.TrackEvent(ctx, "upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
 			return
