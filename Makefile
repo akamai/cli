@@ -7,7 +7,7 @@ build:
 
 .PHONY: test
 test:
-	go test -count=1 -race ./...
+	go test -count=1 ./...
 
 .PHONY: coverage-ui
 coverage-ui:

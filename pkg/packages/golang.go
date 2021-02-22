@@ -77,10 +77,10 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 	}
 
 	for _, command := range commands {
-		execName := "akamai-" + strings.ToLower(command)
+		execName := strings.TrimSuffix(fmt.Sprintf("akamai-%s", filepath.Base(strings.ToLower(command))), ".go")
 
 		var cmd *exec.Cmd
-		if len(commands) > 1 {
+		if len(commands) > 1 || strings.HasSuffix(command, ".go") {
 			cmd = exec.Command(bin, "build", "-o", execName, "./"+command)
 		} else {
 			cmd = exec.Command(bin, "build", "-o", execName, ".")
