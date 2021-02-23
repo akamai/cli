@@ -5,7 +5,7 @@
 
 FROM golang:1.14
 ENV AKAMAI_CLI_HOME=/cli
-ARG AKAMAI_LOG=info
+ARG AKAMAI_LOG=debug
 COPY . /go/src/github.com/akamai/cli
 RUN /bin/bash -c 'mkdir /cli && \
     apt update && \
