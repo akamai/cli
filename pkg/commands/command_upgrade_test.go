@@ -1,11 +1,11 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestCmdUpgrade(t *testing.T) {
 		init              func(*mocked)
 		withError         string
 	}{
-		"set config no error": {
+		"last upgrade check is set to never": {
 			args:              []string{"cli.testKey", "testValue"},
 			respLatestVersion: "10.0.0",
 			init: func(m *mocked) {
@@ -43,7 +43,7 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.term.On("Printf", "Found new version: %s (current version: %s)\n", []interface{}{color.BlueString("v10.0.0"), color.BlueString("v" + version.Version)})
+				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
 
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
@@ -73,7 +73,7 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.term.On("Printf", "Found new version: %s (current version: %s)\n", []interface{}{color.BlueString("v10.0.0"), color.BlueString("v" + version.Version)})
+				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
 
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()

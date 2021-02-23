@@ -126,16 +126,31 @@ func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string)
 }
 
 func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) error {
-	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "go.sum")); !ok {
-		return fmt.Errorf("go.sum not found")
-	}
-	logger.Info("go.sum found, running go module package manager")
 	bin, err := cmdExecutor.LookPath("go")
 	if err != nil {
 		err = fmt.Errorf("%w: %s", ErrRuntimeNotFound, "go")
 		logger.Debug(err.Error())
 		return err
 	}
+	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "go.sum")); !ok {
+		dep, _ := cmdExecutor.FileExists(filepath.Join(dir, "Gopkg.lock"))
+		if !dep {
+			return fmt.Errorf("go.sum not found, unable to initialize go modules due to lack of Gopkg.lock")
+		}
+		logger.Debug("go.sum not found, attempting go mod init")
+		moduleName := filepath.Base(dir)
+		cmd := exec.Command(bin, "mod", "init", moduleName)
+		cmd.Dir = dir
+		_, err = cmdExecutor.ExecCommand(cmd)
+		if err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				logger.Debugf("Unable execute 'go mod init': \n %s", exitErr.Stderr)
+			}
+			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "go mod init")
+		}
+	}
+	logger.Info("go.sum found, running go module package manager")
 	cmd := exec.Command(bin, "mod", "tidy")
 	cmd.Dir = dir
 	_, err = cmdExecutor.ExecCommand(cmd)

@@ -112,7 +112,7 @@ func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 		spnr:  StandardSpinner(),
 	}
 
-	t.spnr.spinner.Writer = &t
+	t.spnr.spinner.Writer = t.Error()
 
 	return &t
 }

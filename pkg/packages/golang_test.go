@@ -69,7 +69,6 @@ func TestInstallGolang(t *testing.T) {
 			givenCommands: []string{"test1", "test2"},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil).Once()
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
 				m.On("LookPath", "go").Return("", fmt.Errorf("not found")).Once()
 				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
@@ -129,6 +128,7 @@ func TestInstallGolang(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("FileExists", "testDir/go.sum").Return(false, nil)
+				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
 				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
@@ -150,6 +150,7 @@ func TestInstallGolang(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("FileExists", "testDir/go.sum").Return(false, nil)
+				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
 				m.On("FileExists", "testDir/glide.lock").Return(false, nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
@@ -165,6 +166,7 @@ func TestInstallGolang(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("FileExists", "testDir/go.sum").Return(false, nil)
+				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
 				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
@@ -182,6 +184,7 @@ func TestInstallGolang(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("FileExists", "testDir/go.sum").Return(false, nil)
+				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
 				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
 				m.On("LookPath", "glide").Return("", fmt.Errorf("not found"))
 			},

@@ -36,8 +36,6 @@ func cmdUpgrade(langManager packages.LangManager) cli.ActionFunc {
 
 		latestVersion := CheckUpgradeVersion(c.Context, true)
 		if latestVersion != "" && latestVersion != version.Version {
-			term.Spinner().Stop(terminal.SpinnerStatusOK)
-			term.Printf("Found new version: %s (current version: %s)\n", color.BlueString("v"+latestVersion), color.BlueString("v"+version.Version))
 			os.Args = []string{os.Args[0], "--version"}
 			success := UpgradeCli(c.Context, latestVersion, langManager)
 			if success {
@@ -45,9 +43,10 @@ func cmdUpgrade(langManager packages.LangManager) cli.ActionFunc {
 			} else {
 				stats.TrackEvent(c.Context, "upgrade.user", "failed", "to: "+latestVersion+" from:"+version.Version)
 			}
+			return nil
 		}
+		term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 		if latestVersion == version.Version {
-			term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 			term.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
 			return nil
 		}
