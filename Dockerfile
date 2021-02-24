@@ -17,7 +17,8 @@ ENV AKAMAI_CLI_HOME=/cli
 ARG AKAMAI_LOG=info
 RUN /bin/bash -c 'mkdir /cli && \
     apt update && \
-    apt install -y python-pip python3 python3-pip jq libssl-dev npm && \
+    apt install -y python-pip python3 python3-pip jq libssl-dev nodejs build-essential && \
+    curl https://www.npmjs.com/install.sh | sh && \
     pip2 install --upgrade pip && \
     pip3 install --upgrade pip && \
     go get github.com/akamai/cli && \
