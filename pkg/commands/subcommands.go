@@ -96,7 +96,7 @@ func findPackageDir(dir string) string {
 	return dir
 }
 
-func downloadBin(ctx context.Context, dir string, cmd command) bool {
+func downloadBin(ctx context.Context, dir string, cmd command) error {
 	logger := log.FromContext(ctx)
 	cmd.Arch = runtime.GOARCH
 
@@ -113,15 +113,16 @@ func downloadBin(ctx context.Context, dir string, cmd command) bool {
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
 		logger.Debugf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
-		return false
+		return err
 	}
 
 	url := buf.String()
 	logger.Debugf("Fetching binary from %s", url)
 
-	bin, err := os.Create(filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix))
+	binName := filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix)
+	bin, err := os.Create(binName)
 	if err != nil {
-		return false
+		return err
 	}
 	defer func() {
 		if err := bin.Close(); err != nil {
@@ -129,13 +130,13 @@ func downloadBin(ctx context.Context, dir string, cmd command) bool {
 		}
 	}()
 
-	if err := bin.Chmod(0775); err != nil {
-		return false
+	if err := os.Chmod(binName, 0775); err != nil {
+		return err
 	}
 
 	res, err := http.Get(url)
 	if err != nil {
-		return false
+		return err
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
@@ -144,13 +145,13 @@ func downloadBin(ctx context.Context, dir string, cmd command) bool {
 	}()
 
 	if res.StatusCode != http.StatusOK {
-		return false
+		return err
 	}
 
 	n, err := io.Copy(bin, res.Body)
 	if err != nil || n == 0 {
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }

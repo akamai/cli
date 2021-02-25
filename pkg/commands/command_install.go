@@ -228,7 +228,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 				term.Spinner().Start("Downloading binary...")
 			}
 
-			if !downloadBin(ctx, filepath.Join(dir, "bin"), cmd) {
+			if err := downloadBin(ctx, filepath.Join(dir, "bin"), cmd); err != nil {
 				term.Spinner().Stop(terminal.SpinnerStatusFail)
 				term.Writeln(color.RedString("Unable to download binary: " + err.Error()))
 				return false, nil
