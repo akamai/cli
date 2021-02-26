@@ -30,3 +30,7 @@ vet:
 .PHONY: fmt
 fmt:
 	go fmt ./...
+
+.PHONY: pack
+pack:
+	tar -zcvf cli.tar.gz .
