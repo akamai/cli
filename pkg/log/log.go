@@ -49,19 +49,19 @@ func SetupContext(ctx context.Context, defaultWriter io.Writer) context.Context 
 		Handler: text.New(defaultWriter),
 	}
 	output := defaultWriter
-	if lvlEnv := os.Getenv("AKAMAI_LOG"); lvlEnv != "" {
+	if lvlEnv := os.Getenv("AKAMAI_CLI_LOG"); lvlEnv != "" {
 		logLevel, err := log.ParseLevel(strings.ToLower(lvlEnv))
 		if err == nil {
 			logger.Level = logLevel
 		} else {
-			logger.Warn("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, info, debug")
+			logger.Warn("Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
 		}
 	}
 	coloredOutput := true
-	if outputEnv := os.Getenv("AKAMAI_LOG_PATH"); outputEnv != "" {
+	if outputEnv := os.Getenv("AKAMAI_CLI_LOG_PATH"); outputEnv != "" {
 		f, err := os.OpenFile(outputEnv, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
 		if err != nil {
-			logger.Warnf("Invalid value of AKAMAI_LOG_PATH %s", err)
+			logger.Warnf("Invalid value of AKAMAI_CLI_LOG_PATH %s", err)
 		}
 		coloredOutput = false
 		output = f

@@ -200,7 +200,7 @@ You can use _any_ language to build commands, so long as the result is executabl
 
 ### Debugging
 
-You can prepend `AKAMAI_LOG=<debug-level>` to the CLI command to see extra information, where debug-level is one of the following (use trace for full logging):
+You can prepend `AKAMAI_CLI_LOG=<debug-level>` to the CLI command to see extra information, where debug-level is one of the following (use trace for full logging):
 
 - panic
 - fatal
@@ -212,7 +212,7 @@ You can prepend `AKAMAI_LOG=<debug-level>` to the CLI command to see extra infor
 
 For example to see extra debug information while trying to update the property package use:
 ```sh
-AKAMAI_LOG=trace akamai update property
+AKAMAI_CLI_LOG=trace akamai update property
 ```
 
 ### Dependencies
