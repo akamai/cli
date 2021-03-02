@@ -19,7 +19,7 @@ func TestSetupContext(t *testing.T) {
 		withError     *regexp.Regexp
 	}{
 		"no envs passed, defaults are used": {
-			expectedLevel: log.InfoLevel,
+			expectedLevel: log.ErrorLevel,
 		},
 		"debug level set": {
 			envs:          map[string]string{"AKAMAI_CLI_LOG": "DEBUG"},
@@ -30,14 +30,14 @@ func TestSetupContext(t *testing.T) {
 			expectedLevel: log.DebugLevel,
 		},
 		"invalid path passed": {
-			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": "."},
+			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": ".", "AKAMAI_CLI_LOG": "INFO"},
 			expectedLevel: log.InfoLevel,
 			withError:     regexp.MustCompile(`WARN.*Invalid value of AKAMAI_CLI_LOG_PATH`),
 		},
 		"invalid log level passed, output to terminal": {
 			envs:          map[string]string{"AKAMAI_CLI_LOG": "abc"},
-			expectedLevel: log.InfoLevel,
-			withError:     regexp.MustCompile(`WARN.*Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
+			expectedLevel: log.ErrorLevel,
+			withError:     regexp.MustCompile(`ERROR.*Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
 		},
 	}
 
@@ -59,7 +59,7 @@ func TestSetupContext(t *testing.T) {
 				assert.Regexp(t, test.withError, buf.String())
 				return
 			}
-			logger.Info("test!")
+			logger.Error("test!")
 			if v, ok := test.envs["AKAMAI_CLI_LOG_PATH"]; ok {
 				res, err := ioutil.ReadFile(v)
 				require.NoError(t, err)
@@ -78,11 +78,11 @@ func TestWithCommand(t *testing.T) {
 		expected *regexp.Regexp
 	}{
 		"output to terminal": {
-			expected: regexp.MustCompile(`\[.{3} {2}INFO\[0m\[[0-9]{4}] abc[ ]*\[.{3}command\[.{2}=test`),
+			expected: regexp.MustCompile(` ERROR\[0m\[[0-9]{4}] abc[ ]*\[.{3}command\[.{2}=test`),
 		},
 		"output to file": {
 			logFile:  "./testlogs.txt",
-			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] INFO abc[ ]*command=test`),
+			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] ERROR abc[ ]*command=test`),
 		},
 	}
 	for name, test := range tests {
@@ -94,7 +94,7 @@ func TestWithCommand(t *testing.T) {
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
 			logger := WithCommand(ctx, "test")
-			logger.Info("abc")
+			logger.Error("abc")
 			if test.logFile != "" {
 				res, err := ioutil.ReadFile(test.logFile)
 				require.NoError(t, err)

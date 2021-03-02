@@ -19,7 +19,7 @@ const (
 // Repository interface.
 type Repository interface {
 	Open(path string) error
-	Clone(ctx context.Context, path, repo string, isBare bool, progress terminal.Spinner, depth int) error
+	Clone(ctx context.Context, path, repo string, isBare bool, progress terminal.Spinner) error
 	Pull(ctx context.Context, worktree *git.Worktree) error
 	Head() (*plumbing.Reference, error)
 	Worktree() (*git.Worktree, error)
@@ -44,11 +44,10 @@ func (r *repository) Open(path string) error {
 	return nil
 }
 
-func (r *repository) Clone(ctx context.Context, path, repo string, isBare bool, progress terminal.Spinner, depth int) error {
+func (r *repository) Clone(ctx context.Context, path, repo string, isBare bool, progress terminal.Spinner) error {
 	gitRepo, err := git.PlainCloneContext(ctx, path, isBare, &git.CloneOptions{
 		URL:      repo,
 		Progress: progress,
-		Depth:    depth,
 	})
 	if err != nil {
 		return err

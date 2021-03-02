@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
 
@@ -65,7 +64,7 @@ func Run() int {
 	if err := firstRun(ctx); err != nil {
 		return 5
 	}
-	checkUpgrade(ctx, packages.NewLangManager())
+	checkUpgrade(ctx)
 	if err := stats.CheckPing(ctx); err != nil {
 		term.WriteError(err.Error())
 	}
@@ -77,12 +76,12 @@ func Run() int {
 	return 0
 }
 
-func checkUpgrade(ctx context.Context, langManager packages.LangManager) {
+func checkUpgrade(ctx context.Context) {
 	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
 		return
 	}
 	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" && latestVersion != version.Version {
-		if commands.UpgradeCli(ctx, latestVersion, langManager) {
+		if commands.UpgradeCli(ctx, latestVersion) {
 			stats.TrackEvent(ctx, "upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
 			return
 		}

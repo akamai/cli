@@ -19,6 +19,7 @@ import (
 	"github.com/akamai/cli/pkg/log"
 	"github.com/fatih/color"
 	"strings"
+	"time"
 
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
@@ -26,8 +27,18 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func cmdConfigSet(c *cli.Context) error {
+func cmdConfigSet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	start := time.Now()
+	logger.Debug("CONFIG SET START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("CONFIG SET FINISH: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("CONFIG SET ERROR: %v", e.Error())
+		}
+	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -41,8 +52,18 @@ func cmdConfigSet(c *cli.Context) error {
 	return nil
 }
 
-func cmdConfigGet(c *cli.Context) error {
+func cmdConfigGet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	start := time.Now()
+	logger.Debug("CONFIG GET START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("CONFIG GET FINISH: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("CONFIG GET ERROR: %v", e.Error())
+		}
+	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -50,11 +71,22 @@ func cmdConfigGet(c *cli.Context) error {
 	}
 	val, _ := cfg.GetValue(section, key)
 	terminal.Get(c.Context).Writeln(val)
+	logger.Debug(val)
 	return nil
 }
 
-func cmdConfigUnset(c *cli.Context) error {
+func cmdConfigUnset(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	start := time.Now()
+	logger.Debug("CONFIG UNSET START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("CONFIG UNSET FINISH: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("CONFIG UNSET ERROR: %v", e.Error())
+		}
+	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
@@ -68,8 +100,18 @@ func cmdConfigUnset(c *cli.Context) error {
 	return nil
 }
 
-func cmdConfigList(c *cli.Context) error {
+func cmdConfigList(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	start := time.Now()
+	logger.Debug("CONFIG LIST START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("CONFIG LIST FINISH: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("CONFIG LIST ERROR: %v", e.Error())
+		}
+	}()
 	cfg := config.Get(c.Context)
 	term := terminal.Get(c.Context)
 

@@ -16,9 +16,11 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"github.com/akamai/cli/pkg/packages"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -30,9 +32,18 @@ import (
 )
 
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (e error) {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		logger := log.WithCommand(c.Context, c.Command.Name)
+		start := time.Now()
+		logger.Debug("UPDATE START")
+		defer func() {
+			if e == nil {
+				logger.Debugf("UPDATE FINISH: %v", time.Now().Sub(start))
+			} else {
+				logger.Errorf("UPDATE ERROR: %v", e.Error())
+			}
+		}()
 		if !c.Args().Present() {
 			var builtinCmds = make(map[string]bool)
 			for _, cmd := range getBuiltinCommands(c) {
@@ -114,14 +125,14 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	}
 
 	err = gitRepo.Pull(ctx, w)
-	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
+	if err != nil && err.Error() != alreadyUptoDate {
 		logger.Debugf("Fetch error: %s", err.Error())
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	ref, err := gitRepo.Head()
-	if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
+	if err != nil && err.Error() != alreadyUptoDate {
 		logger.Debugf("Fetch error: %s", err.Error())
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
@@ -132,7 +143,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		logger.Debugf("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		logger.Debugf("Latest commit: %s", commit)
 
-		if err != nil && err.Error() != alreadyUptoDate && err.Error() != objectNotFound {
+		if err != nil && err.Error() != alreadyUptoDate {
 			logger.Debugf("Fetch error: %s", err.Error())
 			term.Spinner().Fail()
 			return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
@@ -140,14 +151,16 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	} else {
 		logger.Debugf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		term.Spinner().WarnOK()
-		term.Writeln(color.CyanString("command \"%s\" already up-to-date", cmd))
+		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
+		logger.Warn(debugMessage)
+		term.Writeln(color.CyanString(debugMessage))
 		return nil
 	}
 
 	logger.Debug("Repo updated successfully")
 	term.Spinner().OK()
 
-	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, forceBinary); !ok {
+	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, forceBinary, logger); !ok {
 		logger.Trace("Error updating dependencies")
 		return cli.Exit("Unable to update command", 1)
 	}

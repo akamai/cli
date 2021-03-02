@@ -34,7 +34,7 @@ func TestCmdListWithRemote(t *testing.T) {
 				m.term.On("Printf", bold.Sprintf("show"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
-				m.term.On("Printf", "    %s\n", []interface{}{"Displays available commands"}).Return().Once()
+				m.term.On("Printf", "    Displays available commands\n", []interface{}(nil)).Return().Once()
 
 				// Help command
 				m.term.On("Printf", bold.Sprintf("  help"), []interface{}(nil)).Return().Once()
@@ -48,7 +48,7 @@ func TestCmdListWithRemote(t *testing.T) {
 				m.term.On("Writeln", []interface{}{color.YellowString("\nAvailable Commands:\n\n")}).Return(0, nil).Once()
 				m.term.On("Printf", bold.Sprint("  test-remote-command"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("remote-package"))}).Return(0, nil).Once()
-				m.term.On("Printf", "    %s\n", []interface{}{"Test remote command"}).Return().Once()
+				m.term.On("Printf", "    Test remote command\n", []interface{}(nil)).Return().Once()
 				m.term.On("Printf", "\nInstall using \"%s\".\n", []interface{}{color.BlueString("%s install [package]", tools.Self())}).Return().Once()
 			},
 		},

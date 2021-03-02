@@ -24,6 +24,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/akamai/cli/pkg/terminal"
 
@@ -54,8 +55,18 @@ type packageListPackage struct {
 	} `json:"requirements"`
 }
 
-func cmdSearch(c *cli.Context) error {
+func cmdSearch(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	start := time.Now()
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger.Debug("SEARCH START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("SEARCH FINISHED: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("SEARCH ERROR: %v", e.Error())
+		}
+	}()
 	if !c.Args().Present() {
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}

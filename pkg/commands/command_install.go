@@ -17,10 +17,12 @@ package commands
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/akamai/cli/pkg/log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -37,8 +39,18 @@ var (
 )
 
 func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (e error) {
+		start := time.Now()
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger.Debug("INSTALL START")
+		defer func() {
+			if e == nil {
+				logger.Debugf("INSTALL FINISH: %v", time.Now().Sub(start))
+			} else {
+				logger.Errorf("INSTALL ERROR: %v", e.Error())
+			}
+		}()
 		if !c.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 		}
@@ -125,6 +137,7 @@ func isPublicRepo(repo string) bool {
 }
 
 func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string, forceBinary bool) (*subcommands, error) {
+	logger := log.FromContext(ctx)
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
 		return nil, err
@@ -140,17 +153,21 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
 		spin.Stop(terminal.SpinnerStatusFail)
-		return nil, cli.Exit(color.RedString("Package directory already exists (%s)", packageDir), 1)
+		errorMsg := fmt.Sprintf("Package directory already exists (%s)", packageDir)
+		logger.Error(errorMsg)
+		return nil, cli.Exit(color.RedString(errorMsg), 1)
 	}
 
-	err = gitRepo.Clone(ctx, packageDir, repo, false, spin, 1)
+	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)
 	if err != nil {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return nil, err
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		return nil, cli.Exit(color.RedString("Unable to clone repository: "+err.Error()), 1)
+		errorMsg := "Unable to clone repository: " + err.Error()
+		logger.Error(errorMsg)
+		return nil, cli.Exit(color.RedString(errorMsg), 1)
 	}
 	spin.OK()
 
@@ -158,7 +175,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
 
-	ok, subCmd := installPackageDependencies(ctx, langManager, packageDir, forceBinary)
+	ok, subCmd := installPackageDependencies(ctx, langManager, packageDir, forceBinary, logger)
 	if !ok {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return nil, err
@@ -169,7 +186,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	return subCmd, nil
 }
 
-func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, forceBinary bool) (bool, *subcommands) {
+func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, forceBinary bool, logger log.Logger) (bool, *subcommands) {
 	cmdPackage, err := readPackage(dir)
 
 	term := terminal.Get(ctx)
@@ -178,6 +195,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 	if err != nil {
 		term.Spinner().Stop(terminal.SpinnerStatusFail)
 		term.Writeln(err.Error())
+		logger.Error(err.Error())
 		return false, nil
 	}
 
@@ -189,7 +207,9 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 	err = langManager.Install(ctx, dir, cmdPackage.Requirements, commands)
 	if errors.Is(err, packages.ErrUnknownLang) {
 		term.Spinner().WarnOK()
-		term.Writeln(color.CyanString("Package installed successfully, however package type is unknown, and may or may not function correctly."))
+		warnMsg := "Package installed successfully, however package type is unknown, and may or may not function correctly."
+		term.Writeln(color.CyanString(warnMsg))
+		logger.Warn(warnMsg)
 		return true, &cmdPackage
 	}
 
@@ -205,6 +225,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 				first = false
 				term.Spinner().Stop(terminal.SpinnerStatusWarn)
 				term.Writeln(color.CyanString(err.Error()))
+				logger.Warn(err.Error())
 				if !forceBinary {
 					if !term.IsTTY() {
 						return false, nil
@@ -213,6 +234,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 					answer, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
 					if err != nil {
 						term.WriteError(err.Error())
+						logger.Error(err.Error())
 						return false, nil
 					}
 
@@ -228,9 +250,11 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 				term.Spinner().Start("Downloading binary...")
 			}
 
-			if err := downloadBin(ctx, filepath.Join(dir, "bin"), cmd); err != nil {
+			if err = downloadBin(ctx, filepath.Join(dir, "bin"), cmd); err != nil {
 				term.Spinner().Stop(terminal.SpinnerStatusFail)
-				term.Writeln(color.RedString("Unable to download binary: " + err.Error()))
+				errorMsg := "Unable to download binary: " + err.Error()
+				term.Writeln(color.RedString(errorMsg))
+				logger.Error(errorMsg)
 				return false, nil
 			}
 		}
@@ -238,6 +262,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 		if first {
 			term.Spinner().Stop(terminal.SpinnerStatusFail)
 			term.Writeln(color.RedString(err.Error()))
+			logger.Error(err.Error())
 			return false, nil
 		}
 	}

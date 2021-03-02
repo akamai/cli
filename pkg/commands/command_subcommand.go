@@ -34,13 +34,16 @@ import (
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+		logger := log.WithCommand(c.Context, c.Command.Name)
 		term := terminal.Get(c.Context)
 
 		commandName := strings.ToLower(c.Command.Name)
 
 		executable, err := findExec(c.Context, langManager, commandName)
 		if err != nil {
-			return cli.Exit(color.RedString("Executable \"%s\" not found.", commandName), 1)
+			errMsg := color.RedString("Executable \"%s\" not found.", commandName)
+			logger.Error(errMsg)
+			return cli.Exit(errMsg, 1)
 		}
 
 		var packageDir string

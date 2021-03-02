@@ -166,11 +166,11 @@ func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 
 	os.Args[0] = newPath
 	if err != nil {
-		term.Spinner().Start(string(terminal.SpinnerStatusFail))
+		term.Spinner().Fail()
 		term.Writeln(color.RedString(err.Error()))
 		return
 	}
-	term.Spinner().Start(string(terminal.SpinnerStatusOK))
+	term.Spinner().OK()
 }
 
 func firstRunCheckUpgrade(ctx context.Context, cfg config.Config, bannerShown bool) (bool, error) {

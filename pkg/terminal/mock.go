@@ -21,6 +21,11 @@ func (m *Mock) Printf(f string, args ...interface{}) {
 	_ = m.Called(f, args)
 }
 
+// Print mock implementation
+func (m *Mock) Print(f string) {
+	_ = m.Called(f)
+}
+
 // Writeln mock implementation
 func (m *Mock) Writeln(args ...interface{}) (int, error) {
 	a := m.Called(args)

@@ -16,9 +16,12 @@
 
 package app
 
-import "github.com/akamai/cli/pkg/stats"
+import (
+	"context"
+	"github.com/akamai/cli/pkg/stats"
+)
 
-func firstRun() error {
-	stats.FirstRunCheckStats(false)
+func firstRun(ctx context.Context) error {
+	stats.FirstRunCheckStats(ctx, false)
 	return nil
 }

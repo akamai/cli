@@ -21,6 +21,7 @@ import (
 	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
@@ -31,8 +32,18 @@ import (
 )
 
 func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (e error) {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+		logger := log.WithCommand(c.Context, c.Command.Name)
+		start := time.Now()
+		logger.Debug("UNINSTALL START")
+		defer func() {
+			if e == nil {
+				logger.Debugf("UNINSTALL FINISH: %v", time.Now().Sub(start))
+			} else {
+				logger.Errorf("UNINSTALL ERROR: %v", e.Error())
+			}
+		}()
 		for _, cmd := range c.Args().Slice() {
 			if err := uninstallPackage(c.Context, langManager, cmd); err != nil {
 				stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)

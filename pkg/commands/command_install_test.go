@@ -21,18 +21,20 @@ import (
 
 func TestCmdInstall(t *testing.T) {
 	tests := map[string]struct {
-		args      []string
-		init      func(*testing.T, *mocked)
-		teardown  func(*testing.T)
-		withError string
+		args                 []string
+		init                 func(*testing.T, *mocked)
+		teardown             func(*testing.T)
+		binaryResponseStatus int
+		withError            string
 	}{
 		"install from official akamai repository, build from source": {
 			args: []string{"test-cmd"},
 			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -47,8 +49,12 @@ func TestCmdInstall(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
 				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(10)
+				m.term.On("Printf", mock.Anything, []interface{}{"aliases"}).Return().Twice()
+				m.term.On("Printf", mock.Anything, []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", mock.Anything, []interface{}{"commands.test help [command]"}).Return().Once()
+				m.term.On("Printf", mock.Anything).Return().Twice()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-test-cmd"))
@@ -60,7 +66,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -77,6 +83,7 @@ func TestCmdInstall(t *testing.T) {
 				m.langManager.On("Install", "testdata/.akamai-cli/src/cli-test-cmd",
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
 				m.term.On("IsTTY").Return(true).Once()
@@ -90,7 +97,9 @@ func TestCmdInstall(t *testing.T) {
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
 				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
 			},
+			binaryResponseStatus: http.StatusOK,
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-test-cmd"))
 			},
@@ -117,7 +126,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(fmt.Errorf("oops")).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(fmt.Errorf("oops")).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -132,7 +141,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-invalid-json",
-					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo_invalid_json/cli.json", "./testdata/.akamai-cli/src/cli-test-invalid-json")
 					})
@@ -158,7 +167,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -167,6 +176,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.langManager.On("Install", "testdata/.akamai-cli/src/cli-test-cmd",
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(packages.ErrUnknownLang).Once()
 				m.term.On("Spinner").Return(m.term).Once()
@@ -187,7 +197,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -204,6 +214,7 @@ func TestCmdInstall(t *testing.T) {
 				m.langManager.On("Install", "testdata/.akamai-cli/src/cli-test-cmd",
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
 				m.term.On("IsTTY").Return(true).Once()
@@ -219,13 +230,13 @@ func TestCmdInstall(t *testing.T) {
 			},
 			withError: "Unable to install selected package",
 		},
-		"install from official akamai repository, error downloading binary": {
+		"install from official akamai repository, error downloading binary, invalid URL": {
 			args: []string{"test-cmd"},
 			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -251,7 +262,51 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
 				m.term.On("Writeln", mock.Anything).Return(0, nil)
 			},
-			withError: "Unable to install selected package",
+			binaryResponseStatus: http.StatusOK,
+			withError:            "Unable to install selected package",
+			teardown: func(t *testing.T) {
+				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-test-cmd"))
+			},
+		},
+		"install from official akamai repository, error downloading binary, invalid response status": {
+			args: []string{"test-cmd"},
+			init: func(t *testing.T, m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
+				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
+					Run(func(args mock.Arguments) {
+						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
+						require.NoError(t, err)
+						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
+						err = ioutil.WriteFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json", []byte(output), 0755)
+						require.NoError(t, err)
+					})
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+
+				m.langManager.On("Install", "testdata/.akamai-cli/src/cli-test-cmd",
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
+				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
+				m.term.On("IsTTY").Return(true).Once()
+				m.term.On("Confirm", "Binary command(s) found, would you like to download and install it?", true).Return(true, nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Downloading binary...", []interface{}(nil)).Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+
+				// list all packages
+				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
+				m.term.On("Writeln", mock.Anything).Return(0, nil)
+			},
+			binaryResponseStatus: http.StatusNotFound,
+			withError:            "Unable to install selected package",
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-test-cmd"))
 			},
@@ -262,7 +317,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo_no_binary/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -301,6 +356,7 @@ func TestCmdInstall(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "/akamai/cli-test-command/releases/download/1.0.0/akamai-app-1-cmd-1", r.URL.String())
 				assert.Equal(t, http.MethodGet, r.Method)
+				w.WriteHeader(test.binaryResponseStatus)
 				_, err := w.Write([]byte(`binary content`))
 				assert.NoError(t, err)
 			}))

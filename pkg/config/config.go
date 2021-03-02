@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"errors"
+	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -92,6 +93,7 @@ func (c *IniConfig) Save(ctx context.Context) error {
 	term := terminal.Get(ctx)
 	if err := c.file.SaveTo(c.path); err != nil {
 		term.Writeln(err.Error())
+		log.FromContext(ctx).Error(err.Error())
 		return err
 	}
 

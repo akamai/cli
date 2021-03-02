@@ -17,6 +17,7 @@ package stats
 import (
 	"context"
 	"fmt"
+	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -43,6 +44,7 @@ const (
 // FirstRunCheckStats ...
 func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 	term := terminal.Get(ctx)
+	logger := log.FromContext(ctx)
 	cfg := config.Get(ctx)
 	anonymous := color.New(color.FgWhite, color.Bold).Sprint("anonymous")
 
@@ -57,11 +59,19 @@ func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 		bannerShown = true
 		terminal.ShowBanner(ctx)
 	}
+	shareDataMsg := fmt.Sprintf("Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
 	term.Printf("Help Akamai improve Akamai CLI by automatically sending %s diagnostics and usage data.\n", anonymous)
-	term.Writeln("Examples of data being sent include upgrade statistics, and packages installed and updated.")
+	logger.Debug(shareDataMsg)
+	shareDataMsg = "Examples of data being sent include upgrade statistics, and packages installed and updated."
+	term.Writeln(shareDataMsg)
+	logger.Debug(shareDataMsg)
+	shareDataMsg = fmt.Sprintf("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
 	term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
+	logger.Debug(shareDataMsg)
 
-	answer, err := term.Confirm(fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous), true)
+	shareDataMsg = fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
+	answer, err := term.Confirm(shareDataMsg, true)
+	logger.Debug(fmt.Sprintf("%s: %v", shareDataMsg, answer))
 	if err != nil {
 		return bannerShown
 	}
@@ -203,6 +213,7 @@ func TrackEvent(ctx context.Context, category, action, value string) {
 	if debug != "" {
 		body, _ := ioutil.ReadAll(res.Body)
 		term.Writeln(string(body))
+		log.FromContext(ctx).Debug(string(body))
 	}
 }
 

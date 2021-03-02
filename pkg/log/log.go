@@ -45,7 +45,7 @@ type (
 // It handles setting up logging level and log output
 func SetupContext(ctx context.Context, defaultWriter io.Writer) context.Context {
 	logger := &log.Logger{
-		Level:   log.InfoLevel,
+		Level:   log.ErrorLevel,
 		Handler: text.New(defaultWriter),
 	}
 	output := defaultWriter
@@ -54,7 +54,7 @@ func SetupContext(ctx context.Context, defaultWriter io.Writer) context.Context 
 		if err == nil {
 			logger.Level = logLevel
 		} else {
-			logger.Warn("Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
+			logger.Error("Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
 		}
 	}
 	coloredOutput := true

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/akamai/cli/pkg/packages"
 	"io"
 	"io/ioutil"
@@ -145,7 +146,7 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	}()
 
 	if res.StatusCode != http.StatusOK {
-		return err
+		return fmt.Errorf("invalid response status while fetching command binary: %d", res.StatusCode)
 	}
 
 	n, err := io.Copy(bin, res.Body)

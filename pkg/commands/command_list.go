@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"github.com/akamai/cli/pkg/log"
+	"time"
 
 	"github.com/akamai/cli/pkg/terminal"
 
@@ -26,8 +27,18 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 )
 
-func cmdList(c *cli.Context) error {
+func cmdList(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+	start := time.Now()
+	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger.Debug("LIST START")
+	defer func() {
+		if e == nil {
+			logger.Debugf("LIST FINISH: %v", time.Now().Sub(start))
+		} else {
+			logger.Errorf("LIST ERROR: %v", e.Error())
+		}
+	}()
 	term := terminal.Get(c.Context)
 	bold := color.New(color.FgWhite, color.Bold)
 
@@ -52,16 +63,24 @@ func cmdList(c *cli.Context) error {
 		if foundCommands {
 			return nil
 		}
-		term.Writeln(color.YellowString("\nAvailable Commands:\n\n"))
+		headerMsg := "\nAvailable Commands:\n\n"
+		term.Writeln(color.YellowString(headerMsg))
+		logger.Debug(headerMsg)
 
 		for _, remotePackage := range packageList.Packages {
 			for _, command := range remotePackage.Commands {
 				if _, ok := commands[command.Name]; ok {
 					continue
 				}
-				term.Printf(bold.Sprintf("  %s", command.Name))
-				term.Writeln(fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name)))
-				term.Printf("    %s\n", command.Description)
+				commandName := bold.Sprintf("  %s", command.Name)
+				term.Printf(commandName)
+				packageName := fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name))
+				term.Writeln(packageName)
+				commandDescription := fmt.Sprintf("    %s\n", command.Description)
+				term.Printf(commandDescription)
+				logger.Debug(commandName)
+				logger.Debug(packageName)
+				logger.Debug(commandDescription)
 			}
 		}
 
@@ -74,9 +93,12 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 	bold := color.New(color.FgWhite, color.Bold)
 
 	term := terminal.Get(c.Context)
+	logger := log.WithCommand(c.Context, c.Command.Name)
 
 	commands := make(map[string]bool)
-	term.Writeln(color.YellowString("\nInstalled Commands:\n"))
+	installedCmds := color.YellowString("\nInstalled Commands:\n")
+	term.Writeln(installedCmds)
+	logger.Debug(installedCmds)
 	cmds := getCommands(c)
 	for _, cmd := range cmds {
 		for _, command := range cmd.Commands {
@@ -110,10 +132,14 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 
 			term.Writeln()
 			if len(command.Description) > 0 {
-				term.Printf("    %s\n", command.Description)
+				cmdDescription := fmt.Sprintf("    %s\n", command.Description)
+				term.Printf(cmdDescription)
+				logger.Debug(cmdDescription)
 			}
 		}
 	}
+	detailsMsg := fmt.Sprintf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
 	term.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
+	logger.Debug(detailsMsg)
 	return commands
 }
