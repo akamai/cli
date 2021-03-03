@@ -3,28 +3,27 @@ package commands
 import (
 	"fmt"
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"regexp"
-	"runtime"
+	"strings"
 	"testing"
 )
 
 func TestCmdUpgrade(t *testing.T) {
-	binURLRegexp := regexp.MustCompile(`/archive/[0-9]+\.[0-9]+\.[0-9]+\.zip$`)
+	binURLRegexp := regexp.MustCompile(`/releases/download/[0-9]+\.[0-9]+\.[0-9]+/akamai-[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$`)
 	tests := map[string]struct {
 		args              []string
 		respLatestVersion string
 		init              func(*mocked)
+		expectedExitCode  int
 		withError         string
 	}{
 		"last upgrade check is set to never": {
@@ -48,14 +47,13 @@ func TestCmdUpgrade(t *testing.T) {
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Upgrading Akamai CLI", []interface{}(nil)).Return().Once()
-				m.langManager.On("Install", "cli-upgrade-10.0.0/cli-10.0.0", packages.LanguageRequirements{Go: runtime.Version()}, []string{"cli/main.go"}).
-					Return(nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
+			expectedExitCode: 1,
 		},
 		"24 hours passed, upgrade": {
 			args:              []string{"cli.testKey", "testValue"},
@@ -78,14 +76,13 @@ func TestCmdUpgrade(t *testing.T) {
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Upgrading Akamai CLI", []interface{}(nil)).Return().Once()
-				m.langManager.On("Install", "cli-upgrade-10.0.0/cli-10.0.0", packages.LanguageRequirements{Go: runtime.Version()}, []string{"cli/main.go"}).
-					Return(nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
+			expectedExitCode: 1,
 		},
 	}
 
@@ -97,22 +94,26 @@ func TestCmdUpgrade(t *testing.T) {
 					w.Header().Set("Location", test.respLatestVersion)
 					w.WriteHeader(http.StatusFound)
 				} else if binURLRegexp.MatchString(url) {
-					resp, err := ioutil.ReadFile("testdata/cli-upgrade/cli-10.0.0.zip")
+					_, err := w.Write([]byte("binary file"))
 					require.NoError(t, err)
-					_, err = w.Write(resp)
+				} else if strings.HasSuffix(url, ".sig") {
+					// a valid SHA256 checksum for "binary file" string
+					_, err := w.Write([]byte("9a3924b98ad3ce5e51d2c84a7129054c2523f39643a6ea27f8118511ecd4cdba"))
 					require.NoError(t, err)
 				} else {
 					t.Fatalf("unknown URL: %s", url)
 				}
 			}))
 			require.NoError(t, os.Setenv("CLI_REPOSITORY", srv.URL))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
 			command := &cli.Command{
 				Name:   "upgrade",
-				Action: cmdUpgrade(m.langManager),
+				Action: cmdUpgrade,
 			}
 			app, ctx := setupTestApp(command, m)
-			cli.OsExiter = func(rc int) {}
+			cli.OsExiter = func(rc int) {
+				assert.Equal(t, test.expectedExitCode, rc)
+			}
 			args := os.Args[0:1]
 			cli.VersionFlag = &cli.BoolFlag{
 				Name:   "version",
