@@ -31,6 +31,11 @@ vet:
 fmt:
 	go fmt ./...
 
+.PHONY: release
+release:
+	./build.sh
+
+
 .PHONY: pack
 pack:
 	tar -zcvf cli.tar.gz .
