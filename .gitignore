@@ -1,3 +1,13 @@
-vendor/
+# generated files and folders
 build/
+akamai
+*.tar.gz
+coverage.out
+*.log
+
+# IDE directories
 .vscode/
+.idea/
+
+# system directories
+.DS_Store

@@ -73,6 +73,9 @@ func TestCmdUninstall(t *testing.T) {
 				Action: cmdUninstall(m.langManager),
 			}
 			app, ctx := setupTestApp(command, m)
+			defer func() {
+				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-echo-uninstall"))
+			}()
 			args := os.Args[0:1]
 			args = append(args, "uninstall")
 			args = append(args, test.args...)
