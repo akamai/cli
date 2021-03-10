@@ -49,12 +49,12 @@ func SetupContext(ctx context.Context, defaultWriter io.Writer) context.Context 
 		Handler: text.New(defaultWriter),
 	}
 	output := defaultWriter
-	if lvlEnv := os.Getenv("AKAMAI_CLI_LOG"); lvlEnv != "" {
+	if lvlEnv := os.Getenv("AKAMAI_LOG"); lvlEnv != "" {
 		logLevel, err := log.ParseLevel(strings.ToLower(lvlEnv))
 		if err == nil {
 			logger.Level = logLevel
 		} else {
-			logger.Warn("Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
+			logger.Warn("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
 		}
 	}
 	coloredOutput := true

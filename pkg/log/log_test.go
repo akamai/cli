@@ -22,11 +22,11 @@ func TestSetupContext(t *testing.T) {
 			expectedLevel: log.InfoLevel,
 		},
 		"debug level set": {
-			envs:          map[string]string{"AKAMAI_CLI_LOG": "DEBUG"},
+			envs:          map[string]string{"AKAMAI_LOG": "DEBUG"},
 			expectedLevel: log.DebugLevel,
 		},
 		"debug level set, write logs to a file": {
-			envs:          map[string]string{"AKAMAI_CLI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": "./testlogs.txt"},
+			envs:          map[string]string{"AKAMAI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": "./testlogs.txt"},
 			expectedLevel: log.DebugLevel,
 		},
 		"invalid path passed": {
@@ -35,9 +35,9 @@ func TestSetupContext(t *testing.T) {
 			withError:     regexp.MustCompile(`WARN.*Invalid value of AKAMAI_CLI_LOG_PATH`),
 		},
 		"invalid log level passed, output to terminal": {
-			envs:          map[string]string{"AKAMAI_CLI_LOG": "abc"},
+			envs:          map[string]string{"AKAMAI_LOG": "abc"},
 			expectedLevel: log.InfoLevel,
-			withError:     regexp.MustCompile(`WARN.*Unknown AKAMAI_CLI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
+			withError:     regexp.MustCompile(`WARN.*Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
 		},
 	}
 
