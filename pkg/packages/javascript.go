@@ -15,6 +15,7 @@
 package packages
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -42,7 +43,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 	if ver != "" && ver != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s -v: %s", bin, output)
+		logger.Debugf("%s -v: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 		r := regexp.MustCompile("^v(.*?)\\s*$")
 		matches := r.FindStringSubmatch(string(output))
 

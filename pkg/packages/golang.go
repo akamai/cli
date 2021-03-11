@@ -15,6 +15,7 @@
 package packages
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -44,7 +45,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 	if ver != "" && ver != "*" {
 		cmd := exec.Command(bin, "version")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s version: %s", bin, output)
+		logger.Debugf("%s version: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 		r := regexp.MustCompile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 

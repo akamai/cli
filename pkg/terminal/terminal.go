@@ -122,11 +122,6 @@ func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
 	t.Write([]byte(fmt.Sprintf(f, args...)))
 }
 
-// Print writes a formatted message to the output stream
-func (t *DefaultTerminal) Print(f string) {
-	t.Write([]byte(f))
-}
-
 // Writeln writes a line to the terminal
 func (t *DefaultTerminal) Writeln(args ...interface{}) (int, error) {
 	return fmt.Fprintln(t.out, args...)
