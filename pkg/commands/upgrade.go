@@ -32,13 +32,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/fatih/color"
-	"github.com/inconshreveable/go-update"
-	"github.com/kardianos/osext"
-
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
+	"github.com/fatih/color"
+	"github.com/inconshreveable/go-update"
 )
 
 // CheckUpgradeVersion ...
@@ -212,7 +210,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		return false
 	}
 
-	selfPath, err := osext.Executable()
+	selfPath := os.Args[0]
 	if err != nil {
 		term.Spinner().Fail()
 		errMsg := color.RedString("Unable to determine install location")
@@ -225,19 +223,15 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	if err != nil {
 		term.Spinner().Fail()
 		if rerr := update.RollbackError(err); rerr != nil {
-			errMsg := color.RedString("Error occurred while performing upgrade:")
-			term.Writeln(errMsg)
-			logger.Error(errMsg)
+			term.Writeln(color.RedString("Unable to install or rollback, please re-install."))
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			errDesc := color.RedString(err.Error())
-			term.Writeln(errDesc)
-			logger.Error(errDesc)
-			errDesc = color.RedString("Checksums do not match, please try again.")
-			term.Writeln(errDesc)
-			logger.Error(errDesc)
+			term.Writeln(color.RedString(err.Error()))
+			term.Writeln(color.RedString("Checksums do not match, please try again."))
+			return false
 		}
+		term.Writeln(color.RedString(err.Error()))
 		return false
 	}
 
