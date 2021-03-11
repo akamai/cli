@@ -21,8 +21,8 @@ func (m *Mock) Open(path string) error {
 }
 
 // Clone mock
-func (m *Mock) Clone(_ context.Context, path, repo string, isBare bool, progress terminal.Spinner, depth int) error {
-	args := m.Called(path, repo, isBare, progress, depth)
+func (m *Mock) Clone(_ context.Context, path, repo string, isBare bool, progress terminal.Spinner) error {
+	args := m.Called(path, repo, isBare, progress)
 	return args.Error(0)
 }
 

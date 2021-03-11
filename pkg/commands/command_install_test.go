@@ -33,7 +33,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -61,7 +61,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -119,7 +119,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(fmt.Errorf("oops")).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(fmt.Errorf("oops")).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -134,7 +134,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-invalid-json",
-					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo_invalid_json/cli.json", "./testdata/.akamai-cli/src/cli-test-invalid-json")
 					})
@@ -160,7 +160,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -189,7 +189,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -227,7 +227,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -265,7 +265,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
@@ -308,7 +308,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term, 1).Return(nil).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
 						copyFile(t, "./testdata/repo_no_binary/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")

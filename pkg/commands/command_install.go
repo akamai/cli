@@ -143,7 +143,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		return nil, cli.Exit(color.RedString("Package directory already exists (%s)", packageDir), 1)
 	}
 
-	err = gitRepo.Clone(ctx, packageDir, repo, false, spin, 1)
+	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)
 	if err != nil {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return nil, err
