@@ -45,8 +45,9 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 			}
 		}()
 		for _, cmd := range c.Args().Slice() {
-			if err := uninstallPackage(c.Context, langManager, cmd); err != nil {
+			if err := uninstallPackage(c.Context, langManager, cmd, logger); err != nil {
 				stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)
+				logger.Error(err.Error())
 				return cli.Exit(color.RedString(err.Error()), 1)
 			}
 			stats.TrackEvent(c.Context, "package.uninstall", "success", cmd)
@@ -56,7 +57,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 	}
 }
 
-func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string) error {
+func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger log.Logger) error {
 	term := terminal.Get(ctx)
 
 	exec, err := findExec(ctx, langManager, cmd)
@@ -65,6 +66,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 	}
 
 	term.Spinner().Start(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
+	logger.Debugf("Attempting to uninstall \"%s\" command...", cmd)
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -75,11 +77,13 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 
 	if repoDir == "" {
 		term.Spinner().Fail()
+		logger.Error("unable to uninstall, was it installed using \"akamai install\"?")
 		return fmt.Errorf("unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?")
 	}
 
 	if err := os.RemoveAll(repoDir); err != nil {
 		term.Spinner().Fail()
+		logger.Errorf("unable to remove directory: %s", repoDir)
 		return fmt.Errorf("unable to remove directory: %s", repoDir)
 	}
 

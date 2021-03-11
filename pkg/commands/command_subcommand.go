@@ -66,15 +66,17 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 
 			if err == nil {
-				answer, err := term.Confirm("Would y>>/dev/stderrou like to reinstall it", true)
+				answer, err := term.Confirm("Would you like to reinstall it", true)
+				logger.Debugf("Would you like to reinstall it? %v", answer)
 				if err != nil {
 					return err
 				}
 				if !answer {
+					logger.Error(packages.ErrPackageNeedsReinstall.Error())
 					return cli.Exit(color.RedString(packages.ErrPackageNeedsReinstall.Error()), -1)
 				}
 
-				if err = uninstallPackage(c.Context, langManager, commandName); err != nil {
+				if err = uninstallPackage(c.Context, langManager, commandName, logger); err != nil {
 					return err
 				}
 

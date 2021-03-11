@@ -93,12 +93,10 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 	bold := color.New(color.FgWhite, color.Bold)
 
 	term := terminal.Get(c.Context)
-	logger := log.WithCommand(c.Context, c.Command.Name)
 
 	commands := make(map[string]bool)
 	installedCmds := color.YellowString("\nInstalled Commands:\n")
 	term.Writeln(installedCmds)
-	logger.Debug(installedCmds)
 	cmds := getCommands(c)
 	for _, cmd := range cmds {
 		for _, command := range cmd.Commands {
@@ -134,12 +132,9 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 			if len(command.Description) > 0 {
 				cmdDescription := fmt.Sprintf("    %s\n", command.Description)
 				term.Printf(cmdDescription)
-				logger.Debug(cmdDescription)
 			}
 		}
 	}
-	detailsMsg := fmt.Sprintf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
 	term.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))
-	logger.Debug(detailsMsg)
 	return commands
 }
