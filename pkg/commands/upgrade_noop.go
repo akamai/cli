@@ -18,7 +18,6 @@ package commands
 
 import (
 	"context"
-	"github.com/akamai/cli/pkg/packages"
 	"github.com/urfave/cli/v2"
 )
 
@@ -30,10 +29,10 @@ func getLatestReleaseVersion() string {
 	return "0"
 }
 
-func UpgradeCli(ctx context.Context, latestVersion string, langManager packages.LangManager) bool {
+func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	return false
 }
 
-func getUpgradeCommand(langManager packages.LangManager) *cli.Command {
+func getUpgradeCommand() *cli.Command {
 	return nil
 }
