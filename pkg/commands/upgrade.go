@@ -32,13 +32,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/fatih/color"
-	"github.com/inconshreveable/go-update"
-	"github.com/kardianos/osext"
-
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
+	"github.com/fatih/color"
+	"github.com/inconshreveable/go-update"
 )
 
 // CheckUpgradeVersion ...
@@ -210,7 +208,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		return false
 	}
 
-	selfPath, err := osext.Executable()
+	selfPath := os.Args[0]
 	if err != nil {
 		term.Spinner().Fail()
 		term.Writeln(color.RedString("Unable to determine install location"))
@@ -227,7 +225,9 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
 			term.Writeln(color.RedString(err.Error()))
 			term.Writeln(color.RedString("Checksums do not match, please try again."))
+			return false
 		}
+		term.Writeln(color.RedString(err.Error()))
 		return false
 	}
 
