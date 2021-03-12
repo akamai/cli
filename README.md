@@ -58,37 +58,34 @@ This command compiles and globally installs the binary with all necessary depend
 
 ### Install with Docker
 
-A container with Akamai CLI and pre-installed public packages is also available in [Docker](http://docker.com). To start, run the following command:
+A container with Akamai CLI and pre-installed public packages is also available in [Docker](http://docker.com). 
+All images are built using Dockerfiles from [akamai/akamai-docker](https://github.com/akamai/akamai-docker) repository.
+Built are available on [Docker Hub](https://hub.docker.com/u/akamai).
+
+
+To start, run the following command:
 
 ```sh
-$ docker run -ti -v $HOME/.edgerc:/root/.edgerc akamaiopen/cli [arguments]
+$ docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell
 ```
 
-> **Note:** This mounts your local `$HOME/.edgerc`, and `$HOME/.akamai-cli-docker` into the container. To change the local path, modify the `-v` arguments.
+This will create and run a container with Akamai Development Environment, which has `akamai` command, as well as part of the packages, already installed. 
+For details, please visit the [akamai/akamai-docker](https://github.com/akamai/akamai-docker) repository.
 
-If you want to transparently use docker when calling the `akamai` command, add the following code block to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
+> **Note:** This mounts your local `$HOME/.edgerc` into the container. To change the local path, modify the `-v` argument.
 
+If you want to open Akamai Development Environment when calling the `akamai` command, add the following code block to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
+```bash
+alias akamai='docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell'
+```
+
+In order to use the local .akamai-cli directory for configuration and managing the installed packages, you can mount your local .akamai-cli when executing the `docker run` command.
+This is achieved by using the `-v` flag, similar to mounting the .edgerc credentials:
 ```sh
-function akamai {
-    if [[ `docker ps | grep akamai-cli$ | wc -l` -eq 1 ]]; then
-        docker exec -it akamai-cli akamai $@;
-    elif docker start akamai-cli > /dev/null 2>&1 && sleep 3 && docker exec -it akamai-cli akamai $@; then
-        return 0;
-    else
-        echo "Creating new docker container"
-        mkdir -p $HOME/.akamai-cli-docker
-        docker create -it -v $HOME/.edgerc:/root/.edgerc -v $HOME/.akamai-cli-docker:/cli --name akamai-cli akamai/cli > /dev/null 2>&1 && akamai $@;
-    fi;
-}
+$ docker run -it -v $HOME/.akamai-cli:/cli/.akamai-cli akamai/shell
 ```
 
-You can then run `akamai [arguments]` command and it automatically creates or re-uses a "persistent" container.
-
-Docker containers are ephemeral and run for as long as the command (PID 1) inside them stays running. To let you re-use the same container, Akamai uses `akamai --daemon` command that runs indefinitely inside the container.
-
-To restart the container created by the function above, you can safely run `docker stop akamai-cli` followed by `docker start akamai-cli`.
-
-The script above persists your Akamai CLI installation with configuration and packages in the `$HOME/.akamai-cli-docker` directory.
+The script above persists your Akamai CLI installation with configuration and packages in the `$HOME/.akamai-docker` directory.
 
 ### Compile from Source
 
