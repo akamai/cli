@@ -35,7 +35,7 @@ You can also use [Homebrew](#install-with-homebrew), [Docker](#install-with-dock
 
 Once you download the appropriate binary for your system, make it executable, and optionally move it to `$PATH`. Run the following commands:
 
-```bash
+```sh
 $ chmod +x ~/Downloads/akamai-<VERSION>-<PLATFORM>
 $ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
 ```
