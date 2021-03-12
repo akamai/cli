@@ -4,7 +4,6 @@
 * Synced logs with terminal output in most commands.
 * Fixed module update issue.
 
-
 ## Enhancements
 * Code improvements: unit test coverage improvement and project structure refactoring.
 * Glide build tool was dropped in favor of go modules.
