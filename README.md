@@ -58,29 +58,28 @@ This command compiles and globally installs the binary with all necessary depend
 
 ### Install with Docker
 
-A container with Akamai CLI and pre-installed public packages is also available in [Docker](http://docker.com). 
-All images are built using Dockerfiles from [akamai/akamai-docker](https://github.com/akamai/akamai-docker) repository.
-Built are available on [Docker Hub](https://hub.docker.com/u/akamai).
+A container with Akamai CLI and pre-installed public packages is also available in [Docker](http://docker.com).
+All images are built using Docker files from the [akamai-docker](https://github.com/akamai/akamai-docker) repository.
+You can find all Akamai builds on [Docker Hub](https://hub.docker.com/u/akamai).
 
-
-To start, run the following command:
+To start, create and run the container with Akamai Development Environment:
 
 ```sh
 $ docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell
 ```
 
-This will create and run a container with Akamai Development Environment, which has `akamai` command, as well as part of the packages, already installed. 
-For details, please visit the [akamai/akamai-docker](https://github.com/akamai/akamai-docker) repository.
-
 > **Note:** This mounts your local `$HOME/.edgerc` into the container. To change the local path, modify the `-v` argument.
 
+The `akamai` command and basic packages are already installed. See the [akamai-docker](https://github.com/akamai/akamai-docker) repository for more details.
+
 If you want to open Akamai Development Environment when calling the `akamai` command, add the following code block to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
-```bash
+
+```sh
 alias akamai='docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell'
 ```
 
-In order to use the local .akamai-cli directory for configuration and managing the installed packages, you can mount your local .akamai-cli when executing the `docker run` command.
-This is achieved by using the `-v` flag, similar to mounting the .edgerc credentials:
+If you want to use a local `.akamai-cli` directory to configure and manage your installed packages, modify the `-v` argument:
+
 ```sh
 $ docker run -it -v $HOME/.akamai-cli:/cli/.akamai-cli akamai/shell
 ```
@@ -106,12 +105,19 @@ To compile Akamai CLI from source:
 
 5. Move the binary (`akamai` or `akamai.exe`) in to your `$PATH`.
 
+### API credentials
+
+Akamai-branded packages use the standard EdgeGrid authentication with the `.edgerc` file. By default, the CLI looks for credentials in your `$HOME` directory.
+
+You can override both the file location or the credentials section by passing the `--edgerc` or `--section` flags to each command.
+
+To set up your `.edgerc` file, see [Get Started with APIs](#https://developer.akamai.com/api/getting-started#setup).
 
 ## Upgrade to a newer version
 
 Unless you installed Akamai CLI with Homebrew, you can enable automatic check for updates when you run Akamai CLI v0.3.0 or later for the first time.
 
-If a new version is available, CLI prompts you to download it. After the update, your original command is executed using the new version.
+If a new version is available, CLI prompts you to download it. Akamai CLI automatically checks the `SHA256` signature of the new version to verify it is not corrupt. After the update, your original command is executed using the new version.
 
 For information on manual upgrade and the supported Homebrew command, see `akamai upgrade`.
 
@@ -187,8 +193,7 @@ Use the following commands to manage the packages and the toolkit itself:
     - `get`
     - `set`
     - `list`
-    - `unset`
-    - `rm`
+    - `unset` [`rm`]
 
 
 ### Installed commands
