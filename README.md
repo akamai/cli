@@ -8,32 +8,34 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/akamai/cli)](https://goreportcard.com/report/github.com/akamai/cli) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_shield)
 
 
-Akamai CLI is an ever-growing CLI toolkit that lets you configure Akamai platform and products directly from the command line. You can install ready-to-use product packages or build your own custom solutions to manage from the CLI.
+Use Akamai CLI to configure Akamai platform and products directly from the command line. You can install ready-to-use product packages or build your own custom solutions to manage from CLI.
 
 ### Benefits
 
 - Simple and task-oriented interface
 - Consistent user experience across all Akamai products
 - Wide range of supported packages and capabilities
-- Ability to extend or build your own CLI packages with the supported programming languages, including Go, Python, and JavaScript
+- Extend or build your own CLI packages with supported programming languages such as Go, Python, and JavaScript
 
 ### Available Packages
 
-Browse the list of available packages [here](https://developer.akamai.com/cli).
+Browse the list of [available packages](https://developer.akamai.com/cli).
 
 ## Install Akamai CLI
 
-Akamai CLI doesn't have any dependencies and is quick to install. However, you may need additional runtime for the packages as they can be based on different programming languages.
+Akamai CLI doesn't have any dependencies and is quick to install. However, you may need an additional runtime for packages depending on the programming language they are based on.
 
-Install Akamai CLI by downloading an applicable [release binary](https://github.com/akamai/cli/releases). Follow the detailed instructions for various operating systems below.
+Install Akamai CLI by downloading a [release binary](https://github.com/akamai/cli/releases). See instructions for various operating systems.
 
-You can also use [Homebrew](#install-with-homebrew), [Docker](#install-with-docker) or compile from [source](#compile-from-source).
+You can also use [Homebrew](#install-with-homebrew), [Docker](#install-with-docker), or compile from [source](#compile-from-source).
 
 ### Install from binaries
 
+Follow the instructions for your operating system.
+
 #### Linux and macOS
 
-Once you download the appropriate binary for your system, make it executable, and optionally move it to `$PATH`. Run the following commands:
+Once you download the appropriate binary for your system, make it executable, and optionally make it available in your `$PATH`. Run the following commands:
 
 ```sh
 $ chmod +x ~/Downloads/akamai-<VERSION>-<PLATFORM>
@@ -42,11 +44,15 @@ $ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
 
 #### Windows
 
-Once you download the appropriate binary for your system, simply execute the binary from the command line.
+Once you download the appropriate binary for your system, simply execute the binary from the command line. For example:
+
+```sh
+$ akamai.exe help
+```
 
 ### Install with Homebrew
 
-You can also install Akamai CLI using the Homebrew package manager. If you haven’t used it before, check [Homebrew documentation](https://docs.brew.sh/Installation) for system requirements and installation guide.
+You can also install Akamai CLI using the Homebrew package manager. If you haven’t used it before, check [Homebrew documentation](https://docs.brew.sh/Installation) for system requirements and read the installation guide.
 
 Once set up, simply run:
 
@@ -72,7 +78,7 @@ $ docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell
 
 The `akamai` command and basic packages are already installed. See the [akamai-docker](https://github.com/akamai/akamai-docker) repository for more details.
 
-If you want to open Akamai Development Environment when calling the `akamai` command, add the following code block to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
+If you want to open Akamai Development Environment when calling the `akamai` command, add the following line to your `.bashrc`, `.bash_profile`, or `.zshrc` files:
 
 ```sh
 alias akamai='docker run -it -v $HOME/.edgerc:/root/.edgerc:ro akamai/shell'
@@ -84,7 +90,7 @@ If you want to use a local `.akamai-cli` directory to configure and manage your 
 $ docker run -it -v $HOME/.akamai-cli:/cli/.akamai-cli akamai/shell
 ```
 
-The script above persists your Akamai CLI installation with configuration and packages in the `$HOME/.akamai-docker` directory.
+This command installs the CLI and persists the configuration and packages in `$HOME/.akamai-docker` directory.
 
 ### Compile from Source
 
@@ -93,37 +99,49 @@ The script above persists your Akamai CLI installation with configuration and pa
 To compile Akamai CLI from source:
 
 1. Change the working directory:
-   `cd $GOPATH`
-2. Fetch the package:  
-    `git clone github.com/akamai/cli`
-3.  Go to the package directory:  
-    `cd cli`
+
+    ```sh
+    $ cd $GOPATH
+    ```
+
+2. Fetch the package:
+
+    ```sh
+    $ git clone github.com/akamai/cli
+    ```
+
+3.  Go to the package directory:
+
+    ```sh
+    $ cd cli
+    ```
+
 4. Compile the binary:  
 
-  - For Linux/macOS/*nix, run: `go build -o cli/main.go`
+  - For Linux, macOS, and other Unix-based systems, run: `go build -o cli/main.go`
   - For Windows, run: `go build -o akamai.exe cli/main.go`
 
-5. Move the binary (`akamai` or `akamai.exe`) in to your `$PATH`.
+5. Move the `akamai` or `akamai.exe` binary so that it's available in your `$PATH`.
 
 ### API credentials
 
-Akamai-branded packages use the standard EdgeGrid authentication with the `.edgerc` file. By default, the CLI looks for credentials in your `$HOME` directory.
+Akamai-branded packages use a `.edgerc` file for standard EdgeGrid authentication. By default, CLI looks for credentials in your `$HOME` directory.
 
 You can override both the file location or the credentials section by passing the `--edgerc` or `--section` flags to each command.
 
-To set up your `.edgerc` file, see [Get Started with APIs](#https://developer.akamai.com/api/getting-started#setup).
+To set up your `.edgerc` file, see [Get started with APIs](https://developer.akamai.com/api/getting-started#setup).
 
-## Upgrade to a newer version
+## Upgrade
 
 Unless you installed Akamai CLI with Homebrew, you can enable automatic check for updates when you run Akamai CLI v0.3.0 or later for the first time.
 
-If a new version is available, CLI prompts you to download it. Akamai CLI automatically checks the `SHA256` signature of the new version to verify it is not corrupt. After the update, your original command is executed using the new version.
+If a new version is available, CLI prompts you to download it. Akamai CLI automatically checks the new version's `SHA256` signature to verify it is not corrupt. After the update, your original command executes using the new version.
 
-For information on manual upgrade and the supported Homebrew command, see `akamai upgrade`.
+For information on manual upgrade and the supported Homebrew command, see `akamai upgrade` in [Built-in commands](#built-in-commands).
 
 ## How to use Akamai CLI
 
-All CLI commands start with the `akamai` binary, followed by a `command`, and optionally an action or other arguments.
+All CLI commands start with the `akamai` binary, followed by a command, and optionally an action or other arguments.
 
 ```sh
 akamai [command] [action] [arguments...]
@@ -131,25 +149,25 @@ akamai [command] [action] [arguments...]
 
 ### Built-in commands
 
-Use the following commands to manage the packages and the toolkit itself:
+Use the following commands to manage packages and the toolkit:
 
 - `help`
 
-    `akamai help` shows basic usage info, and available commands. To learn more about a specific command, run `akamai help <command> [sub-command]`.
+    `akamai help` shows basic usage info and available commands. To learn more about a specific command, run `akamai help <command> [sub-command]`.
 
 - `list`
 
-    `akamai list` shows you a list of available commands. If a command doesn't display, ensure the binary is executable, and in your `$PATH`.
+    `akamai list` shows a list of available commands. If a command doesn't display, ensure the binary is executable and in your `$PATH`.
 
 - `install`
 
-    The `install` command lets you install new packages from a git repository.
+    This installs new packages from a git repository.
 
     `akamai install <package name or repository URL>` downloads and installs the command repository to the `$HOME/.akamai-cli` directory.
 
-    For Github repositories, specify `user/repo` or `organization/repo`. For official Akamai packages, you can omit the `akamai/cli-` prefix, so to install `akamai/cli-property` it's enough to run `property`.
+    For Github repositories, specify `user/repo` or `organization/repo`. For official Akamai packages, you can omit the `akamai/cli-` prefix. For example, to install `akamai/cli-property`, it's enough to run `property`.
 
-    The following example installs Akamai CLI for Property Manager from Github using various aliases:
+    These examples all install Akamai CLI for Property Manager from Github using various aliases:
 
     ```sh
     akamai install property
@@ -157,13 +175,13 @@ Use the following commands to manage the packages and the toolkit itself:
     akamai install https://github.com/akamai/cli-property.git
     ```
 
-    You can specify multiple packages to install at once.
+    The `install` command accepts more than one argument, so you can install many packages at once using any of these types of syntax.
 
 - `uninstall`
 
     To remove all the package files you installed with `akamai install`, run `akamai uninstall <command>`, where `<command>` is any command within that package.
 
-    You can specify multiple packages to uninstall at once.
+    The `uninstall` command accepts more than one argument, so you can uninstall many packages at once.
 
 - `update`
 
@@ -185,43 +203,42 @@ Use the following commands to manage the packages and the toolkit itself:
 
 - `search`
 
-    Search all the packages published on developer.akamai.com for the submitter string. Search is performed against the package name, alias, and description. You can find the search results in the console output.
+    Search all the packages published on [developer.akamai.com](https://developer.akamai.com/) for the submitter string. Searches apply to the package name, alias, and description. Search results appear in the console output.
 
 - `config`
 
-    View or modify the configuration settings that drive the common CLI behavior. Akamai CLI maintains a local config in a file in its root directory. The config command supports the following sub-commands:
+    View or modify the configuration settings that drive the common CLI behavior. Akamai CLI maintains a local configuration file in its root directory. The `config` command supports these sub-commands:
     - `get`
     - `set`
     - `list`
-    - `unset` [`rm`]
-
+    - `unset` or `rm`
 
 ### Installed commands
 
-This type of commands depends on the packages you installed. To use an installed command, run `akamai <command> <action> [arguments]`, e.g.
+This commands depend on your installed packages. To use an installed command, run `akamai <command> <action> [arguments]`, for example:
 
 ```sh
 akamai property create example.org
 ```
-For the list of supported commands, see the [documentation](https://developer.akamai.com/cli-packages) for your package.
+For the list of supported commands, see the [documentation](https://developer.akamai.com/cli-packages) for each package.
 
 ### Custom commands
 
-Akamai CLI provides a framework for writing custom CLI commands. See extended [Akamai CLI documentation](https://developer.akamai.com/cli) to learn how to contribute, create custom packages and build commands.
+Akamai CLI provides a framework for writing custom CLI commands. See the extended [Akamai CLI documentation](https://developer.akamai.com/cli) to learn how to contribute, create custom packages, and build commands.
 
-Before you start building your own commands, make sure you meet the following prerequisites:
+Before you start to build your own commands, make sure you meet these prerequisites:
 
-1. The package must be available through a Git repository that supports standard SSH public key authentication.
-2. The executable must be named `akamai-<command>` or `akamai<Command>`
-3. Verify that `akamai-command help` works for you. Ideally, CLI should allow for `akamai-command help <sub-command>`
-4. If you're using OPEN APIs, the executable must support the `.edgerc` format, and must support both `--edgerc` and `--section` flags
-5. If an action fails to complete, the executable should exit with a non-zero status code (however, `akamai` will only return `0` on success or `1` on failure)
+1. The package is available through a Git repository that supports standard SSH public key authentication.
+2. The executable is named `akamai-<command>` using dashed-lowercase, or `akamai<Command>` using camelCase.
+3. Verify that `akamai-command help` works for you. Ideally, CLI should allow for `akamai-command help <sub-command>`.
+4. If you're using Akamai APIs, the executable must support the `.edgerc` format, and must support both `--edgerc` and `--section` flags.
+5. If an action fails to complete, the executable exits with a non-zero status code.
 
-As long as the result is executable, you can use any of the supported languages to build your commands, including **Python, Go,** and **JavaScript**.
+As long as the result is executable, you can use any of the supported languages to build your commands, including Python, Go, and JavaScript.
 
 ### Logging
 
-To see additional log information, prepend `AKAMAI_LOG=<debug-level>` to any CLI command. You can specify one of the following logging levels:
+To see additional log information, prepend `AKAMAI_LOG=<logging-level>` to any CLI command. You can specify one of the following logging levels:
 
 - `fatal`
 - `error`
@@ -234,6 +251,8 @@ For example, to see extra debug information while updating the property package,
 ```sh
 AKAMAI_CLI_LOG=debug akamai update property
 ```
+
+Each level is a progressive superset of all previous tiers. The output for `debug` also includes `fatal`, `error`, `warn`, and `info` logs.
 
 If you want to redirect logs to a file, use the `AKAMAI_CLI_LOG_PATH` environmental variable:
 
@@ -253,7 +272,7 @@ If you want to use other languages or package managers, make sure you include al
 
 ## Command package metadata
 
-The package you install must include a `cli.json` file. This is where you specify the command language runtime version and define all commands included in package.
+The package you install needs a `cli.json` file. This is where you specify the command language runtime version and define all commands included in package.
 
 ### Format
 
@@ -263,8 +282,8 @@ The package you install must include a `cli.json` file. This is where you specif
   - `python`
 
 - `commands`: Lists commands included in the package.
-  - `name`: The command name (used as the executable name).
-  - `aliases`: An array of aliases that can be used to invoke the command.
+  - `name`: The command name, used as the executable name.
+  - `aliases`: An array of aliases that invoke the same command.
   - `version`: The command version.
   - `description`: A short description for the command.
   - `bin`: A URL to fetch a binary package from if it cannot be installed from source.
