@@ -1,0 +1,91 @@
+{
+  "version": 1.0,
+  "packages": [
+    {
+      "title": "Test CLI",
+      "name": "cli-1",
+      "commands": [
+        {
+          "name": "title-cmd",
+          "version": "1.0.0",
+          "description": "test for match on title"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Test CLI",
+      "name": "test-cli",
+      "version": "1.0.0",
+      "commands": [
+        {
+          "aliases": ["test", "abc"],
+          "name": "test-cmd",
+          "version": "1.0.0",
+          "description": "test for highest score"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Some CLI",
+      "name": "cli-2",
+      "commands": [
+        {
+          "name": "desc-cmd",
+          "version": "1.0.0",
+          "description": "test - match on description"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Unmatched CLI",
+      "name": "cli-3",
+      "commands": [
+        {
+          "name": "some-cmd",
+          "version": "1.0.0",
+          "description": "no match"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Some CLI",
+      "name": "cli-4",
+      "commands": [
+        {
+          "name": "test",
+          "version": "1.0.0",
+          "description": "test for match on command name"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Test no cmd match",
+      "name": "test-no-cmd-match",
+      "commands": [
+        {
+          "name": "cmd-5",
+          "version": "1.0.0",
+          "description": "title and name match, but no match on command"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    }
+  ]
+}

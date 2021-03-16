@@ -1,0 +1,4 @@
+[cli]
+enable-cli-statistics = 
+config-version        = 1.1
+
