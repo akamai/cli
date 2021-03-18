@@ -10,6 +10,7 @@
 
 Use Akamai CLI to configure Akamai platform and products directly from the command line. You can install ready-to-use product packages or build your own custom solutions to manage from CLI.
 
+
 ### Benefits
 
 - Simple and task-oriented interface
