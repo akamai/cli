@@ -37,9 +37,7 @@ func TestCreateApp(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, log.FromContext(cliCtx.Context))
 	assert.Equal(t, "https://test.akamai.com", os.Getenv("HTTP_PROXY"))
-	assert.Equal(t, "https://test.akamai.com", os.Getenv("http_proxy"))
 	assert.Equal(t, "https://test.akamai.com", os.Getenv("HTTPS_PROXY"))
-	assert.Equal(t, "https://test.akamai.com", os.Getenv("https_proxy"))
 }
 
 func hasFlag(app *cli.App, name string) bool {
