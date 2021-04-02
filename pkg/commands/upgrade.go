@@ -86,16 +86,11 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 		comp := version.Compare(version.Version, latestVersion)
 		if comp == 1 {
 			term.Spinner().Stop(terminal.SpinnerStatusOK)
-			answer, err := term.Confirm(fmt.Sprintf(
+			if answer, err := term.Confirm(fmt.Sprintf(
 				"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
 				color.BlueString(latestVersion),
 				color.BlueString(version.Version),
-			), true)
-			if err != nil {
-				return ""
-			}
-
-			if !answer {
+			), true); err != nil || !answer {
 				return ""
 			}
 			return latestVersion
@@ -212,13 +207,6 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	}
 
 	selfPath := os.Args[0]
-	if err != nil {
-		term.Spinner().Fail()
-		errMsg := color.RedString("Unable to determine install location")
-		term.Writeln(errMsg)
-		logger.Error(errMsg)
-		return false
-	}
 
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
 	if err != nil {

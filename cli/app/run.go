@@ -2,8 +2,11 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/commands"
@@ -19,6 +22,13 @@ import (
 func Run() int {
 	ctx := context.Background()
 	term := terminal.Color()
+
+	var pathErr *os.PathError
+	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
+		term.WriteErrorf("Unable to remove old executable: %s", err.Error())
+		return 7
+	}
+
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
 		term.WriteErrorf("Unable to set AKAMAI_CLI: %s", err.Error())
 		return 1
@@ -74,6 +84,11 @@ func Run() int {
 	}
 
 	return 0
+}
+
+func cleanupUpgrade() error {
+	oldFilename := fmt.Sprintf(".%s.old", os.Args[0])
+	return os.Remove(oldFilename)
 }
 
 func checkUpgrade(ctx context.Context) {
