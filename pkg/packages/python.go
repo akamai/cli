@@ -54,7 +54,7 @@ func (l *langManager) installPython(ctx context.Context, dir, cmdReq string) err
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Python Version found: %s", matches[1])
-			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "python", cmdReq, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "python", cmdReq, matches[1])
 		}
 	}
 
@@ -79,20 +79,20 @@ func findPythonBin(ctx context.Context, cmdExecutor executor, ver string) (strin
 	if ver == "" || ver == "*" {
 		bin, err = lookForBins(cmdExecutor, "python3", "python2", "python")
 		if err != nil {
-			return "", fmt.Errorf("%w: %s", ErrRuntimeNotFound, "python")
+			return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python")
 		}
 		return bin, nil
 	}
 	if version.Compare("3.0.0", ver) != -1 {
 		bin, err = lookForBins(cmdExecutor, "python3", "python")
 		if err != nil {
-			return "", fmt.Errorf("%w: %s", ErrRuntimeNotFound, "python 3")
+			return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python 3")
 		}
 		return bin, nil
 	}
 	bin, err = lookForBins(cmdExecutor, "python2", "python", "python3")
 	if err != nil {
-		return "", fmt.Errorf("%w: %s", ErrRuntimeNotFound, "python")
+		return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python")
 	}
 	return bin, nil
 }
@@ -147,7 +147,7 @@ func installPythonDepsPip(ctx context.Context, cmdExecutor executor, bin, dir st
 		if errors.As(err, &exitErr) {
 			logger.Debugf("Unable execute package manager (PYTHONUSERBASE=%s %s): \n %s", dir, strings.Join(args, " "), exitErr.Stderr)
 		}
-		return fmt.Errorf("%w: %s", ErrPackageManagerExec, "pip")
+		return fmt.Errorf("%w: %s. Please verify pip system dependencies (setuptools, python3-dev, gcc, libffi-dev, openssl-dev)", ErrPackageManagerExec, "pip")
 	}
 	return nil
 }

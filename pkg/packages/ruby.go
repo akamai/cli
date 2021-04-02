@@ -32,7 +32,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 
 	bin, err := l.commandExecutor.LookPath("ruby")
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "ruby")
+		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "ruby")
 	}
 
 	logger.Debugf("Ruby binary found: %s", bin)
@@ -50,7 +50,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("Ruby Version found: %s", matches[1])
-			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "ruby", cmdReq, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "ruby", cmdReq, matches[1])
 		}
 	}
 
