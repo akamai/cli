@@ -28,16 +28,61 @@ func TestCreateApp(t *testing.T) {
 	assert.True(t, hasFlag(app, "proxy"))
 	assert.True(t, hasFlag(app, "daemon"))
 	assert.NotNil(t, app.Before)
+}
 
-	set := flag.NewFlagSet("test", 0)
-	set.String("proxy", "", "")
-	cliCtx := cli.NewContext(app, set, nil)
-	require.NoError(t, cliCtx.Set("proxy", "https://test.akamai.com"))
-	err := app.Before(cliCtx)
-	require.NoError(t, err)
-	assert.NotNil(t, log.FromContext(cliCtx.Context))
-	assert.Equal(t, "https://test.akamai.com", os.Getenv("HTTP_PROXY"))
-	assert.Equal(t, "https://test.akamai.com", os.Getenv("HTTPS_PROXY"))
+func TestCreateAppProxy(t *testing.T) {
+	tests := map[string]struct {
+		proxyValue   string
+		expectedEnvs map[string]string
+	}{
+		"no proxy": {
+			expectedEnvs: map[string]string{
+				"HTTP_PROXY":  "",
+				"HTTPS_PROXY": "",
+			},
+		},
+		"proxy set without protocol": {
+			proxyValue: "test.akamai.com",
+			expectedEnvs: map[string]string{
+				"HTTP_PROXY":  "http://test.akamai.com",
+				"HTTPS_PROXY": "http://test.akamai.com",
+			},
+		},
+		"proxy set with http": {
+			proxyValue: "http://test.akamai.com",
+			expectedEnvs: map[string]string{
+				"HTTP_PROXY":  "http://test.akamai.com",
+				"HTTPS_PROXY": "http://test.akamai.com",
+			},
+		},
+		"proxy set with https": {
+			proxyValue: "https://test.akamai.com",
+			expectedEnvs: map[string]string{
+				"HTTP_PROXY":  "https://test.akamai.com",
+				"HTTPS_PROXY": "https://test.akamai.com",
+			},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			term := terminal.Color()
+			ctx := terminal.Context(context.Background(), term)
+			app := CreateApp(ctx)
+			set := flag.NewFlagSet("test", 0)
+			set.String("proxy", "", "")
+			cliCtx := cli.NewContext(app, set, nil)
+			if test.proxyValue != "" {
+				require.NoError(t, cliCtx.Set("proxy", test.proxyValue))
+			}
+			err := app.Before(cliCtx)
+			require.NoError(t, err)
+			assert.NotNil(t, log.FromContext(cliCtx.Context))
+			for k, v := range test.expectedEnvs {
+				assert.Equal(t, v, os.Getenv(k))
+				require.NoError(t, os.Unsetenv(k))
+			}
+		})
+	}
 }
 
 func hasFlag(app *cli.App, name string) bool {
