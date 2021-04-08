@@ -37,7 +37,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 	logger := log.FromContext(ctx)
 	bin, err := l.commandExecutor.LookPath("go")
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "go")
+		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
 	}
 
 	logger.Debugf("Go binary found: %s", bin)
@@ -55,7 +55,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 
 		if version.Compare(ver, matches[1]) == -1 {
 			logger.Debugf("Go Version found: %s", matches[1])
-			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "go", ver, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "go", ver, matches[1])
 		}
 	}
 
@@ -129,7 +129,7 @@ func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string)
 func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) error {
 	bin, err := cmdExecutor.LookPath("go")
 	if err != nil {
-		err = fmt.Errorf("%w: %s", ErrRuntimeNotFound, "go")
+		err = fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
 		logger.Debug(err.Error())
 		return err
 	}

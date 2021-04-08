@@ -29,7 +29,7 @@ import (
 func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error {
 	bin, err := l.commandExecutor.LookPath("php")
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "php")
+		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "php")
 	}
 
 	logger := log.FromContext(ctx)
@@ -49,7 +49,7 @@ func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error 
 
 		if version.Compare(cmdReq, matches[1]) == -1 {
 			logger.Debugf("PHP Version found: %s", matches[1])
-			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "php", cmdReq, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "php", cmdReq, matches[1])
 		}
 	}
 
