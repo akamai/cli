@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/akamai/cli/pkg/app"
@@ -87,7 +88,12 @@ func Run() int {
 }
 
 func cleanupUpgrade() error {
-	oldFilename := fmt.Sprintf(".%s.old", os.Args[0])
+	oldFilename := os.Args[0]
+	if strings.HasSuffix(strings.ToLower(oldFilename), ".exe") {
+		oldFilename = fmt.Sprintf(".%s.old", oldFilename)
+	} else {
+		oldFilename = fmt.Sprintf(".%s.exe.old", oldFilename)
+	}
 	return os.Remove(oldFilename)
 }
 
