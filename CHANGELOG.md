@@ -1,4 +1,15 @@
-# 1.2.0 (March 16th, 2021)
+# 1.2.1 (April 28, 2021)
+
+## Fixes
+* Fixed `PROXY` flag not working correctly in go 1.16
+* Fixed old executable not being removed after upgrading on windows
+
+## Enhancements
+* `upgrade` command can now be executed with auto upgrades disabled
+* Improved error messages on several commands
+* Added upgrade command error message for homebrew installation 
+
+# 1.2.0 (March 16, 2021)
 
 ## Fixes
 * Synced logs with terminal output in most commands.
