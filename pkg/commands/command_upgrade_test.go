@@ -2,6 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"regexp"
+	"strings"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
@@ -9,12 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"regexp"
-	"strings"
-	"testing"
 )
 
 func TestCmdUpgrade(t *testing.T) {
@@ -37,6 +38,35 @@ func TestCmdUpgrade(t *testing.T) {
 				// Checking if cli should be upgraded
 				m.term.On("IsTTY").Return(true).Once()
 				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("never", true).Once()
+				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
+				m.cfg.On("Save").Return(nil).Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
+				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
+
+				// start upgrade
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Upgrading Akamai CLI", []interface{}(nil)).Return().Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+
+				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+			},
+			expectedExitCode: 1,
+		},
+		"last upgrade check is set to ignore": {
+			args:              []string{"cli.testKey", "testValue"},
+			respLatestVersion: "10.0.0",
+			init: func(m *mocked) {
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Checking for upgrades...", []interface{}(nil)).Return().Once()
+
+				// Checking if cli should be upgraded
+				m.term.On("IsTTY").Return(true).Once()
+				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("ignore", true).Once()
 				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
 				m.cfg.On("Save").Return(nil).Once()
 

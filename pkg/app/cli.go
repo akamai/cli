@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -75,19 +76,14 @@ func CreateApp(ctx context.Context) *cli.App {
 	app.Before = func(c *cli.Context) error {
 		if c.IsSet("proxy") {
 			proxy := c.String("proxy")
+			if !strings.HasPrefix(proxy, "http://") && !strings.HasPrefix(proxy, "https://") {
+				proxy = fmt.Sprintf("http://%s", proxy)
+			}
 			if err := os.Setenv("HTTP_PROXY", proxy); err != nil {
 				return err
 			}
-			if err := os.Setenv("http_proxy", proxy); err != nil {
+			if err := os.Setenv("HTTPS_PROXY", proxy); err != nil {
 				return err
-			}
-			if strings.HasPrefix(proxy, "https") {
-				if err := os.Setenv("HTTPS_PROXY", proxy); err != nil {
-					return err
-				}
-				if err := os.Setenv("https_proxy", proxy); err != nil {
-					return err
-				}
 			}
 		}
 

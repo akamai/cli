@@ -135,7 +135,7 @@ To set up your `.edgerc` file, see [Get started with APIs](https://developer.aka
 
 Unless you installed Akamai CLI with Homebrew, you can enable automatic check for updates when you run Akamai CLI v0.3.0 or later for the first time.
 
-If a new version is available, CLI prompts you to download it. Akamai CLI automatically checks the new version's `SHA256` signature to verify it is not corrupt. After the update, your original command executes using the new version.
+When run for the first time, CLI asks you to enable automatic upgrades. If you do not agree, `last-upgrade-check=ignore` is set in the `.akamai-cli/config` file (this option will still allow you to perform manual upgrade as explained below). Otherwise, if a new version is available, CLI prompts you to download it. Akamai CLI automatically checks the new version's `SHA256` signature to verify it is not corrupt. After the update, your original command executes using the new version.
 
 For information on manual upgrade and the supported Homebrew command, see `akamai upgrade` in [Built-in commands](#built-in-commands).
 
@@ -313,8 +313,3 @@ The package you install needs a `cli.json` file. This is where you specify the c
   ]
 }
 ```
-
-
-
-## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_large)

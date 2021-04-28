@@ -34,7 +34,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 	if err != nil {
 		bin, err = l.commandExecutor.LookPath("nodejs")
 		if err != nil {
-			return fmt.Errorf("%w: %s", ErrRuntimeNotFound, "Node.js")
+			return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "Node.js")
 		}
 	}
 
@@ -53,7 +53,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 
 		if version.Compare(ver, matches[1]) == -1 {
 			logger.Debugf("Node.js Version found: %s", matches[1])
-			return fmt.Errorf("%w: required: %s:%s, have: %s", ErrRuntimeMinimumVersionRequired, "Node.js", ver, matches[1])
+			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "Node.js", ver, matches[1])
 		}
 	}
 
