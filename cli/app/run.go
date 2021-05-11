@@ -27,7 +27,6 @@ func Run() int {
 	var pathErr *os.PathError
 	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
 		term.WriteErrorf("Unable to remove old executable: %s", err.Error())
-		return 7
 	}
 
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
@@ -88,13 +87,14 @@ func Run() int {
 }
 
 func cleanupUpgrade() error {
-	oldFilename := os.Args[0]
-	if strings.HasSuffix(strings.ToLower(oldFilename), ".exe") {
-		oldFilename = fmt.Sprintf(".%s.old", oldFilename)
+	filename := filepath.Base(os.Args[0])
+	var oldExe string
+	if strings.HasSuffix(strings.ToLower(filename), ".exe") {
+		oldExe = fmt.Sprintf(".%s.old", filename)
 	} else {
-		oldFilename = fmt.Sprintf(".%s.exe.old", oldFilename)
+		oldExe = fmt.Sprintf(".%s.exe.old", filename)
 	}
-	return os.Remove(oldFilename)
+	return os.Remove(filepath.Join(filepath.Dir(os.Args[0]), oldExe))
 }
 
 func checkUpgrade(ctx context.Context) {
