@@ -34,8 +34,8 @@ func CreateApp(ctx context.Context) *cli.App {
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
 	cli.VersionFlag = &cli.BoolFlag{
-		Name:   "version",
-		Hidden: true,
+		Name:  "version",
+		Usage: "Output CLI version",
 	}
 
 	cli.BashCompletionFlag = &cli.BoolFlag{
