@@ -23,10 +23,11 @@ import (
 func Run() int {
 	ctx := context.Background()
 	term := terminal.Color()
+	logger := log.FromContext(ctx)
 
 	var pathErr *os.PathError
 	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
-		term.WriteErrorf("Unable to remove old executable: %s", err.Error())
+		logger.Debugf("Unable to remove old executable: %s", err.Error())
 	}
 
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
