@@ -26,6 +26,7 @@ func Run() int {
 
 	var pathErr *os.PathError
 	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
+		fmt.Println(err)
 		term.WriteErrorf("Unable to remove old executable: %s", err.Error())
 		return 7
 	}
@@ -90,11 +91,20 @@ func Run() int {
 func cleanupUpgrade() error {
 	oldFilename := os.Args[0]
 	if strings.HasSuffix(strings.ToLower(oldFilename), ".exe") {
+		if strings.Contains(oldFilename, "\\") {
+			oldFilename = oldFilename[(strings.LastIndex(oldFilename, "\\") + 1):]
+		}
 		oldFilename = fmt.Sprintf(".%s.old", oldFilename)
 	} else {
 		oldFilename = fmt.Sprintf(".%s.exe.old", oldFilename)
 	}
-	return os.Remove(oldFilename)
+
+	_, err := os.Stat(oldFilename)
+	if os.IsNotExist(err) {
+		return nil
+	} else {
+		return os.Remove(oldFilename)
+	}
 }
 
 func checkUpgrade(ctx context.Context) {
