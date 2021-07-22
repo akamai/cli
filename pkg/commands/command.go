@@ -185,7 +185,7 @@ func createBuiltinCommands() []*cli.Command {
 			Name:        "install",
 			Aliases:     []string{"get"},
 			ArgsUsage:   "<package name or repository URL>...",
-			Description: "Fetch and install packages from a Git repository.",
+			Description: "Fetch and install packages from a Git repository",
 			Action:      cmdInstall(gitRepo, langManager),
 			UsageText: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
 				"akamai install property purge",
@@ -203,7 +203,7 @@ func createBuiltinCommands() []*cli.Command {
 		},
 		{
 			Name:        "list",
-			Description: "Displays available commands",
+			Description: "By default, displays installed commands. Optionally, can display package commands from Git repositories",
 			Action:      cmdList,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
