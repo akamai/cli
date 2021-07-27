@@ -67,6 +67,16 @@ func CreateApp(ctx context.Context) *cli.App {
 			Hidden:  true,
 			EnvVars: []string{"AKAMAI_CLI_DAEMON"},
 		},
+		&cli.StringFlag{
+			Name:    "edgerc",
+			Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
+			Aliases: []string{"e"},
+		},
+		&cli.StringFlag{
+			Name:    "section",
+			Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
+			Aliases: []string{"s"},
+		},
 	}
 
 	app.Action = func(c *cli.Context) error {
