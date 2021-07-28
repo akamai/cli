@@ -109,7 +109,7 @@ func TestCmdInstall(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-installed.git"}).Return().Once()
-				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			withError: color.RedString("Package directory already exists ("),
