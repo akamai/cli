@@ -21,6 +21,43 @@
 
 
 
+            {
+              "title": "API Gateway",
+              "name": "akamai/api-gateway",
+              "version": "0.1.0",
+              "url": "https://github.com/akamai/cli-api-gateway",
+              "issues": "https://github.com/akamai/cli-api-gateway/issues",
+              "commands": [
+                {
+                  "name": "api-gateway",
+                  "version": "0.1.0",
+                  "description": "Manage API definitions and endpoints",
+                  "auto-complete": true,
+                  "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
+                },
+                {
+                  "name": "api-keys",
+                  "version": "0.1.0",
+                  "description": "Manage API keys",
+                  "auto-complete": true,
+                  "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
+                },
+                {
+                  "name": "api-security",
+                  "version": "0.1.0",
+                  "description": "Manage API protections",
+                  "auto-complete": true,
+                  "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
+                }
+              ],
+              "requirements": {
+                "go": "1.10.0"
+              }
+            },
+
+
+
+
 
 
 
@@ -140,6 +177,26 @@
 
 
 
+            {
+              "title": "Enterprise Application Access",
+              "name": "eaa",
+              "version": "0.4.2",
+              "url": "https://github.com/akamai/cli-eaa",
+              "issues": "https://github.com/akamai/cli-eaa/issues",
+              "commands": [
+                {
+                  "name": "eaa",
+                  "version": "0.4.2",
+                  "description": "Akamai CLI for Enterprise Application Access (EAA)"
+                }
+              ],
+              "requirements": {
+                "python": "3.6.0"
+              }
+            },
+
+
+
 
 
             {
@@ -182,6 +239,31 @@
                 "issues": "https://github.com/akamai/cli-image-manager/issues",
                 "commands": [{"name":"image-manager","aliases":["im"],"version":"0.1.8","description":"An Akamai CLI package for Image Manager"}],
                 "requirements": {"python":"2.7.11"}
+            },
+
+
+
+
+
+            {
+              "title": "Jsonnet",
+              "name": "jsonnet",
+              "version": "0.4.3",
+              "url": "https://github.com/akamai/cli-jsonnet",
+              "issues": "https://github.com/akamai/cli-jsonnet/issues",
+              "commands": [
+                {
+                  "name": "jsonnet",
+                  "aliases": [
+                    "jsonnet"
+                  ],
+                  "version": "0.4.3",
+                  "description": "Utilities for managing Akamai as jsonnet"
+                }
+              ],
+              "requirements": {
+                "python": "3.0.0"
+              }
             },
 
 
