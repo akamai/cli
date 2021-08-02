@@ -27,6 +27,18 @@ func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {
 	ctx = config.Context(ctx, m.cfg)
 	app := cli.NewApp()
 	app.Commands = []*cli.Command{command}
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "edgerc",
+			Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
+			Aliases: []string{"e"},
+		},
+		&cli.StringFlag{
+			Name:    "section",
+			Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
+			Aliases: []string{"s"},
+		},
+	}
 	return app, ctx
 }
 
