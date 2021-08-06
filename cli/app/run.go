@@ -17,9 +17,10 @@ import (
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
+	"github.com/urfave/cli/v2"
 )
 
-// Run ...
+// Run is the entry point to the CLI
 func Run() int {
 	ctx := context.Background()
 	term := terminal.Color()
@@ -66,11 +67,11 @@ func Run() int {
 		term.WriteErrorf("Unable to export required envs: %s", err.Error())
 	}
 
-	cli := app.CreateApp(ctx)
-	ctx = log.SetupContext(ctx, cli.Writer)
+	cliApp := app.CreateApp(ctx)
+	ctx = log.SetupContext(ctx, cliApp.Writer)
 
 	cmds := commands.CommandLocator(ctx)
-	cli.Commands = cmds
+	cliApp.Commands = cmds
 
 	if err := firstRun(ctx); err != nil {
 		return 5
@@ -80,11 +81,65 @@ func Run() int {
 		term.WriteError(err.Error())
 	}
 
-	if err := cli.RunContext(ctx, os.Args); err != nil {
+	// check collision before this line - here it will get out of our hands
+	if err := findCollisions(cliApp.Commands, os.Args); err != nil {
+		term.WriteError(err)
+		return 7
+	}
+
+	if err := cliApp.RunContext(ctx, os.Args); err != nil {
 		return 6
 	}
 
 	return 0
+}
+
+func findCollisions(availableCmds []*cli.Command, args []string) error {
+	// check names and aliases
+
+	// for some built in commands, we need to check their first parameter (args[2])
+	metaCmds := []string{"help", "uninstall", "update"}
+	for _, c := range metaCmds {
+		if c == args[1] && len(args) > 2 {
+			if err := findDuplicate(availableCmds, args[2]); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	// rest of commands: we need to check the first parameter (args[1])
+	if err := findDuplicate(availableCmds, args[1]); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func findDuplicate(availableCmds []*cli.Command, cmdName string) error {
+	matching := make([]string, 0, 2)
+	for _, cmd := range availableCmds {
+		// match with command name
+		if cmd.Name == cmdName {
+			matching = append(matching, cmd.Name)
+			continue
+		}
+		// match with command aliases
+		for _, alias := range cmd.Aliases {
+			if alias == cmdName {
+				matching = append(matching, cmdName)
+				break
+			}
+		}
+
+	}
+
+	if len(matching) > 1 {
+		return fmt.Errorf("this command is ambiguous, please use prefix of the package which should be used (i.e. custom/command): %s", cmdName)
+	}
+
+	return nil
 }
 
 func cleanupUpgrade() error {
