@@ -142,12 +142,12 @@
             {
                 "title": "EdgeWorkers",
                 "name": "edgeworkers",
-                "version": "1.3.0",
+                "version": "1.3.1",
                 "url": "https://github.com/akamai/cli-edgeworkers",
                 "issues": "https://github.com/akamai/cli-edgeworkers/issues",
                 "commands": [
-                  {"name":"edgeworkers","aliases":["ew", "edgeworkers"],"version":"1.3.0","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeWorkers code bundles"},
-                  {"name":"edgekv","aliases":["ekw", "edgekv"],"version":"1.3.0","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeKV database"}
+                  {"name":"edgeworkers","aliases":["ew", "edgeworkers"],"version":"1.3.1","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeWorkers code bundles"},
+                  {"name":"edgekv","aliases":["ekw", "edgekv"],"version":"1.3.1","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeKV database"}
                 ],
                 "requirements": {"node":"7.0.0"}
             },
