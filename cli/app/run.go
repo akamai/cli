@@ -81,7 +81,7 @@ func Run() int {
 		term.WriteError(err.Error())
 	}
 
-	// check collision before this line - here it will get out of our hands
+	// check command collision
 	if err := findCollisions(cliApp.Commands, os.Args); err != nil {
 		term.WriteError(err)
 		return 7
@@ -95,23 +95,25 @@ func Run() int {
 }
 
 func findCollisions(availableCmds []*cli.Command, args []string) error {
-	// check names and aliases
+	if len(args) > 1 {
+		// check names and aliases
 
-	// for some built in commands, we need to check their first parameter (args[2])
-	metaCmds := []string{"help", "uninstall", "update"}
-	for _, c := range metaCmds {
-		if c == args[1] && len(args) > 2 {
-			if err := findDuplicate(availableCmds, args[2]); err != nil {
-				return err
+		// for some built in commands, we need to check their first parameter (args[2])
+		metaCmds := []string{"help", "uninstall", "update"}
+		for _, c := range metaCmds {
+			if c == args[1] && len(args) > 2 {
+				if err := findDuplicate(availableCmds, args[2]); err != nil {
+					return err
+				}
+
+				return nil
 			}
-
-			return nil
 		}
-	}
 
-	// rest of commands: we need to check the first parameter (args[1])
-	if err := findDuplicate(availableCmds, args[1]); err != nil {
-		return err
+		// rest of commands: we need to check the first parameter (args[1])
+		if err := findDuplicate(availableCmds, args[1]); err != nil {
+			return err
+		}
 	}
 
 	return nil

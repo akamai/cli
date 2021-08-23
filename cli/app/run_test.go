@@ -14,6 +14,28 @@ func TestFindCollisions(t *testing.T) {
 		args          []string
 		withError     string
 	}{
+		"no command": {
+			availableCmds: []*cli.Command{
+				{
+					Name: "list",
+				},
+				{
+					Name: "help",
+				},
+				{
+					Name: "uninstall",
+				},
+				{
+					Name:    "install",
+					Aliases: []string{"get"},
+				},
+				{
+					Name:    "firewall",
+					Aliases: []string{"firewall"},
+				},
+			},
+			args: []string{"akamai"},
+		},
 		"no collision": {
 			availableCmds: []*cli.Command{
 				{
