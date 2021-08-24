@@ -313,3 +313,14 @@ The package you install needs a `cli.json` file. This is where you specify the c
   ]
 }
 ```
+## Akamai CLI exit codes
+
+When you complete an operation, Akamai CLI generates one of these exit codes:
+
+- `0` (Success) - Indicates that the latest command or script executed successfully.
+- `1` (Configuration error) - Indicates an error while loading `AKAMAI_CLI_VERSION` or `AKAMAI_CLI`.
+- `2` (Configuration error) - Indicates an error while creating the `cache directory`.
+- `3` (Configuration error) - Indicates an error while saving the `cache-path`.
+- `5` (Application error) - Indicates an error with the initial setup. Occurs when you run Akamai CLI for the first time.
+- `6` (Syntax error) - Indicates that the latest command or script cannot be processed.
+- `7` (Syntax error) - Indicates that the commands in your installed packages have conflicting names. To fix this, add a prefix to the commands that have the same name.
