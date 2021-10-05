@@ -1,4 +1,4 @@
-# 1.3.0 (October 5, 2021)
+# 1.3.0 (October 12, 2021)
 
 ## Fixes
 * Remove old binary in PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
