@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/akamai/cli/pkg/packages"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +27,8 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/akamai/cli/pkg/packages"
 
 	"github.com/akamai/cli/pkg/log"
 	"github.com/urfave/cli/v2"
@@ -39,6 +40,7 @@ type subcommands struct {
 	Commands     []command                     `json:"commands"`
 	Requirements packages.LanguageRequirements `json:"requirements"`
 	Action       cli.ActionFunc                `json:"-"`
+	Pkg          string                        `json:"pkg"`
 }
 
 func readPackage(dir string) (subcommands, error) {
@@ -63,6 +65,8 @@ func readPackage(dir string) (subcommands, error) {
 	for key := range packageData.Commands {
 		packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
 	}
+
+	packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
 
 	return packageData, nil
 }

@@ -48,7 +48,12 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 			if e == nil {
 				logger.Debugf("INSTALL FINISH: %v", time.Now().Sub(start))
 			} else {
-				logger.Errorf("INSTALL ERROR: %v", e.Error())
+				var exitErr cli.ExitCoder
+				if errors.As(e, &exitErr) && exitErr.ExitCode() == 0 {
+					logger.Warnf("INSTALL WARN: %v", e.Error())
+				} else {
+					logger.Errorf("INSTALL ERROR: %v", e.Error())
+				}
 			}
 		}()
 		if !c.Args().Present() {
@@ -152,10 +157,9 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
 	if _, err = os.Stat(packageDir); err == nil {
-		spin.Stop(terminal.SpinnerStatusFail)
-		errorMsg := fmt.Sprintf("Package directory already exists (%s)", packageDir)
-		logger.Error(errorMsg)
-		return nil, cli.Exit(color.RedString(errorMsg), 1)
+		spin.Stop(terminal.SpinnerStatusWarn)
+		warningMsg := fmt.Sprintf("Package directory already exists (%s). To reinstall this package, first run 'akamai uninstall' command.", packageDir)
+		return nil, cli.Exit(color.YellowString(warningMsg), 0)
 	}
 
 	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)

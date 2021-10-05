@@ -95,9 +95,11 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 	for key, command := range from.Commands {
 		commandPkg := from
 		commandPkg.Commands = commandPkg.Commands[key : key+1]
+		aliases := append(command.Aliases, fmt.Sprintf("%s/%s", from.Pkg, command.Name))
+
 		commands = append(commands, &cli.Command{
 			Name:        strings.ToLower(command.Name),
-			Aliases:     command.Aliases,
+			Aliases:     aliases,
 			Description: command.Description,
 
 			Action:          cmdSubcommand(gitRepo, langManager),
@@ -121,7 +123,7 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 	return commands
 }
 
-// CommandLocator ...
+// CommandLocator builds a sorted slice of built-in and installed commands
 func CommandLocator(ctx context.Context) []*cli.Command {
 	gitRepo := git.NewRepository()
 	langManager := packages.NewLangManager()
@@ -142,7 +144,7 @@ func sortCommands(commands []*cli.Command) {
 func createBuiltinCommands() []*cli.Command {
 	gitRepo := git.NewRepository()
 	langManager := packages.NewLangManager()
-	commands := []*cli.Command{
+	return []*cli.Command{
 		{
 			Name:        "config",
 			ArgsUsage:   "<action> <setting> [value]",
@@ -185,7 +187,7 @@ func createBuiltinCommands() []*cli.Command {
 			Name:        "install",
 			Aliases:     []string{"get"},
 			ArgsUsage:   "<package name or repository URL>...",
-			Description: "Fetch and install packages from a Git repository.",
+			Description: "Fetch and install packages from a Git repository",
 			Action:      cmdInstall(gitRepo, langManager),
 			UsageText: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
 				"akamai install property purge",
@@ -203,7 +205,7 @@ func createBuiltinCommands() []*cli.Command {
 		},
 		{
 			Name:        "list",
-			Description: "Displays available commands",
+			Description: "By default, displays installed commands. Optionally, can display package commands from Git repositories",
 			Action:      cmdList,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
@@ -245,12 +247,12 @@ func createBuiltinCommands() []*cli.Command {
 			HideHelp:     true,
 			BashComplete: app.DefaultAutoComplete,
 		},
+		{
+			Name:        "upgrade",
+			Description: "Upgrade Akamai CLI to the latest version",
+			Action:      cmdUpgrade,
+		},
 	}
-	upgradeCommand := getUpgradeCommand()
-	if upgradeCommand != nil {
-		commands = append(commands, upgradeCommand)
-	}
-	return commands
 }
 
 func createInstalledCommands(_ context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {

@@ -2,6 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
@@ -11,12 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strings"
-	"testing"
 )
 
 func TestCmdInstall(t *testing.T) {
@@ -50,10 +51,11 @@ func TestCmdInstall(t *testing.T) {
 
 				// list all packages
 				m.term.On("Writeln", mock.Anything).Return(0, nil)
-				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(10)
+				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(11)
 				m.term.On("Printf", mock.Anything, []interface{}{"aliases"}).Return().Twice()
 				m.term.On("Printf", mock.Anything, []interface{}{"alias"}).Return().Once()
 				m.term.On("Printf", mock.Anything, []interface{}{"commands.test help [command]"}).Return().Once()
+				m.term.On("Printf", mock.Anything, mock.Anything).Return().Twice()
 				m.term.On("Printf", mock.Anything).Return().Twice()
 			},
 			teardown: func(t *testing.T) {
@@ -109,7 +111,7 @@ func TestCmdInstall(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-installed.git"}).Return().Once()
-				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			withError: color.RedString("Package directory already exists ("),

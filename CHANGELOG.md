@@ -1,3 +1,16 @@
+# 1.3.0 (October 5, 2021)
+
+## Fixes
+* Remove old binary in PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
+* Document CLI exit codes.
+* Review exit code when trying to install an already installed command ([#83](https://github.com/akamai/cli/issues/83)).
+
+## Enhancements
+* Update list of installable CLI commands.
+* Document `--version` flag ([#94](https://github.com/akamai/cli/issues/94)).
+* Add alias with package prefix to all installed commands to work around possible command name collisions ([#60](https://github.com/akamai/cli/issues/60)).
+* Make .edgerc location configurable ([#81](https://github.com/akamai/cli/issues/81))
+
 # 1.2.1 (April 28, 2021)
 
 ## Fixes

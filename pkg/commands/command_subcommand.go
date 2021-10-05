@@ -15,12 +15,14 @@
 package commands
 
 import (
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/packages"
 
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
@@ -103,7 +105,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 		}
 
-		executable = append(executable, os.Args[2:]...)
+		executable = append(executable, c.Args().Slice()...)
 		if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
 			return err
 		}
@@ -111,6 +113,25 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			return err
 		}
 		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
+		executable = findAndAppendFlags(c, executable, "edgerc", "section")
 		return passthruCommand(executable)
 	}
+}
+
+func findAndAppendFlags(c *cli.Context, target []string, flags ...string) []string {
+	for _, flagName := range flags {
+		if flagVal := c.String(flagName); flagVal != "" && !containsString(target, fmt.Sprintf("--%s", flagName)) {
+			target = append(target, fmt.Sprintf("--%s", flagName), flagVal)
+		}
+	}
+	return target
+}
+
+func containsString(s []string, item string) bool {
+	for _, v := range s {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }

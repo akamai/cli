@@ -238,11 +238,3 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 
 	return true
 }
-
-func getUpgradeCommand() *cli.Command {
-	return &cli.Command{
-		Name:        "upgrade",
-		Description: "Upgrade Akamai CLI to the latest version",
-		Action:      cmdUpgrade,
-	}
-}

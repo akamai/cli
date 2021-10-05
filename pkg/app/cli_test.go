@@ -3,14 +3,16 @@ package app
 import (
 	"context"
 	"flag"
+	"os"
+	"regexp"
+	"testing"
+
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"testing"
 )
 
 func TestCreateApp(t *testing.T) {
@@ -28,6 +30,15 @@ func TestCreateApp(t *testing.T) {
 	assert.True(t, hasFlag(app, "proxy"))
 	assert.True(t, hasFlag(app, "daemon"))
 	assert.NotNil(t, app.Before)
+}
+
+func TestVersion(t *testing.T) {
+	term := terminal.Color()
+	ctx := terminal.Context(context.Background(), term)
+	_ = CreateApp(ctx)
+	assert.Regexp(t, regexp.MustCompile(`^--version\s+Output CLI version \(default: false\)$`), cli.VersionFlag.String())
+	assert.Len(t, cli.VersionFlag.Names(), 1)
+	assert.Equal(t, cli.VersionFlag.Names()[0], "version")
 }
 
 func TestCreateAppProxy(t *testing.T) {

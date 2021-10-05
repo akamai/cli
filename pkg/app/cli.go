@@ -34,8 +34,8 @@ func CreateApp(ctx context.Context) *cli.App {
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
 	cli.VersionFlag = &cli.BoolFlag{
-		Name:   "version",
-		Hidden: true,
+		Name:  "version",
+		Usage: "Output CLI version",
 	}
 
 	cli.BashCompletionFlag = &cli.BoolFlag{
@@ -66,6 +66,16 @@ func CreateApp(ctx context.Context) *cli.App {
 			Usage:   "Keep Akamai CLI running in the background, particularly useful for Docker containers",
 			Hidden:  true,
 			EnvVars: []string{"AKAMAI_CLI_DAEMON"},
+		},
+		&cli.StringFlag{
+			Name:    "edgerc",
+			Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
+			Aliases: []string{"e"},
+		},
+		&cli.StringFlag{
+			Name:    "section",
+			Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
+			Aliases: []string{"s"},
 		},
 	}
 
