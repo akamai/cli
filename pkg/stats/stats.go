@@ -66,7 +66,7 @@ func FirstRunCheckStats(ctx context.Context, bannerShown bool) bool {
 	term.Writeln(shareDataMsg)
 	logger.Debug(shareDataMsg)
 	shareDataMsg = fmt.Sprintf("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
-	term.Writeln("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
+	term.Sprintf("Note: if you choose to opt-out, a single %s event will be submitted to help track overall usage.\n", anonymous)
 	logger.Debug(shareDataMsg)
 
 	shareDataMsg = fmt.Sprintf("Send %s diagnostics and usage data to Akamai? [Y/n]: ", anonymous)
