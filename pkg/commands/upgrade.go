@@ -86,8 +86,9 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 		comp := version.Compare(version.Version, latestVersion)
 		if comp == 1 {
 			term.Spinner().Stop(terminal.SpinnerStatusOK)
+			_, _ = term.Writeln("You can find more details about the new version here: https://github.com/akamai/cli/releases")
 			if answer, err := term.Confirm(fmt.Sprintf(
-				"New upgrade found: %s (you are running: %s). Upgrade now? [Y/n]: ",
+				"New update found: %s. You are running: %s. Upgrade now?",
 				color.BlueString(latestVersion),
 				color.BlueString(version.Version),
 			), true); err != nil || !answer {
