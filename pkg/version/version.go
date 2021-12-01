@@ -4,7 +4,7 @@ import "github.com/Masterminds/semver"
 
 const (
 	// Version Application Version
-	Version = "1.3.0"
+	Version = "1.3.1"
 )
 
 // Compare ...
