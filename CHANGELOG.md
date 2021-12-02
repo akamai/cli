@@ -1,4 +1,4 @@
-# 1.3.1 (December 6, 2021)
+# 1.3.1 (December 8, 2021)
 
 ## Enhancements
 * Improved message for updating CLI version
