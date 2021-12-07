@@ -25,13 +25,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 )
 
 type command struct {

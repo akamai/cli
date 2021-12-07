@@ -1,4 +1,5 @@
-//+build !nofirstrun
+//go:build !nofirstrun
+// +build !nofirstrun
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -23,14 +24,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/fatih/color"
-	"github.com/kardianos/osext"
-
 	"github.com/akamai/cli/pkg/config"
-
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/fatih/color"
+	"github.com/kardianos/osext"
 )
 
 const (

@@ -15,9 +15,9 @@
 package commands
 
 import (
-	"github.com/akamai/cli/pkg/log"
 	"os"
 
+	"github.com/akamai/cli/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 

@@ -58,11 +58,7 @@ func (l *langManager) installPython(ctx context.Context, dir, cmdReq string) err
 		}
 	}
 
-	if err := installPythonDepsPip(ctx, l.commandExecutor, pipBin, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installPythonDepsPip(ctx, l.commandExecutor, pipBin, dir)
 }
 
 func findPythonBin(ctx context.Context, cmdExecutor executor, ver string) (string, error) {

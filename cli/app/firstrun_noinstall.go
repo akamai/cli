@@ -1,4 +1,5 @@
-//+build nofirstrun
+//go:build nofirstrun
+// +build nofirstrun
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -18,6 +19,7 @@ package app
 
 import (
 	"context"
+
 	"github.com/akamai/cli/pkg/stats"
 )
 

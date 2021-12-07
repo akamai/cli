@@ -2,14 +2,15 @@ package config
 
 import (
 	"context"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/go-ini/ini"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/akamai/cli/pkg/terminal"
+	"github.com/go-ini/ini"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewIni(t *testing.T) {

@@ -21,16 +21,13 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
-
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-
-	"github.com/akamai/cli/pkg/git"
 )
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {

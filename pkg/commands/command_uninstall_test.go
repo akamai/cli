@@ -2,6 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
@@ -11,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"testing"
 )
 
 func TestCmdUninstall(t *testing.T) {
@@ -24,8 +25,8 @@ func TestCmdUninstall(t *testing.T) {
 		"uninstall command": {
 			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
-				copyFile(t, "./testdata/.akamai-cli/src/cli-echo/cli.json", "./testdata/.akamai-cli/src/cli-echo-uninstall")
-				copyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
+				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/cli.json", "./testdata/.akamai-cli/src/cli-echo-uninstall")
+				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
 				err := os.Rename("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall")
 				require.NoError(t, err)
 				err = os.Chmod("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall", 0755)
@@ -41,7 +42,7 @@ func TestCmdUninstall(t *testing.T) {
 		"package does not contain cli.json": {
 			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
-				copyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
+				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
 				err := os.Rename("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall")
 				require.NoError(t, err)
 				err = os.Chmod("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall", 0755)

@@ -19,18 +19,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
-	"os"
-
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
-
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
-
-	"github.com/AlecAivazis/survey/v2"
 )
 
 type (

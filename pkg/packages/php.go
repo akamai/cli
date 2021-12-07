@@ -53,11 +53,7 @@ func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error 
 		}
 	}
 
-	if err := installPHPDepsComposer(ctx, l.commandExecutor, bin, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installPHPDepsComposer(ctx, l.commandExecutor, bin, dir)
 }
 
 func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, dir string) error {
