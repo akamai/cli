@@ -43,7 +43,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
+				m.term.On("Writeln", []interface{}{"You can find more details about the new version here: https://github.com/akamai/cli/releases"}).Return(0, nil).Once()
+				m.term.On("Confirm", fmt.Sprintf("New update found: 10.0.0. You are running: %s. Upgrade now?", version.Version), true).Return(true, nil).Once()
 
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
@@ -72,7 +73,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
+				m.term.On("Writeln", []interface{}{"You can find more details about the new version here: https://github.com/akamai/cli/releases"}).Return(0, nil).Once()
+				m.term.On("Confirm", fmt.Sprintf("New update found: 10.0.0. You are running: %s. Upgrade now?", version.Version), true).Return(true, nil).Once()
 
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
@@ -101,7 +103,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.term.On("Confirm", fmt.Sprintf("New upgrade found: 10.0.0 (you are running: %s). Upgrade now? [Y/n]: ", version.Version), true).Return(true, nil).Once()
+				m.term.On("Writeln", []interface{}{"You can find more details about the new version here: https://github.com/akamai/cli/releases"}).Return(0, nil).Once()
+				m.term.On("Confirm", fmt.Sprintf("New update found: 10.0.0. You are running: %s. Upgrade now?", version.Version), true).Return(true, nil).Once()
 
 				// start upgrade
 				m.term.On("Spinner").Return(m.term).Once()
