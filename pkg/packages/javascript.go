@@ -61,11 +61,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 		return err
 	}
 
-	if err := installNodeDepsNpm(ctx, l.commandExecutor, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installNodeDepsNpm(ctx, l.commandExecutor, dir)
 }
 
 func installNodeDepsYarn(ctx context.Context, cmdExecutor executor, dir string) error {

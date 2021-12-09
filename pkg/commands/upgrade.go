@@ -1,4 +1,5 @@
-//+build !noautoupgrade
+//go:build !noautoupgrade
+// +build !noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -30,14 +31,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
+	"github.com/urfave/cli/v2"
 )
 
 // CheckUpgradeVersion ...

@@ -17,17 +17,16 @@ package config
 import (
 	"context"
 	"errors"
-	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/go-ini/ini"
-
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/go-ini/ini"
 )
 
 const (

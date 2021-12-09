@@ -2,11 +2,12 @@ package terminal
 
 import (
 	"fmt"
-	spnr "github.com/briandowns/spinner"
-	"github.com/fatih/color"
 	"io"
 	"strings"
 	"time"
+
+	spnr "github.com/briandowns/spinner"
+	"github.com/fatih/color"
 )
 
 type (

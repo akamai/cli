@@ -17,7 +17,6 @@ package stats
 import (
 	"context"
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -25,11 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/terminal"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
-
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/terminal"
 )
 
 // Akamai CLI (optionally) tracks upgrades, package installs, and updates anonymously

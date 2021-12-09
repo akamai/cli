@@ -2,13 +2,14 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"testing"
 )
 
 func TestCmdConfigSet(t *testing.T) {

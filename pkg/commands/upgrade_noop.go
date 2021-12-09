@@ -1,4 +1,5 @@
-//+build noautoupgrade
+//go:build noautoupgrade
+// +build noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -18,6 +19,7 @@ package commands
 
 import (
 	"context"
+
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )

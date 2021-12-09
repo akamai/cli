@@ -1,8 +1,9 @@
 package version
 
 import (
-	"github.com/tj/assert"
 	"testing"
+
+	"github.com/tj/assert"
 )
 
 func TestCompareVersion(t *testing.T) {

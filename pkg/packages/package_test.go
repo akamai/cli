@@ -3,12 +3,12 @@ package packages
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"os/exec"
-
-	"testing"
 )
 
 type mocked struct {

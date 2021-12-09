@@ -3,10 +3,11 @@ package terminal
 import (
 	"bytes"
 	"fmt"
-	spnr "github.com/briandowns/spinner"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	spnr "github.com/briandowns/spinner"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStart(t *testing.T) {

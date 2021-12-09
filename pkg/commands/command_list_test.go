@@ -2,6 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
@@ -9,10 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
 func TestCmdListWithRemote(t *testing.T) {

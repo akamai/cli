@@ -17,16 +17,15 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )

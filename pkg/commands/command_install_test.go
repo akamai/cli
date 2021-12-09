@@ -37,7 +37,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
@@ -70,7 +70,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
 						require.NoError(t, err)
 						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
@@ -130,7 +130,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(fmt.Errorf("oops")).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
@@ -145,7 +145,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-invalid-json",
 					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo_invalid_json/cli.json", "./testdata/.akamai-cli/src/cli-test-invalid-json")
+						mustCopyFile(t, "./testdata/repo_invalid_json/cli.json", "./testdata/.akamai-cli/src/cli-test-invalid-json")
 					})
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
@@ -171,7 +171,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
@@ -201,7 +201,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
 						require.NoError(t, err)
 						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
@@ -240,7 +240,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
@@ -278,7 +278,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
 						require.NoError(t, err)
 						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
@@ -321,7 +321,7 @@ func TestCmdInstall(t *testing.T) {
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
 					Run(func(args mock.Arguments) {
-						copyFile(t, "./testdata/repo_no_binary/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
+						mustCopyFile(t, "./testdata/repo_no_binary/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 						input, err := ioutil.ReadFile("./testdata/.akamai-cli/src/cli-test-cmd/cli.json")
 						require.NoError(t, err)
 						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))

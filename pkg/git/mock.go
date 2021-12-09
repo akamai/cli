@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/src-d/go-git.v4"

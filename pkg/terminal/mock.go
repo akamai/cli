@@ -1,8 +1,9 @@
 package terminal
 
 import (
-	"github.com/stretchr/testify/mock"
 	"io"
+
+	"github.com/stretchr/testify/mock"
 )
 
 // Mock terminal

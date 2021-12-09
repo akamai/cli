@@ -54,11 +54,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 		}
 	}
 
-	if err := installRubyDepsBundler(ctx, l.commandExecutor, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installRubyDepsBundler(ctx, l.commandExecutor, dir)
 }
 
 func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir string) error {

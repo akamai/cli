@@ -16,14 +16,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/fatih/color"
 	"strings"
 	"time"
 
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
-
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
