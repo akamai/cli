@@ -49,7 +49,8 @@ test: ; $(info $(M) Running tests...) ## Run all unit tests
 .PHONY: coverage
 coverage: ; $(info $(M) Running tests with coverage...) @ ## Run tests and generate coverage profile
 	@mkdir -p $(COVERAGE_DIR)
-	$(GOTEST) -coverprofile $(COVERAGE_PROFILE) ./... | tee test/tests.output
+	@$(GOTEST) -v -covermode=$(COVERAGE_MODE) \
+               -coverprofile="$(COVERAGE_PROFILE)" ./... | tee test/tests.output
 
 .PHONY: create-junit-report
 create-junit-report: | $(GOJUNITREPORT) ; $(info $(M) Creating juint xml report) @ ## Generate junit-style coverage report
