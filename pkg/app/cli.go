@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,35 +22,8 @@ const sleepTime24Hours = time.Hour * 24
 
 // CreateApp creates and sets up *cli.App
 func CreateApp(ctx context.Context) *cli.App {
-	term := terminal.Get(ctx)
-
-	appName := "akamai"
-	app := cli.NewApp()
-	app.Name = appName
-	app.HelpName = appName
-	app.Usage = "Akamai CLI"
-	app.Version = version.Version
-	app.Writer = term
-	app.ErrWriter = term.Error()
-	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
-	app.EnableBashCompletion = true
-	app.BashComplete = DefaultAutoComplete
-	cli.VersionFlag = &cli.BoolFlag{
-		Name:  "version",
-		Usage: "Output CLI version",
-	}
-
-	cli.BashCompletionFlag = &cli.BoolFlag{
-		Name:   "generate-auto-complete",
-		Hidden: true,
-	}
-	cli.HelpFlag = &cli.BoolFlag{
-		Name:  "help",
-		Usage: "show help",
-	}
-
-	SetHelpTemplates()
-	app.Flags = []cli.Flag{
+	app := CreateAppTemplate(ctx, "", "Akamai CLI", "", version.Version)
+	app.Flags = append(app.Flags,
 		&cli.BoolFlag{
 			Name:  "bash",
 			Usage: "Output bash auto-complete",
@@ -67,17 +42,7 @@ func CreateApp(ctx context.Context) *cli.App {
 			Hidden:  true,
 			EnvVars: []string{"AKAMAI_CLI_DAEMON"},
 		},
-		&cli.StringFlag{
-			Name:    "edgerc",
-			Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
-			Aliases: []string{"e"},
-		},
-		&cli.StringFlag{
-			Name:    "section",
-			Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
-			Aliases: []string{"s"},
-		},
-	}
+	)
 
 	app.Action = func(c *cli.Context) error {
 		return defaultAction(c)
@@ -104,6 +69,76 @@ func CreateApp(ctx context.Context) *cli.App {
 		}
 		return nil
 	}
+
+	return app
+}
+
+// CreateAppTemplate creates a basic *cli.App template
+func CreateAppTemplate(ctx context.Context, commandName, usage, description, version string) *cli.App {
+	_, inCli := os.LookupEnv("AKAMAI_CLI")
+	term := terminal.Get(ctx)
+
+	appName := "akamai"
+	if commandName != "" {
+		appName = "akamai-" + commandName
+		if inCli {
+			appName = "akamai " + commandName
+		}
+	}
+
+	app := cli.NewApp()
+	app.Name = appName
+	app.HelpName = appName
+	app.Usage = usage
+	app.Description = description
+	app.Version = version
+
+	app.Copyright = "Copyright (C) Akamai Technologies, Inc"
+	app.Writer = term
+	app.ErrWriter = term.Error()
+	app.EnableBashCompletion = true
+	app.BashComplete = DefaultAutoComplete
+
+	edgercpath, _ := homedir.Dir()
+	edgercpath = path.Join(edgercpath, ".edgerc")
+
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "edgerc",
+			Aliases: []string{"e"},
+			Usage:   "Location of the credentials file",
+			Value:   edgercpath,
+			EnvVars: []string{"AKAMAI_EDGERC"},
+		},
+		&cli.StringFlag{
+			Name:    "section",
+			Aliases: []string{"s"},
+			Usage:   "Section of the credentials file",
+			Value:   "default",
+			EnvVars: []string{"AKAMAI_EDGERC_SECTION"},
+		},
+		&cli.StringFlag{
+			Name:    "accountkey",
+			Aliases: []string{"account-key"},
+			Usage:   "Account switch key",
+			EnvVars: []string{"AKAMAI_EDGERC_ACCOUNT_KEY"},
+		},
+	}
+
+	cli.VersionFlag = &cli.BoolFlag{
+		Name:  "version",
+		Usage: "Output CLI version",
+	}
+	cli.BashCompletionFlag = &cli.BoolFlag{
+		Name:   "generate-auto-complete",
+		Hidden: true,
+	}
+	cli.HelpFlag = &cli.BoolFlag{
+		Name:  "help",
+		Usage: "show help",
+	}
+
+	SetHelpTemplates()
 
 	return app
 }
