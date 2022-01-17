@@ -102,7 +102,6 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 		}
 
-		executable = append(executable, c.Args().Slice()...)
 		if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
 			return err
 		}
@@ -110,18 +109,21 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			return err
 		}
 		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
-		executable = findAndAppendFlags(c, executable, "edgerc", "section")
+
+		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section")
+
 		return passthruCommand(executable)
 	}
 }
 
-func findAndAppendFlags(c *cli.Context, target []string, flags ...string) []string {
+func prepareCommand(c *cli.Context, command, args []string, flags ...string) []string {
 	for _, flagName := range flags {
-		if flagVal := c.String(flagName); flagVal != "" && !containsString(target, fmt.Sprintf("--%s", flagName)) {
-			target = append(target, fmt.Sprintf("--%s", flagName), flagVal)
+		if flagVal := c.String(flagName); flagVal != "" && !containsString(args, fmt.Sprintf("--%s", flagName)) {
+			command = append(command, fmt.Sprintf("--%s", flagName), flagVal)
 		}
 	}
-	return target
+	command = append(command, args...)
+	return command
 }
 
 func containsString(s []string, item string) bool {
