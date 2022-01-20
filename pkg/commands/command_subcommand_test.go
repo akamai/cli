@@ -121,13 +121,13 @@ func TestPrepareCommand(t *testing.T) {
 		expected     []string
 	}{
 		"no flags and no args": {
-			givenCommand: []string{"some", "command"},
-			expected:     []string{"some", "command"},
+			givenCommand: []string{"command"},
+			expected:     []string{"command"},
 		},
 		"no flags and with args": {
-			givenCommand: []string{"some", "command"},
+			givenCommand: []string{"command"},
 			givenArgs:    []string{"--flag_1", "existing_value"},
-			expected:     []string{"some", "command", "--flag_1", "existing_value"},
+			expected:     []string{"command", "--flag_1", "existing_value"},
 		},
 		"flags and no args": {
 			flagsInCtx: map[string]string{
@@ -135,11 +135,70 @@ func TestPrepareCommand(t *testing.T) {
 				"flag_2": "other_value",
 				"flag_3": "abc",
 			},
-			givenCommand: []string{"some", "command"},
+			givenCommand: []string{"command"},
 			givenFlags:   []string{"flag_2"},
-			expected:     []string{"some", "command", "--flag_2", "other_value"},
+			expected:     []string{"command"},
 		},
 		"flags and args not overlaping": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"command", "--flag_2", "other_value", "--flag_1", "existing_value"},
+		},
+		"flags found in context but not in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenFlags:   []string{"flag_1", "flag_3"},
+			expected:     []string{"command"},
+		},
+		"flag found in context and in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"command", "--flag_1", "existing_value"},
+		},
+		"flag does not have value": {
+			flagsInCtx:   map[string]string{},
+			givenCommand: []string{"command"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"command"},
+		},
+
+		// tests for script commands like python or js
+		"script - no flags and no args": {
+			givenCommand: []string{"some", "command"},
+			expected:     []string{"some", "command"},
+		},
+		"script - no flags and with args": {
+			givenCommand: []string{"some", "command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			expected:     []string{"some", "command", "--flag_1", "existing_value"},
+		},
+		"script - flags and no args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"some", "command"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"some", "command"},
+		},
+		"script - flags and args not overlaping": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",
@@ -148,9 +207,9 @@ func TestPrepareCommand(t *testing.T) {
 			givenCommand: []string{"some", "command"},
 			givenArgs:    []string{"--flag_1", "existing_value"},
 			givenFlags:   []string{"flag_2"},
-			expected:     []string{"some", "command", "--flag_2", "other_value", "--flag_1", "existing_value"},
+			expected:     []string{"some", "command", "--flag_1", "existing_value", "--flag_2", "other_value"},
 		},
-		"flags found in context but not in args": {
+		"script - flags found in context but not in args": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",
@@ -158,9 +217,9 @@ func TestPrepareCommand(t *testing.T) {
 			},
 			givenCommand: []string{"some", "command"},
 			givenFlags:   []string{"flag_1", "flag_3"},
-			expected:     []string{"some", "command", "--flag_1", "some_value", "--flag_3", "abc"},
+			expected:     []string{"some", "command"},
 		},
-		"flag found in context and in args": {
+		"script -  flag found in context and in args": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",
@@ -171,7 +230,7 @@ func TestPrepareCommand(t *testing.T) {
 			givenFlags:   []string{"flag_1"},
 			expected:     []string{"some", "command", "--flag_1", "existing_value"},
 		},
-		"flag does not have value": {
+		"script - flag does not have value": {
 			flagsInCtx:   map[string]string{},
 			givenCommand: []string{"some", "command"},
 			givenFlags:   []string{"flag_1"},

@@ -22,7 +22,7 @@ const sleepTime24Hours = time.Hour * 24
 
 // CreateApp creates and sets up *cli.App
 func CreateApp(ctx context.Context) *cli.App {
-	app := CreateAppTemplate(ctx, "", "Akamai CLI", "", version.Version)
+	app := createAppTemplate(ctx, "", "Akamai CLI", "", version.Version, false)
 	app.Flags = append(app.Flags,
 		&cli.BoolFlag{
 			Name:  "bash",
@@ -75,6 +75,10 @@ func CreateApp(ctx context.Context) *cli.App {
 
 // CreateAppTemplate creates a basic *cli.App template
 func CreateAppTemplate(ctx context.Context, commandName, usage, description, version string) *cli.App {
+	return createAppTemplate(ctx, commandName, usage, description, version, true)
+}
+
+func createAppTemplate(ctx context.Context, commandName, usage, description, version string, useDefaults bool) *cli.App {
 	_, inCli := os.LookupEnv("AKAMAI_CLI")
 	term := terminal.Get(ctx)
 
@@ -99,8 +103,13 @@ func CreateAppTemplate(ctx context.Context, commandName, usage, description, ver
 	app.EnableBashCompletion = true
 	app.BashComplete = DefaultAutoComplete
 
-	edgercpath, _ := homedir.Dir()
-	edgercpath = path.Join(edgercpath, ".edgerc")
+	var edgercpath, section string
+	if useDefaults {
+		edgercpath, _ = homedir.Dir()
+		edgercpath = path.Join(edgercpath, ".edgerc")
+
+		section = "default"
+	}
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
@@ -114,7 +123,7 @@ func CreateAppTemplate(ctx context.Context, commandName, usage, description, ver
 			Name:    "section",
 			Aliases: []string{"s"},
 			Usage:   "Section of the credentials file",
-			Value:   "default",
+			Value:   section,
 			EnvVars: []string{"AKAMAI_EDGERC_SECTION"},
 		},
 		&cli.StringFlag{
@@ -222,7 +231,8 @@ func SetHelpTemplates() {
 			"{{if .Commands}} command [command flags]{{end}} "+
 			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}"+
 			"\n\n{{end}}") +
-		"{{if .Description}}\n\n" +
+
+		"{{if .Description}}" +
 		color.YellowString("Description:\n") +
 		"   {{.Description}}" +
 		"\n\n{{end}}" +

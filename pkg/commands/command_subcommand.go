@@ -110,20 +110,39 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		}
 		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
 
-		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section")
+		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section", "accountkey")
 
 		return passthruCommand(executable)
 	}
 }
 
 func prepareCommand(c *cli.Context, command, args []string, flags ...string) []string {
+	// dont search for flags is there are no args
+	if len(args) == 0 {
+		return command
+	}
+	additionalFlags := findFlags(c, args, flags...)
+
+	if len(command) > 1 {
+		// for python or js append flags to the end
+		command = append(command, args...)
+		command = append(command, additionalFlags...)
+	} else {
+		command = append(command, additionalFlags...)
+		command = append(command, args...)
+	}
+
+	return command
+}
+
+func findFlags(c *cli.Context, target []string, flags ...string) []string {
+	var ret []string
 	for _, flagName := range flags {
-		if flagVal := c.String(flagName); flagVal != "" && !containsString(args, fmt.Sprintf("--%s", flagName)) {
-			command = append(command, fmt.Sprintf("--%s", flagName), flagVal)
+		if flagVal := c.String(flagName); flagVal != "" && !containsString(target, fmt.Sprintf("--%s", flagName)) {
+			ret = append(ret, fmt.Sprintf("--%s", flagName), flagVal)
 		}
 	}
-	command = append(command, args...)
-	return command
+	return ret
 }
 
 func containsString(s []string, item string) bool {
