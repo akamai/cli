@@ -103,13 +103,24 @@
 
 
             {
-                "title": "Certificate Provisioning Service (CPS)",
-                "name": "cps",
-                "version": "v1.0.8",
-                "url": "https://github.com/akamai/cli-cps",
-                "issues": "https://github.com/akamai/cli-cps/issues",
-                "commands": [{"name":"cps","aliases":["certs"],"version":"1.0.8","description":"Access Certificate Provisioning System (CPS) Information"}],
-                "requirements": {"python":"3.0.0"}
+              "title": "Certificate Provisioning Service (CPS)",
+              "name": "cps",
+              "version": "v1.0.9",
+              "url": "https://github.com/akamai/cli-cps",
+              "issues": "https://github.com/akamai/cli-cps/issues",
+              "commands": [
+                {
+                  "name": "cps",
+                  "aliases": [
+                    "certs"
+                  ],
+                  "version": "1.0.9",
+                  "description": "Access Certificate Provisioning System (CPS) Information"
+                }
+              ],
+              "requirements": {
+                "python": "3.0.0"
+              }
             },
 
 
