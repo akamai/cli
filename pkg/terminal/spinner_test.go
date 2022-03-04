@@ -71,7 +71,7 @@ func TestOK(t *testing.T) {
 	}
 	s.Start("spinner %s", "test")
 	s.OK()
-	assert.Contains(t, wr.String(), fmt.Sprintf("spinner test ... [OK]"))
+	assert.Contains(t, wr.String(), "spinner test ... [OK]")
 }
 
 func TestWarn(t *testing.T) {
@@ -81,7 +81,7 @@ func TestWarn(t *testing.T) {
 	}
 	s.Start("spinner %s", "test")
 	s.Warn()
-	assert.Contains(t, wr.String(), fmt.Sprintf("spinner test ... [WARN]"))
+	assert.Contains(t, wr.String(), "spinner test ... [WARN]")
 }
 
 func TestWarnOK(t *testing.T) {
@@ -91,7 +91,7 @@ func TestWarnOK(t *testing.T) {
 	}
 	s.Start("spinner %s", "test")
 	s.WarnOK()
-	assert.Contains(t, wr.String(), fmt.Sprintf("spinner test ... [OK]"))
+	assert.Contains(t, wr.String(), "spinner test ... [OK]")
 }
 
 func TestFail(t *testing.T) {

@@ -235,7 +235,7 @@ func TestCmdUpdate(t *testing.T) {
 			}))
 			defer srv.Close()
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   "update",
 				Action: cmdUpdate(m.gitRepo, m.langManager),

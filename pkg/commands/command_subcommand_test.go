@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/akamai/cli/pkg/config"
@@ -28,6 +29,8 @@ func TestCmdSubcommand(t *testing.T) {
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as binary with edgerc location": {
@@ -35,6 +38,8 @@ func TestCmdSubcommand(t *testing.T) {
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as binary with alias": {
@@ -44,13 +49,8 @@ func TestCmdSubcommand(t *testing.T) {
 			section:        "some_section",
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
-			},
-		},
-		"run installed akamai echo command with python required": {
-			command: "echo-python",
-			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as .cmd file": {
@@ -60,6 +60,8 @@ func TestCmdSubcommand(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
 					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed python akamai echo command": {
@@ -69,6 +71,8 @@ func TestCmdSubcommand(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
 					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"executable not found": {
@@ -82,7 +86,7 @@ func TestCmdSubcommand(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   test.command,
 				Action: cmdSubcommand(m.gitRepo, m.langManager),
@@ -110,6 +114,44 @@ func TestCmdSubcommand(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestPythonCmdSubcommand(t *testing.T) {
+	// run installed akamai echo command with python required
+	t.Run(
+		"run installed akamai echo command with python required",
+		func(t *testing.T) {
+			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
+			command := &cli.Command{
+				Name:   "echo-python",
+				Action: cmdSubcommand(m.gitRepo, m.langManager),
+			}
+			app, ctx := setupTestApp(command, m)
+			args := os.Args[0:1]
+			args = append(args, "echo-python")
+			args = append(args, "abc")
+
+			// Using the system python avoids the need of shipping a python
+			// interpreter together with the test data. This wouldn't be a
+			// good option because of different OSes and CPU architectures.
+			if pythonBin, err := exec.LookPath("python"); err != nil {
+				// If python is not available, just skip the test
+				t.Skipf("We could not find any available Python binary, thus we skip this test. Details: \n%s", err.Error())
+			} else {
+				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, "testdata/.akamai-cli/src/cli-echo-python").
+					Return([]string{pythonBin}, nil).Once()
+				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(true, nil)
+			}
+
+			err := app.RunContext(ctx, args)
+
+			m.cfg.AssertExpectations(t)
+			require.NoError(t, err)
+		})
 }
 
 func TestPrepareCommand(t *testing.T) {

@@ -37,7 +37,7 @@ import (
 
 const (
 	statsVersion     string = "1.1"
-	sleepTime24Hours        = time.Hour * 24
+	sleep24HDuration        = time.Hour * 24
 )
 
 // FirstRunCheckStats ...
@@ -237,7 +237,7 @@ func CheckPing(ctx context.Context) error {
 		}
 
 		currentTime := time.Now()
-		if lastPing.Add(sleepTime24Hours).Before(currentTime) {
+		if lastPing.Add(sleep24HDuration).Before(currentTime) {
 			doPing = true
 		}
 	}

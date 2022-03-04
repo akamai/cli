@@ -51,7 +51,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "Node.js", ver)
 		}
 
-		if version.Compare(ver, matches[1]) == -1 {
+		if version.Compare(ver, matches[1]) == version.Greater {
 			logger.Debugf("Node.js Version found: %s", matches[1])
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "Node.js", ver, matches[1])
 		}

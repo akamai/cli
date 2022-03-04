@@ -42,7 +42,7 @@ func TestCmdConfigSet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -94,7 +94,7 @@ func TestCmdConfigGet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -154,7 +154,7 @@ func TestCmdConfigUnset(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -224,7 +224,7 @@ func TestCmdConfigList(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{

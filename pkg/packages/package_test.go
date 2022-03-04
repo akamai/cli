@@ -52,38 +52,13 @@ func TestLangManager_FindExec(t *testing.T) {
 			},
 			expected: []string{"/test/nodejs", "test"},
 		},
-		"python command, default version, python command found": {
-			givenReqs: LanguageRequirements{
-				Python: "*",
-			},
-			givenCmdExec: "test",
-			init: func(m *mocked) {
-				m.On("LookPath", "python3").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python2").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python").Return("/test/python", nil)
-			},
-			expected: []string{"/test/python", "test"},
-		},
-		"python command, default version, not found": {
-			givenReqs: LanguageRequirements{
-				Python: "*",
-			},
-			givenCmdExec: "test",
-			init: func(m *mocked) {
-				m.On("LookPath", "python3").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python2").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python").Return("", fmt.Errorf("not found"))
-			},
-			withError: true,
-		},
 		"python command, version 3, binary found": {
 			givenReqs: LanguageRequirements{
 				Python: "3.0.0",
 			},
 			givenCmdExec: "test",
 			init: func(m *mocked) {
-				m.On("LookPath", "python3").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python").Return("/test/python", nil)
+				m.On("LookPath", "python3").Return("/test/python", nil)
 			},
 			expected: []string{"/test/python", "test"},
 		},
@@ -94,7 +69,8 @@ func TestLangManager_FindExec(t *testing.T) {
 			givenCmdExec: "test",
 			init: func(m *mocked) {
 				m.On("LookPath", "python3").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python").Return("", fmt.Errorf("not found"))
+				m.On("LookPath", "python3.exe").Return("", fmt.Errorf("not found"))
+				m.On("LookPath", "py.exe").Return("", fmt.Errorf("not found"))
 			},
 			withError: true,
 		},
@@ -108,15 +84,27 @@ func TestLangManager_FindExec(t *testing.T) {
 			},
 			expected: []string{"/test/python2", "test"},
 		},
+		"python command, version 2, python3 not found": {
+			givenReqs: LanguageRequirements{
+				Python: "2.0.0",
+			},
+			givenCmdExec: "test",
+			init: func(m *mocked) {
+				m.On("LookPath", "python2").Return("", fmt.Errorf("not found")).Once()
+				m.On("LookPath", "python2.exe").Return("", fmt.Errorf("not found")).Once()
+				m.On("LookPath", "py.exe").Return("", fmt.Errorf("not found")).Once()
+			},
+			withError: true,
+		},
 		"python command, version 2, not found": {
 			givenReqs: LanguageRequirements{
 				Python: "2.0.0",
 			},
 			givenCmdExec: "test",
 			init: func(m *mocked) {
-				m.On("LookPath", "python2").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python").Return("", fmt.Errorf("not found"))
-				m.On("LookPath", "python3").Return("", fmt.Errorf("not found"))
+				m.On("LookPath", "python2").Return("", fmt.Errorf("not found")).Once()
+				m.On("LookPath", "python2.exe").Return("", fmt.Errorf("not found")).Once()
+				m.On("LookPath", "py.exe").Return("", fmt.Errorf("not found")).Once()
 			},
 			withError: true,
 		},
@@ -174,4 +162,50 @@ func (m *mocked) LookPath(file string) (string, error) {
 func (m *mocked) FileExists(path string) (bool, error) {
 	args := m.Called(path)
 	return args.Bool(0), args.Error(1)
+}
+
+func (m *mocked) GetOS() string {
+	args := m.Called()
+	return args.String(0)
+}
+
+func TestDetermineLangAndRequirements(t *testing.T) {
+	tests := map[string]struct {
+		reqs     LanguageRequirements
+		language string
+		version  string
+	}{
+		"undefined": {
+			language: Undefined,
+			version:  "",
+		},
+		"concrete Python version": {
+			reqs:     LanguageRequirements{Python: "2.7.10"},
+			language: Python,
+			version:  "2.7.10",
+		},
+		"Python with wildcard": {
+			reqs:     LanguageRequirements{Python: "3.0.*"},
+			language: Python,
+			version:  "3.0.0",
+		},
+		"Python with short wildcard": {
+			reqs:     LanguageRequirements{Python: "3.*"},
+			language: Python,
+			version:  "3.0.0",
+		},
+		"Python pure wildcard": {
+			reqs:     LanguageRequirements{Python: "*"},
+			language: Python,
+			version:  "0.0.0",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			language, version := determineLangAndRequirements(test.reqs)
+			assert.Equal(t, test.language, language)
+			assert.Equal(t, test.version, version)
+		})
+	}
 }

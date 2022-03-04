@@ -96,6 +96,7 @@ func findPackageDir(dir string) string {
 		}
 	}
 
+	// at this point, dir points to the package directory, with cli.json
 	return dir
 }
 

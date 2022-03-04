@@ -25,3 +25,32 @@ func (m *Mock) FindExec(_ context.Context, requirements LanguageRequirements, cm
 	}
 	return args.Get(0).([]string), args.Error(1)
 }
+
+// FinishExecution mocks behavior of (*langManager) FinishExecution()
+func (m *Mock) FinishExecution(_ context.Context, languageRequirements LanguageRequirements, dirName string) {
+	m.Called(languageRequirements, dirName)
+}
+
+// PrepareExecution mocks behavior of (*langManager) PrepareExecution()
+func (m *Mock) PrepareExecution(_ context.Context, languageRequirements LanguageRequirements, dirName string) error {
+	args := m.Called(languageRequirements, dirName)
+	return args.Error(0)
+}
+
+// GetShell mocks behavior of (*langManager) GetShell()
+func (m *Mock) GetShell(goos string) (string, error) {
+	args := m.Called(goos)
+	return args.Get(0).(string), args.Error(0)
+}
+
+// GetOS mocks behavior of (*langManager) GetOS()
+func (m *Mock) GetOS() string {
+	m.Called()
+	return "GetOS()"
+}
+
+// FileExists mocks behavior of (*langManager) FileExists()
+func (m *Mock) FileExists(path string) (bool, error) {
+	args := m.Called(path)
+	return args.Bool(0), args.Error(1)
+}

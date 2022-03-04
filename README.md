@@ -1,6 +1,6 @@
-<h1 align="center">
+<h1 style="text-align: center">
   <br>
-      <img src="assets/screen-1.png">
+      <img alt="Akamai CLI usage" src="assets/screen-1.png">
   <br>
 </h1>
 
@@ -28,6 +28,15 @@ Akamai CLI doesn't have any dependencies and is quick to install. However, you m
 Install Akamai CLI by downloading a [release binary](https://github.com/akamai/cli/releases). See instructions for various operating systems.
 
 You can also use [Homebrew](#install-with-homebrew), [Docker](#install-with-docker), or compile from [source](#compile-from-source).
+
+### System dependencies for Python-based packages
+
+If you're using a Python-based CLI package, install these extra dependencies:
+
+- Python 3.3 or above
+- [Python 3 `pip` package installer](https://pip.pypa.io/en/stable/installation)
+- [Python 3 `venv` module](https://docs.python.org/3/library/venv.html)
+- Up-to-date common CA certificates for your operating system (PEM files)
 
 ### Install from binaries
 
@@ -284,16 +293,16 @@ The package you install needs a `cli.json` file. This is where you specify the c
 - `commands`: Lists commands included in the package.
   - `name`: The command name, used as the executable name.
   - `aliases`: An array of aliases that invoke the same command.
-  - `version`: The command version.
+  - `version`: The command version.
   - `description`: A short description for the command.
   - `bin`: A URL to fetch a binary package from if it cannot be installed from source.
 
     The `bin` URL may contain the following placeholders:
 
-    - `{{.Version}}`: The command version.
-    - `{{.Name}}`: The command name.
+    - `{{.Version}}`: The command version.
+    - `{{.Name}}`: The command name.
     - `{{.OS}}`: The current operating system, either `windows`, `mac`, or `linux`.
-    - `{{.Arch}}`: The current OS architecture, either `386` or `amd64`.
+    - `{{.Arch}}`: The current OS architecture, either `386` or `amd64`.
     - `{{.BinSuffix}}`: The binary suffix for the current OS: `.exe` for `windows`.
 
 ### Example

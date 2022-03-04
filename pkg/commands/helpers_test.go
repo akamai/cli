@@ -22,7 +22,6 @@ import (
 var testFiles = map[string][]string{
 	"cli-echo":              {"akamai-e", "akamai-echo", "akamai-echo-cmd.cmd"},
 	"cli-echo-invalid-json": {"akamai-echo-invalid-json"},
-	"cli-echo-python":       {"akamai-echo-python"},
 }
 
 // TestMain prepares test binary used as cli command in tests and copies it to each directory specified in 'testFiles' variable
@@ -81,6 +80,7 @@ type mocked struct {
 	cfg         *config.Mock
 	gitRepo     *git.Mock
 	langManager *packages.Mock
+	cmd         *MockCmd
 }
 
 func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {

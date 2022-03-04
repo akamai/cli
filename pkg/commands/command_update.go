@@ -38,7 +38,7 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 		logger.Debug("UPDATE START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("UPDATE FINISH: %v", time.Now().Sub(start))
+				logger.Debugf("UPDATE FINISH: %v", time.Since(start))
 			} else {
 				logger.Errorf("UPDATE ERROR: %v", e.Error())
 			}
@@ -74,7 +74,7 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 
 func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger log.Logger, cmd string, forceBinary bool) error {
 	term := terminal.Get(ctx)
-	exec, err := findExec(ctx, langManager, cmd)
+	exec, _, err := findExec(ctx, langManager, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}

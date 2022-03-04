@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
+	git2 "gopkg.in/src-d/go-git.v4"
 )
 
 func TestCmdInstall(t *testing.T) {
@@ -106,7 +107,7 @@ func TestCmdInstall(t *testing.T) {
 				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-test-cmd"))
 			},
 		},
-		"package already exists": {
+		"package directory already exists": {
 			args: []string{"installed"},
 			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
@@ -134,6 +135,7 @@ func TestCmdInstall(t *testing.T) {
 					})
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.gitRepo.On("Clone", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(git2.ErrRepositoryAlreadyExists)
 			},
 			withError: "Unable to clone repository: oops",
 		},
@@ -365,7 +367,7 @@ func TestCmdInstall(t *testing.T) {
 			defer srv.Close()
 			require.NoError(t, os.Setenv("REPOSITORY_URL", srv.URL))
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   "install",
 				Action: cmdInstall(m.gitRepo, m.langManager),

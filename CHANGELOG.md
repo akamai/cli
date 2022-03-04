@@ -1,8 +1,9 @@
-# 1.3.? (? ?, 2022)
+# 1.4.0 (March 9, 2022)
 
-## Fixes
+## Enhancements
 
-* Resolve some vulnerabilities in the dependencies (DXE-539, DXE-540, DXE-541).
+* [IMPORTANT] Refactor Python support, making use of virtual environments to isolate dependencies for each Python package.
+  * Refer to README.md for new system dependencies.
 
 # 1.3.1 (December 8, 2021)
 

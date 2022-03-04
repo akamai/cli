@@ -11,11 +11,11 @@ func TestCompareVersion(t *testing.T) {
 		left, right string
 		expected    int
 	}{
-		"left is greater than right":                 {"1.0.1", "1.0.0", -1},
-		"left is less than right":                    {"0.9.0", "1.0.0", 1},
-		"versions are equal":                         {"0.9.0", "0.9.0", 0},
-		"left version does not match semver syntax":  {"abc", "0.9.0", -2},
-		"right version does not match semver syntax": {"1.0.0", "abc", 2},
+		"left is greater than right":                 {"1.0.1", "1.0.0", Greater},
+		"left is less than right":                    {"0.9.0", "1.0.0", Smaller},
+		"versions are equal":                         {"0.9.0", "0.9.0", Equals},
+		"left version does not match semver syntax":  {"abc", "0.9.0", Error},
+		"right version does not match semver syntax": {"1.0.0", "abc", Error},
 	}
 
 	for name, test := range tests {

@@ -107,7 +107,7 @@ func TestCmdSearch(t *testing.T) {
 		require.NoError(t, os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL))
 		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name:   "search",
 				Action: cmdSearch,

@@ -38,7 +38,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 		logger.Debug("UNINSTALL START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("UNINSTALL FINISH: %v", time.Now().Sub(start))
+				logger.Debugf("UNINSTALL FINISH: %v", time.Since(start))
 			} else {
 				logger.Errorf("UNINSTALL ERROR: %v", e.Error())
 			}
@@ -59,7 +59,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger log.Logger) error {
 	term := terminal.Get(ctx)
 
-	exec, err := findExec(ctx, langManager, cmd)
+	exec, _, err := findExec(ctx, langManager, cmd)
 	if err != nil {
 		return fmt.Errorf("command \"%s\" not found. Try \"%s help\"", cmd, tools.Self())
 	}
@@ -84,6 +84,19 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 		term.Spinner().Fail()
 		logger.Errorf("unable to remove directory: %s", repoDir)
 		return fmt.Errorf("unable to remove directory: %s", repoDir)
+	}
+
+	venvPath, err := tools.GetPkgVenvPath(fmt.Sprintf("cli-%s", cmd))
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(venvPath); err == nil || !os.IsNotExist(err) {
+		logger.Debugf("Attempting to remove package virtualenv directory")
+		if err := os.RemoveAll(venvPath); err != nil {
+			term.Spinner().Fail()
+			logger.Errorf("unable to remove virtualenv directory: %s", venvPath)
+			return fmt.Errorf("unable to remove virtualenv directory: %s", repoDir)
+		}
 	}
 
 	term.Spinner().OK()

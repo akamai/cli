@@ -32,7 +32,7 @@ func cmdList(c *cli.Context) (e error) {
 	logger.Debug("LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("LIST FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("LIST FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("LIST ERROR: %v", e.Error())
 		}

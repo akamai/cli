@@ -32,7 +32,7 @@ func cmdUpgrade(c *cli.Context) error {
 	start := time.Now()
 	logger.Debug("UPGRADE START")
 	defer func() {
-		logger.Debugf("UPGRADE FINISH: %v", time.Now().Sub(start))
+		logger.Debugf("UPGRADE FINISH: %v", time.Since(start))
 	}()
 	term := terminal.Get(c.Context)
 

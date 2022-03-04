@@ -18,7 +18,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const sleepTime24Hours = time.Hour * 24
+const sleep24HDuration = time.Hour * 24
 
 // CreateApp creates and sets up *cli.App
 func CreateApp(ctx context.Context) *cli.App {
@@ -64,7 +64,7 @@ func CreateApp(ctx context.Context) *cli.App {
 
 		if c.IsSet("daemon") {
 			for {
-				time.Sleep(sleepTime24Hours)
+				time.Sleep(sleep24HDuration)
 			}
 		}
 		return nil
@@ -231,7 +231,6 @@ func SetHelpTemplates() {
 			"{{if .Commands}} command [command flags]{{end}} "+
 			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}"+
 			"\n\n{{end}}") +
-
 		"{{if .Description}}" +
 		color.YellowString("Description:\n") +
 		"   {{.Description}}" +

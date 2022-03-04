@@ -38,7 +38,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 		commandName := strings.ToLower(c.Command.Name)
 
-		executable, err := findExec(c.Context, langManager, commandName)
+		executable, _, err := findExec(c.Context, langManager, commandName)
 		if err != nil {
 			errMsg := color.RedString("Executable \"%s\" not found.", commandName)
 			logger.Error(errMsg)
@@ -55,7 +55,20 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		cmdPackage, _ := readPackage(packageDir)
 
 		if cmdPackage.Requirements.Python != "" {
-			var err error
+			exec, err := langManager.FindExec(c.Context, cmdPackage.Requirements, packageDir)
+			if err != nil {
+				return err
+			}
+
+			if len(executable) == 1 {
+				executable = append([]string{exec[0]}, executable...)
+			} else {
+				if strings.Contains(strings.ToLower(executable[0]), "python") ||
+					strings.Contains(strings.ToLower(executable[0]), "py.exe") {
+					executable[0] = exec[0]
+				}
+			}
+
 			if runtime.GOOS == "linux" {
 				_, err = os.Stat(filepath.Join(packageDir, ".local"))
 			} else if runtime.GOOS == "darwin" {
@@ -108,11 +121,18 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
 			return err
 		}
+
+		cmdPackage, err = readPackage(packageDir)
+		if err != nil {
+			return err
+		}
+
 		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
 
 		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section", "accountkey")
 
-		return passthruCommand(executable)
+		subCmd := createCommand(executable[0], executable[1:])
+		return passthruCommand(c.Context, subCmd, langManager, cmdPackage.Requirements, fmt.Sprintf("cli-%s", cmdPackage.Commands[0].Name))
 	}
 }
 

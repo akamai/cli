@@ -60,7 +60,7 @@ func cmdSearch(c *cli.Context) (e error) {
 	logger.Debug("SEARCH START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("SEARCH FINISHED: %v", time.Now().Sub(start))
+			logger.Debugf("SEARCH FINISHED: %v", time.Since(start))
 		} else {
 			logger.Errorf("SEARCH ERROR: %v", e.Error())
 		}

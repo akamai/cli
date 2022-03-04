@@ -138,7 +138,7 @@ func TestCmdUpgrade(t *testing.T) {
 				}
 			}))
 			require.NoError(t, os.Setenv("CLI_REPOSITORY", srv.URL))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name:   "upgrade",
 				Action: cmdUpgrade,
