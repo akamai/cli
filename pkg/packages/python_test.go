@@ -201,6 +201,7 @@ venv: error: the following arguments are required: ENV_DIR
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
 				m.On("GetOS").Return("linux").Times(4)
+				m.On("FileExists", veDir).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: bashBin,
 					Args: []string{"source", "veDir/bin/activate"},
@@ -252,6 +253,7 @@ venv: error: the following arguments are required: ENV_DIR
 					Args: []string{py3BinWindows, "-m", "venv", "veDir"},
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
+				m.On("FileExists", veDir).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "veDir/Scripts/activate.bat",
 					Args: []string{},

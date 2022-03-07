@@ -71,7 +71,14 @@ func (l *langManager) setup(ctx context.Context, pkgVenvPath, srcPath, python3Bi
 			logger.Debugf("All virtualenv dependencies successfully installed")
 		}()
 
-		if !passthru {
+		veExists, err := l.commandExecutor.FileExists(pkgVenvPath)
+		if err != nil {
+			return err
+		}
+
+		if !passthru || !veExists {
+			logger.Debugf("the virtual environment %s does not exist yet - installing dependencies", pkgVenvPath)
+
 			// upgrade pip and setuptools
 			if err := l.upgradePipAndSetuptools(ctx, python3Bin); err != nil {
 				return err
