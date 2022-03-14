@@ -32,6 +32,42 @@ func TestCreateApp(t *testing.T) {
 	assert.NotNil(t, app.Before)
 }
 
+func TestCreateAppTemplate_EmptyCommandName(t *testing.T) {
+	term := terminal.Color()
+	ctx := terminal.Context(context.Background(), term)
+
+	app := CreateAppTemplate(ctx, "", "Akamai CLI", "some description", version.Version)
+	assert.Equal(t, "akamai", app.Name)
+	assert.Equal(t, "Akamai CLI", app.Usage)
+	assert.Equal(t, "some description", app.Description)
+	assert.Equal(t, version.Version, app.Version)
+	assert.Equal(t, term, app.Writer)
+	assert.Equal(t, term.Error(), app.ErrWriter)
+	assert.Equal(t, "Copyright (C) Akamai Technologies, Inc", app.Copyright)
+	assert.True(t, app.EnableBashCompletion)
+	assert.True(t, hasFlag(app, "edgerc"))
+	assert.True(t, hasFlag(app, "section"))
+	assert.True(t, hasFlag(app, "accountkey"))
+}
+
+func TestCreateAppTemplate_NonEmptyCommandName(t *testing.T) {
+	term := terminal.Color()
+	ctx := terminal.Context(context.Background(), term)
+
+	app := CreateAppTemplate(ctx, "test", "Akamai CLI", "some description", version.Version)
+	assert.Equal(t, "akamai-test", app.Name)
+}
+
+func TestCreateAppTemplate_NonEmptyCommandNameWithEnvAKAMAI_CLI(t *testing.T) {
+	term := terminal.Color()
+	ctx := terminal.Context(context.Background(), term)
+
+	assert.NoError(t, os.Setenv("AKAMAI_CLI", ""))
+	app := CreateAppTemplate(ctx, "test", "", "", "")
+	assert.Equal(t, "akamai test", app.Name)
+	assert.NoError(t, os.Unsetenv("AKAMAI_CLI"))
+}
+
 func TestVersion(t *testing.T) {
 	term := terminal.Color()
 	ctx := terminal.Context(context.Background(), term)

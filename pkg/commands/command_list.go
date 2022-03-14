@@ -16,15 +16,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
-
+	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-
-	"github.com/akamai/cli/pkg/tools"
 )
 
 func cmdList(c *cli.Context) (e error) {
@@ -34,7 +32,7 @@ func cmdList(c *cli.Context) (e error) {
 	logger.Debug("LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("LIST FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("LIST FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("LIST ERROR: %v", e.Error())
 		}

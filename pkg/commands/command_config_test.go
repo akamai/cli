@@ -2,13 +2,14 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"testing"
 )
 
 func TestCmdConfigSet(t *testing.T) {
@@ -41,7 +42,7 @@ func TestCmdConfigSet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -93,7 +94,7 @@ func TestCmdConfigGet(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -153,7 +154,7 @@ func TestCmdConfigUnset(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{
@@ -223,7 +224,7 @@ func TestCmdConfigList(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
 				Subcommands: []*cli.Command{

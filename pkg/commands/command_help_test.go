@@ -2,15 +2,16 @@ package commands
 
 import (
 	"bytes"
+	"os"
+	"regexp"
+	"testing"
+
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"regexp"
-	"testing"
 )
 
 func TestCmdHelp(t *testing.T) {
@@ -51,7 +52,7 @@ func TestCmdHelp(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			wr := bytes.Buffer{}
 			testApp, ctx := setupTestApp(test.cmd, m)
 			testApp.Commands = append(testApp.Commands, &cli.Command{

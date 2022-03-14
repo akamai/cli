@@ -26,20 +26,20 @@ func TestVersionCompare(t *testing.T) {
 		right  string
 		result int
 	}{
-		{"0.9.9", "1.0.0", 1},
-		{"0.1.0", "0.2.0", 1},
-		{"0.3.0", "0.3.1", 1},
-		{"0.1.0", "0.1.0", 0},
-		{"1.0.0", "0.9.9", -1},
-		{"0.2.0", "0.1.0", -1},
-		{"0.3.1", "0.3.0", -1},
-		{"1", "2", 1},
-		{"1.1", "1.2", 1},
-		{"3.0.0", "3.1.4", 1},
-		{"1.1.0", "1.1.1", 1},
-		{"1.1.0", "1.1.1-dev", 1},
-		{"1.0.4", "1.1.1-dev", 1},
-		{"1.1.3", "1.1.4-dev", 1},
+		{"0.9.9", "1.0.0", version.Smaller},
+		{"0.1.0", "0.2.0", version.Smaller},
+		{"0.3.0", "0.3.1", version.Smaller},
+		{"0.1.0", "0.1.0", version.Equals},
+		{"1.0.0", "0.9.9", version.Greater},
+		{"0.2.0", "0.1.0", version.Greater},
+		{"0.3.1", "0.3.0", version.Greater},
+		{"1", "2", version.Smaller},
+		{"1.1", "1.2", version.Smaller},
+		{"3.0.0", "3.1.4", version.Smaller},
+		{"1.1.0", "1.1.1", version.Smaller},
+		{"1.1.0", "1.1.1-dev", version.Smaller},
+		{"1.0.4", "1.1.1-dev", version.Smaller},
+		{"1.1.3", "1.1.4-dev", version.Smaller},
 	}
 
 	for _, tt := range versionTests {

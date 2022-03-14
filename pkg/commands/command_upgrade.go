@@ -15,14 +15,13 @@
 package commands
 
 import (
-	"github.com/akamai/cli/pkg/log"
 	"os"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -33,7 +32,7 @@ func cmdUpgrade(c *cli.Context) error {
 	start := time.Now()
 	logger.Debug("UPGRADE START")
 	defer func() {
-		logger.Debugf("UPGRADE FINISH: %v", time.Now().Sub(start))
+		logger.Debugf("UPGRADE FINISH: %v", time.Since(start))
 	}()
 	term := terminal.Get(c.Context)
 

@@ -102,18 +102,12 @@ func findCollisions(availableCmds []*cli.Command, args []string) error {
 		metaCmds := []string{"help", "uninstall", "update"}
 		for _, c := range metaCmds {
 			if c == args[1] && len(args) > 2 {
-				if err := findDuplicate(availableCmds, args[2]); err != nil {
-					return err
-				}
-
-				return nil
+				return findDuplicate(availableCmds, args[2])
 			}
 		}
 
 		// rest of commands: we need to check the first parameter (args[1])
-		if err := findDuplicate(availableCmds, args[1]); err != nil {
-			return err
-		}
+		return findDuplicate(availableCmds, args[1])
 	}
 
 	return nil

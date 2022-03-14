@@ -1,4 +1,5 @@
-//+build !noautoupgrade
+//go:build !noautoupgrade
+// +build !noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -30,14 +31,14 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/log"
+	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
+	"github.com/urfave/cli/v2"
 )
 
 // CheckUpgradeVersion ...
@@ -70,7 +71,7 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 		}
 
 		currentTime := time.Now()
-		if lastUpgrade.Add(sleepTime24Hours).Before(currentTime) {
+		if lastUpgrade.Add(sleep24HDuration).Before(currentTime) {
 			checkForUpgrade = true
 		}
 	}
@@ -84,7 +85,7 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 
 		latestVersion := getLatestReleaseVersion(ctx)
 		comp := version.Compare(version.Version, latestVersion)
-		if comp == 1 {
+		if comp == version.Smaller {
 			term.Spinner().Stop(terminal.SpinnerStatusOK)
 			_, _ = term.Writeln("You can find more details about the new version here: https://github.com/akamai/cli/releases")
 			if answer, err := term.Confirm(fmt.Sprintf(
@@ -96,7 +97,7 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 			}
 			return latestVersion
 		}
-		if comp == 0 {
+		if comp == version.Equals {
 			return version.Version
 		}
 	}
@@ -230,8 +231,9 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	if err == nil {
 		os.Args[0] = selfPath
 	}
-	err = passthruCommand(os.Args)
-	if err != nil {
+
+	subCmd := createCommand(os.Args[0], os.Args[1:])
+	if err = passthruCommand(ctx, subCmd, packages.NewLangManager(), packages.LanguageRequirements{}, selfPath); err != nil {
 		cli.OsExiter(1)
 		return false
 	}

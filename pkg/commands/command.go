@@ -25,32 +25,44 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/app"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/pkg/version"
+	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 )
 
-type command struct {
-	Name         string   `json:"name"`
-	Aliases      []string `json:"aliases"`
-	Version      string   `json:"version"`
-	Description  string   `json:"description"`
-	Usage        string   `json:"usage"`
-	Arguments    string   `json:"arguments"`
-	Bin          string   `json:"bin"`
-	AutoComplete bool     `json:"auto-complete"`
+type (
+	command struct {
+		Name         string   `json:"name"`
+		Aliases      []string `json:"aliases"`
+		Version      string   `json:"version"`
+		Description  string   `json:"description"`
+		Usage        string   `json:"usage"`
+		Arguments    string   `json:"arguments"`
+		Bin          string   `json:"bin"`
+		AutoComplete bool     `json:"auto-complete"`
 
-	Flags       []cli.Flag     `json:"-"`
-	Docs        string         `json:"-"`
-	BinSuffix   string         `json:"-"`
-	OS          string         `json:"-"`
-	Arch        string         `json:"-"`
-	Subcommands []*cli.Command `json:"-"`
-}
+		Flags       []cli.Flag     `json:"-"`
+		Docs        string         `json:"-"`
+		BinSuffix   string         `json:"-"`
+		OS          string         `json:"-"`
+		Arch        string         `json:"-"`
+		Subcommands []*cli.Command `json:"-"`
+	}
+
+	// Command represents an external command being prepared or run
+	Command struct {
+		cmd *exec.Cmd
+	}
+
+	// Cmd is a wrapper for exec.Cmd methods
+	Cmd interface {
+		Run() error
+	}
+)
 
 func getBuiltinCommands(c *cli.Context) []subcommands {
 	commands := make([]subcommands, 0)
@@ -107,13 +119,19 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 			SkipFlagParsing: true,
 			BashComplete: func(c *cli.Context) {
 				if command.AutoComplete {
-					executable, err := findExec(c.Context, langManager, c.Command.Name)
+					executable, packageReqs, err := findExec(c.Context, langManager, c.Command.Name)
+					if err != nil {
+						return
+					}
+
+					packageDir, err := findBinPackageDir(executable)
 					if err != nil {
 						return
 					}
 
 					executable = append(executable, os.Args[2:]...)
-					if err = passthruCommand(executable); err != nil {
+					subCmd := createCommand(executable[0], executable[1:])
+					if err = passthruCommand(c.Context, subCmd, langManager, *packageReqs, packageDir); err != nil {
 						return
 					}
 				}
@@ -267,7 +285,8 @@ func createInstalledCommands(_ context.Context, gitRepo git.Repository, langMana
 	return commands
 }
 
-func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, error) {
+// findExec returns paths to language interpreter (if necessary) and package binary
+func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, *packages.LanguageRequirements, error) {
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
 	cmdName := "akamai"
@@ -280,7 +299,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 	systemPath := os.Getenv("PATH")
 	packagePaths := getPackageBinPaths()
 	if err := os.Setenv("PATH", packagePaths); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Quick look for executables on the path
@@ -292,16 +311,16 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 
 	if path != "" {
 		if err := os.Setenv("PATH", systemPath); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return []string{path}, nil
+		return []string{path}, nil, nil
 	}
 
 	if err := os.Setenv("PATH", systemPath); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if packagePaths == "" {
-		return nil, errors.New("no executables found")
+		return nil, nil, packages.ErrNoExeFound
 	}
 
 	for _, path := range filepath.SplitList(packagePaths) {
@@ -328,29 +347,28 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 			continue
 		}
 
-		cmdFile := files[0]
+		cmdBinary := files[0]
 
-		packageDir := findPackageDir(filepath.Dir(cmdFile))
+		packageDir := findPackageDir(filepath.Dir(cmdBinary))
 		cmdPackage, err := readPackage(packageDir)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		cmd, err := langManager.FindExec(ctx, cmdPackage.Requirements, cmdFile)
+		comm, err := langManager.FindExec(ctx, cmdPackage.Requirements, cmdBinary)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		return cmd, nil
+		return comm, &cmdPackage.Requirements, nil
 	}
 
-	return nil, errors.New("no executables found")
+	return nil, nil, packages.ErrNoExeFound
 }
 
 func getPackageBinPaths() string {
 	path := ""
-	akamaiCliPath, err := tools.GetAkamaiCliSrcPath()
-	if err == nil && akamaiCliPath != "" {
+	if akamaiCliPath, err := tools.GetAkamaiCliSrcPath(); err == nil {
 		paths, _ := filepath.Glob(filepath.Join(akamaiCliPath, "*"))
 		if len(paths) > 0 {
 			path += strings.Join(paths, string(os.PathListSeparator))
@@ -364,11 +382,31 @@ func getPackageBinPaths() string {
 	return path
 }
 
-func passthruCommand(executable []string) error {
-	subCmd := exec.Command(executable[0], executable[1:]...)
-	subCmd.Stdin = os.Stdin
-	subCmd.Stderr = os.Stderr
-	subCmd.Stdout = os.Stdout
+// passthruCommand performs the external Cmd invocation and previous set up, if required
+func passthruCommand(ctx context.Context, subCmd Cmd, langManager packages.LangManager, languageRequirements packages.LanguageRequirements, dirName string) error {
+	/*
+		Checking if any additional VE set up for Python commands is required.
+		Just run package setup if both conditions below are met:
+		* required python >= 3.0.0
+		* virtual environment is not present
+	*/
+	if v3Comparison := version.Compare(languageRequirements.Python, "3.0.0"); languageRequirements.Python != "" && (v3Comparison == version.Greater || v3Comparison == version.Equals) {
+		vePath, err := tools.GetPkgVenvPath(filepath.Base(dirName))
+		if err != nil {
+			return err
+		}
+		veExists, err := langManager.FileExists(vePath)
+		if err != nil {
+			return err
+		}
+		if !veExists {
+			if err := langManager.PrepareExecution(ctx, languageRequirements, dirName); err != nil {
+				return err
+			}
+		}
+	}
+	defer langManager.FinishExecution(ctx, languageRequirements, dirName)
+
 	err := subCmd.Run()
 
 	exitCode := 1
@@ -381,4 +419,39 @@ func passthruCommand(executable []string) error {
 		return cli.Exit("", exitCode)
 	}
 	return nil
+}
+
+func findBinPackageDir(binPath []string) (string, error) {
+	if len(binPath) == 0 {
+		return "", packages.ErrPackageExecutableNotFound
+	}
+
+	absPath, err := filepath.Abs(binPath[len(binPath)-1])
+	if err != nil {
+		return "", err
+	}
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return "", err
+	}
+	if info.IsDir() {
+		return "", errors.New("the specified binary is a directory")
+	}
+
+	return filepath.Dir(filepath.Dir(absPath)), nil
+}
+
+func createCommand(name string, args []string) *Command {
+	comm := &Command{cmd: exec.Command(name, args...)}
+	comm.cmd.Stdin = os.Stdin
+	comm.cmd.Stderr = os.Stderr
+	comm.cmd.Stdout = os.Stdout
+
+	return comm
+}
+
+// Run starts the command and waits for it to complete
+func (c *Command) Run() error {
+	return c.cmd.Run()
 }

@@ -48,17 +48,13 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "ruby", cmdReq)
 		}
 
-		if version.Compare(cmdReq, matches[1]) == -1 {
+		if version.Compare(cmdReq, matches[1]) == version.Greater {
 			logger.Debugf("Ruby Version found: %s", matches[1])
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "ruby", cmdReq, matches[1])
 		}
 	}
 
-	if err := installRubyDepsBundler(ctx, l.commandExecutor, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installRubyDepsBundler(ctx, l.commandExecutor, dir)
 }
 
 func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir string) error {

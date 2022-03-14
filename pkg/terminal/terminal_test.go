@@ -16,11 +16,12 @@ package terminal
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/tj/assert"
 )
 
 func TestWrite(t *testing.T) {

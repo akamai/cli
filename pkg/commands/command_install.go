@@ -18,20 +18,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/git"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -46,7 +45,7 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 		logger.Debug("INSTALL START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("INSTALL FINISH: %v", time.Now().Sub(start))
+				logger.Debugf("INSTALL FINISH: %v", time.Since(start))
 			} else {
 				var exitErr cli.ExitCoder
 				if errors.As(e, &exitErr) && exitErr.ExitCode() == 0 {
@@ -91,16 +90,12 @@ func packageListDiff(c *cli.Context, oldcmds []subcommands) {
 
 	var old []command
 	for _, oldcmd := range oldcmds {
-		for _, cmd := range oldcmd.Commands {
-			old = append(old, cmd)
-		}
+		old = append(old, oldcmd.Commands...)
 	}
 
 	var newCmds []command
 	for _, newcmd := range cmds {
-		for _, cmd := range newcmd.Commands {
-			newCmds = append(newCmds, cmd)
-		}
+		newCmds = append(newCmds, newcmd.Commands...)
 	}
 
 	var added = make(map[string]bool)

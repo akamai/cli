@@ -28,12 +28,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/akamai/cli/pkg/packages"
-
 	"github.com/akamai/cli/pkg/log"
-	"github.com/urfave/cli/v2"
-
+	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
+	"github.com/urfave/cli/v2"
 )
 
 type subcommands struct {
@@ -98,6 +96,7 @@ func findPackageDir(dir string) string {
 		}
 	}
 
+	// at this point, dir points to the package directory, with cli.json
 	return dir
 }
 

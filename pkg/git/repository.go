@@ -3,12 +3,11 @@ package git
 import (
 	"context"
 	"fmt"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-
-	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/akamai/cli/pkg/terminal"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 const (

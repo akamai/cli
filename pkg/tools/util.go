@@ -28,7 +28,13 @@ func Self() string {
 	return filepath.Base(os.Args[0])
 }
 
-// GetAkamaiCliPath ...
+// GetAkamaiCliPath returns the "$AKAMAI_CLI_HOME/.akamai-cli" value and tries to create it if not existing.
+//
+// Errors out if:
+//
+// * $AKAMAI_CLI_HOME is not defined
+//
+// * $AKAMAI_CLI_HOME/.akamai-cli does not exist, and we cannot create it
 func GetAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
@@ -48,14 +54,37 @@ func GetAkamaiCliPath() (string, error) {
 	return cliPath, nil
 }
 
-// GetAkamaiCliSrcPath ...
+// GetAkamaiCliSrcPath returns $AKAMAI_CLI_HOME/.akamai-cli/src
 func GetAkamaiCliSrcPath() (string, error) {
-	cliHome, _ := GetAkamaiCliPath()
+	cliHome, err := GetAkamaiCliPath()
+	if err != nil {
+		return "", err
+	}
 
 	return filepath.Join(cliHome, "src"), nil
 }
 
-// Githubize ..
+// GetAkamaiCliVenvPath - returns the .akamai-cli/venv path, for Python virtualenv
+func GetAkamaiCliVenvPath() (string, error) {
+	cliHome, err := GetAkamaiCliPath()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(cliHome, "venv"), nil
+}
+
+// GetPkgVenvPath - returns the package virtualenv path
+func GetPkgVenvPath(pkgName string) (string, error) {
+	vePath, err := GetAkamaiCliVenvPath()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(vePath, pkgName), nil
+}
+
+// Githubize returns the GitHub package repository URI
 func Githubize(repo string) string {
 	if strings.HasPrefix(repo, "http") || strings.HasPrefix(repo, "ssh") || strings.HasSuffix(repo, ".git") {
 		return strings.TrimPrefix(repo, "ssh://")

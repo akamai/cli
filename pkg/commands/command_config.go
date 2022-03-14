@@ -16,14 +16,13 @@ package commands
 
 import (
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/fatih/color"
 	"strings"
 	"time"
 
 	"github.com/akamai/cli/pkg/config"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
-
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
@@ -34,7 +33,7 @@ func cmdConfigSet(c *cli.Context) (e error) {
 	logger.Debug("CONFIG SET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG SET FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("CONFIG SET FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("CONFIG SET ERROR: %v", e.Error())
 		}
@@ -59,7 +58,7 @@ func cmdConfigGet(c *cli.Context) (e error) {
 	logger.Debug("CONFIG GET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG GET FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("CONFIG GET FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("CONFIG GET ERROR: %v", e.Error())
 		}
@@ -82,7 +81,7 @@ func cmdConfigUnset(c *cli.Context) (e error) {
 	logger.Debug("CONFIG UNSET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG UNSET FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("CONFIG UNSET FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("CONFIG UNSET ERROR: %v", e.Error())
 		}
@@ -107,7 +106,7 @@ func cmdConfigList(c *cli.Context) (e error) {
 	logger.Debug("CONFIG LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG LIST FINISH: %v", time.Now().Sub(start))
+			logger.Debugf("CONFIG LIST FINISH: %v", time.Since(start))
 		} else {
 			logger.Errorf("CONFIG LIST ERROR: %v", e.Error())
 		}

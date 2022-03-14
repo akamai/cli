@@ -2,6 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
@@ -9,11 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
 func TestCmdSearch(t *testing.T) {
@@ -106,7 +107,7 @@ func TestCmdSearch(t *testing.T) {
 		require.NoError(t, os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL))
 		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name:   "search",
 				Action: cmdSearch,

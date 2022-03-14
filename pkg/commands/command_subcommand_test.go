@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/akamai/cli/pkg/config"
@@ -28,6 +29,8 @@ func TestCmdSubcommand(t *testing.T) {
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as binary with edgerc location": {
@@ -35,6 +38,8 @@ func TestCmdSubcommand(t *testing.T) {
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as binary with alias": {
@@ -44,13 +49,8 @@ func TestCmdSubcommand(t *testing.T) {
 			section:        "some_section",
 			init: func(t *testing.T, m *mocked) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
-			},
-		},
-		"run installed akamai echo command with python required": {
-			command: "echo-python",
-			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed akamai echo command as .cmd file": {
@@ -60,6 +60,8 @@ func TestCmdSubcommand(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
 					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"run installed python akamai echo command": {
@@ -69,6 +71,8 @@ func TestCmdSubcommand(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
 					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
 		},
 		"executable not found": {
@@ -82,7 +86,7 @@ func TestCmdSubcommand(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   test.command,
 				Action: cmdSubcommand(m.gitRepo, m.langManager),
@@ -112,38 +116,167 @@ func TestCmdSubcommand(t *testing.T) {
 	}
 }
 
-func TestFindAndAppendFlag(t *testing.T) {
+func TestPythonCmdSubcommand(t *testing.T) {
+	// run installed akamai echo command with python required
+	t.Run(
+		"run installed akamai echo command with python required",
+		func(t *testing.T) {
+			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
+			command := &cli.Command{
+				Name:   "echo-python",
+				Action: cmdSubcommand(m.gitRepo, m.langManager),
+			}
+			app, ctx := setupTestApp(command, m)
+			args := os.Args[0:1]
+			args = append(args, "echo-python")
+			args = append(args, "abc")
+
+			// Using the system python avoids the need of shipping a python
+			// interpreter together with the test data. This wouldn't be a
+			// good option because of different OSes and CPU architectures.
+			if pythonBin, err := exec.LookPath("python"); err != nil {
+				// If python is not available, just skip the test
+				t.Skipf("We could not find any available Python binary, thus we skip this test. Details: \n%s", err.Error())
+			} else {
+				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, "testdata/.akamai-cli/src/cli-echo-python").
+					Return([]string{pythonBin}, nil).Once()
+				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(true, nil)
+			}
+
+			err := app.RunContext(ctx, args)
+
+			m.cfg.AssertExpectations(t)
+			require.NoError(t, err)
+		})
+}
+
+func TestPrepareCommand(t *testing.T) {
 	tests := map[string]struct {
-		flagsInCtx map[string]string
-		givenSlice []string
-		givenFlags []string
-		expected   []string
+		flagsInCtx   map[string]string
+		givenCommand []string
+		givenArgs    []string
+		givenFlags   []string
+		expected     []string
 	}{
-		"flags found on context and not in slice": {
-			flagsInCtx: map[string]string{
-				"flag_1": "some_value",
-				"flag_2": "other_value",
-				"flag_3": "abc",
-			},
-			givenSlice: []string{"some", "command"},
-			givenFlags: []string{"flag_1", "flag_3"},
-			expected:   []string{"some", "command", "--flag_1", "some_value", "--flag_3", "abc"},
+		"no flags and no args": {
+			givenCommand: []string{"command"},
+			expected:     []string{"command"},
 		},
-		"flag found on context and in slice": {
+		"no flags and with args": {
+			givenCommand: []string{"command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			expected:     []string{"command", "--flag_1", "existing_value"},
+		},
+		"flags and no args": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",
 				"flag_3": "abc",
 			},
-			givenSlice: []string{"some", "command", "--flag_1", "existing_value"},
-			givenFlags: []string{"flag_1"},
-			expected:   []string{"some", "command", "--flag_1", "existing_value"},
+			givenCommand: []string{"command"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"command"},
+		},
+		"flags and args not overlaping": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"command", "--flag_2", "other_value", "--flag_1", "existing_value"},
+		},
+		"flags found in context but not in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenFlags:   []string{"flag_1", "flag_3"},
+			expected:     []string{"command"},
+		},
+		"flag found in context and in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"command", "--flag_1", "existing_value"},
 		},
 		"flag does not have value": {
-			flagsInCtx: map[string]string{},
-			givenSlice: []string{"some", "command"},
-			givenFlags: []string{"flag_1"},
-			expected:   []string{"some", "command"},
+			flagsInCtx:   map[string]string{},
+			givenCommand: []string{"command"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"command"},
+		},
+
+		// tests for script commands like python or js
+		"script - no flags and no args": {
+			givenCommand: []string{"some", "command"},
+			expected:     []string{"some", "command"},
+		},
+		"script - no flags and with args": {
+			givenCommand: []string{"some", "command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			expected:     []string{"some", "command", "--flag_1", "existing_value"},
+		},
+		"script - flags and no args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"some", "command"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"some", "command"},
+		},
+		"script - flags and args not overlaping": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"some", "command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_2"},
+			expected:     []string{"some", "command", "--flag_1", "existing_value", "--flag_2", "other_value"},
+		},
+		"script - flags found in context but not in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"some", "command"},
+			givenFlags:   []string{"flag_1", "flag_3"},
+			expected:     []string{"some", "command"},
+		},
+		"script -  flag found in context and in args": {
+			flagsInCtx: map[string]string{
+				"flag_1": "some_value",
+				"flag_2": "other_value",
+				"flag_3": "abc",
+			},
+			givenCommand: []string{"some", "command"},
+			givenArgs:    []string{"--flag_1", "existing_value"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"some", "command", "--flag_1", "existing_value"},
+		},
+		"script - flag does not have value": {
+			flagsInCtx:   map[string]string{},
+			givenCommand: []string{"some", "command"},
+			givenFlags:   []string{"flag_1"},
+			expected:     []string{"some", "command"},
 		},
 	}
 
@@ -157,7 +290,7 @@ func TestFindAndAppendFlag(t *testing.T) {
 			for name, value := range test.flagsInCtx {
 				require.NoError(t, c.Set(name, value))
 			}
-			res := findAndAppendFlags(c, test.givenSlice, test.givenFlags...)
+			res := prepareCommand(c, test.givenCommand, test.givenArgs, test.givenFlags...)
 			assert.Equal(t, test.expected, res)
 		})
 	}

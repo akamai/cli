@@ -3,13 +3,14 @@ package log
 import (
 	"bytes"
 	"context"
-	"github.com/apex/log"
-	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
+
+	"github.com/apex/log"
+	"github.com/stretchr/testify/require"
+	"github.com/tj/assert"
 )
 
 func TestSetupContext(t *testing.T) {
@@ -82,7 +83,7 @@ func TestWithCommand(t *testing.T) {
 		},
 		"output to file": {
 			logFile:  "./testlogs.txt",
-			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}] ERROR abc[ ]*command=test`),
+			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\+[0-9]{2}:[0-9]{2})?[Z]*] ERROR abc[ ]*command=test`),
 		},
 	}
 	for name, test := range tests {

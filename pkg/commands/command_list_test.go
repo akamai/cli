@@ -2,6 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
@@ -9,10 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
 func TestCmdListWithRemote(t *testing.T) {
@@ -65,7 +66,7 @@ func TestCmdListWithRemote(t *testing.T) {
 		require.NoError(t, os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL))
 		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
 		t.Run(name, func(t *testing.T) {
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "list",
 				Flags: []cli.Flag{

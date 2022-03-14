@@ -21,16 +21,13 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
-
 	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-
-	"github.com/akamai/cli/pkg/git"
 )
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
@@ -41,7 +38,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 		commandName := strings.ToLower(c.Command.Name)
 
-		executable, err := findExec(c.Context, langManager, commandName)
+		executable, _, err := findExec(c.Context, langManager, commandName)
 		if err != nil {
 			errMsg := color.RedString("Executable \"%s\" not found.", commandName)
 			logger.Error(errMsg)
@@ -58,7 +55,20 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		cmdPackage, _ := readPackage(packageDir)
 
 		if cmdPackage.Requirements.Python != "" {
-			var err error
+			exec, err := langManager.FindExec(c.Context, cmdPackage.Requirements, packageDir)
+			if err != nil {
+				return err
+			}
+
+			if len(executable) == 1 {
+				executable = append([]string{exec[0]}, executable...)
+			} else {
+				if strings.Contains(strings.ToLower(executable[0]), "python") ||
+					strings.Contains(strings.ToLower(executable[0]), "py.exe") {
+					executable[0] = exec[0]
+				}
+			}
+
 			if runtime.GOOS == "linux" {
 				_, err = os.Stat(filepath.Join(packageDir, ".local"))
 			} else if runtime.GOOS == "darwin" {
@@ -105,26 +115,54 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 		}
 
-		executable = append(executable, c.Args().Slice()...)
 		if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
 			return err
 		}
 		if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
 			return err
 		}
+
+		cmdPackage, err = readPackage(packageDir)
+		if err != nil {
+			return err
+		}
+
 		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
-		executable = findAndAppendFlags(c, executable, "edgerc", "section")
-		return passthruCommand(executable)
+
+		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section", "accountkey")
+
+		subCmd := createCommand(executable[0], executable[1:])
+		return passthruCommand(c.Context, subCmd, langManager, cmdPackage.Requirements, fmt.Sprintf("cli-%s", cmdPackage.Commands[0].Name))
 	}
 }
 
-func findAndAppendFlags(c *cli.Context, target []string, flags ...string) []string {
+func prepareCommand(c *cli.Context, command, args []string, flags ...string) []string {
+	// dont search for flags is there are no args
+	if len(args) == 0 {
+		return command
+	}
+	additionalFlags := findFlags(c, args, flags...)
+
+	if len(command) > 1 {
+		// for python or js append flags to the end
+		command = append(command, args...)
+		command = append(command, additionalFlags...)
+	} else {
+		command = append(command, additionalFlags...)
+		command = append(command, args...)
+	}
+
+	return command
+}
+
+func findFlags(c *cli.Context, target []string, flags ...string) []string {
+	var ret []string
 	for _, flagName := range flags {
 		if flagVal := c.String(flagName); flagVal != "" && !containsString(target, fmt.Sprintf("--%s", flagName)) {
-			target = append(target, fmt.Sprintf("--%s", flagName), flagVal)
+			ret = append(ret, fmt.Sprintf("--%s", flagName), flagVal)
 		}
 	}
-	return target
+	return ret
 }
 
 func containsString(s []string, item string) bool {

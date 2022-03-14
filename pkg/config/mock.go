@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+
 	"github.com/stretchr/testify/mock"
 )
 
@@ -11,7 +12,7 @@ type Mock struct {
 }
 
 // Save mock
-func (m *Mock) Save(ctx context.Context) error {
+func (m *Mock) Save(_ context.Context) error {
 	args := m.Called()
 	return args.Error(0)
 }

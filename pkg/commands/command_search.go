@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/akamai/cli/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -26,12 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
-
+	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-
-	"github.com/akamai/cli/pkg/tools"
 )
 
 type packageList struct {
@@ -62,7 +60,7 @@ func cmdSearch(c *cli.Context) (e error) {
 	logger.Debug("SEARCH START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("SEARCH FINISHED: %v", time.Now().Sub(start))
+			logger.Debugf("SEARCH FINISHED: %v", time.Since(start))
 		} else {
 			logger.Errorf("SEARCH ERROR: %v", e.Error())
 		}

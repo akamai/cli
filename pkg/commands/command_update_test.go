@@ -2,6 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
@@ -15,10 +20,6 @@ import (
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
 func TestCmdUpdate(t *testing.T) {
@@ -234,7 +235,7 @@ func TestCmdUpdate(t *testing.T) {
 			}))
 			defer srv.Close()
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   "update",
 				Action: cmdUpdate(m.gitRepo, m.langManager),

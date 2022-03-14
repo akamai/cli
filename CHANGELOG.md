@@ -1,11 +1,20 @@
+# 1.4.0 (March 14, 2022)
+
+## Enhancements
+
+* [IMPORTANT] Refactor Python support, making use of virtual environments to isolate dependencies for each Python package.
+  * Refer to README.md for new system dependencies.
+
 # 1.3.1 (December 8, 2021)
 
 ## Enhancements
+
 * Improved message for updating CLI version
 
 # 1.3.0 (October 6, 2021)
 
 ## Fixes
+
 * Remove old binary in PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
 * Document CLI exit codes.
 * Review exit code when trying to install an already installed command ([#83](https://github.com/akamai/cli/issues/83)).

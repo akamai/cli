@@ -47,17 +47,13 @@ func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error 
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "php", cmdReq)
 		}
 
-		if version.Compare(cmdReq, matches[1]) == -1 {
+		if version.Compare(cmdReq, matches[1]) == version.Greater {
 			logger.Debugf("PHP Version found: %s", matches[1])
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "php", cmdReq, matches[1])
 		}
 	}
 
-	if err := installPHPDepsComposer(ctx, l.commandExecutor, bin, dir); err != nil {
-		return err
-	}
-
-	return nil
+	return installPHPDepsComposer(ctx, l.commandExecutor, bin, dir)
 }
 
 func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, dir string) error {

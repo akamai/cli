@@ -25,12 +25,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
-
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
+	"github.com/fatih/color"
+	"github.com/urfave/cli/v2"
 )
 
 func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands []string) error {
@@ -53,7 +52,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "go", ver)
 		}
 
-		if version.Compare(ver, matches[1]) == -1 {
+		if version.Compare(ver, matches[1]) == version.Greater {
 			logger.Debugf("Go Version found: %s", matches[1])
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "go", ver, matches[1])
 		}
