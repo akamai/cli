@@ -127,7 +127,7 @@ To compile Akamai CLI from source:
 
 4. Compile the binary:  
 
-  - For Linux, macOS, and other Unix-based systems, run: `go build -o cli/main.go`
+  - For Linux, macOS, and other Unix-based systems, run: `go build -o akamai cli/main.go`
   - For Windows, run: `go build -o akamai.exe cli/main.go`
 
 5. Move the `akamai` or `akamai.exe` binary so that it's available in your `$PATH`.

@@ -2,17 +2,24 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/akamai/cli/pkg/terminal"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
 const (
 	// DefaultRemoteName will provide default origin.
 	DefaultRemoteName = git.DefaultRemoteName
+)
+
+var (
+	// ErrPackageNotAvailable is an error for handling incorrect package
+	ErrPackageNotAvailable = errors.New("package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z")
 )
 
 // Repository interface.
@@ -49,14 +56,14 @@ func (r *repository) Clone(ctx context.Context, path, repo string, isBare bool, 
 		Progress: progress,
 	})
 	if err != nil {
-		return err
+		return translateError(err)
 	}
 	r.gitRepo = gitRepo
 	return nil
 }
 
 func (r *repository) Pull(ctx context.Context, worktree *git.Worktree) error {
-	return worktree.PullContext(ctx, &git.PullOptions{RemoteName: DefaultRemoteName})
+	return translateError(worktree.PullContext(ctx, &git.PullOptions{RemoteName: DefaultRemoteName}))
 }
 
 func (r *repository) Head() (*plumbing.Reference, error) {
@@ -78,4 +85,11 @@ func (r *repository) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 		return nil, fmt.Errorf("repository is not yet initialized")
 	}
 	return r.gitRepo.CommitObject(h)
+}
+
+func translateError(err error) error {
+	if err == transport.ErrAuthenticationRequired {
+		err = ErrPackageNotAvailable
+	}
+	return err
 }

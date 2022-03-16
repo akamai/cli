@@ -168,12 +168,12 @@ func TestCmdUpdate(t *testing.T) {
 				m.gitRepo.On("Open", "testdata/.akamai-cli/src/cli-echo-invalid-json").Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Head").Return(plumbing.NewHashReference("", plumbing.Hash{0}), nil).Once()
-				m.gitRepo.On("Pull", worktree).Return(fmt.Errorf("oops"))
+				m.gitRepo.On("Pull", worktree).Return(git.ErrPackageNotAvailable)
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "Unable to fetch updates (oops)",
+			withError: "Unable to fetch updates (package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z)",
 		},
 		"error getting HEAD of repository before pull": {
 			args: []string{"echo-invalid-json"},

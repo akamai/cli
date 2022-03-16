@@ -129,7 +129,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(fmt.Errorf("oops")).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(git.ErrPackageNotAvailable).Once().
 					Run(func(args mock.Arguments) {
 						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
@@ -137,7 +137,7 @@ func TestCmdInstall(t *testing.T) {
 				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.gitRepo.On("Clone", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(git2.ErrRepositoryAlreadyExists)
 			},
-			withError: "Unable to clone repository: oops",
+			withError: "Unable to clone repository: package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
 		"error reading downloaded package, invalid cli.json": {
 			args: []string{"test-invalid-json"},
