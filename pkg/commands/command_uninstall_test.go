@@ -36,7 +36,6 @@ func TestCmdUninstall(t *testing.T) {
 				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true).Once()
 			},
 		},
 		"package does not contain cli.json": {
@@ -52,14 +51,12 @@ func TestCmdUninstall(t *testing.T) {
 				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true).Once()
 			},
 			withError: "unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?",
 		},
 		"executable not found": {
 			args: []string{"invalid"},
 			init: func(t *testing.T, m *mocked) {
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			withError: fmt.Sprintf(`command "invalid" not found. Try "%s help"`, tools.Self()),
 		},

@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
@@ -52,7 +51,6 @@ func firstRun(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	stats.FirstRunCheckStats(ctx, bannerShown)
 
 	return nil
 }

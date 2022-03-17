@@ -24,7 +24,6 @@ import (
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -126,8 +125,6 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		if err != nil {
 			return err
 		}
-
-		stats.TrackEvent(c.Context, "exec", commandName, currentCmd.Version)
 
 		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section", "accountkey")
 

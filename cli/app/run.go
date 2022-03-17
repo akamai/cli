@@ -13,7 +13,6 @@ import (
 	"github.com/akamai/cli/pkg/commands"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
@@ -77,9 +76,6 @@ func Run() int {
 		return 5
 	}
 	checkUpgrade(ctx)
-	if err := stats.CheckPing(ctx); err != nil {
-		term.WriteError(err.Error())
-	}
 
 	// check command collision
 	if err := findCollisions(cliApp.Commands, os.Args); err != nil {
@@ -154,10 +150,6 @@ func checkUpgrade(ctx context.Context) {
 		return
 	}
 	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" && latestVersion != version.Version {
-		if commands.UpgradeCli(ctx, latestVersion) {
-			stats.TrackEvent(ctx, "upgrade.auto", "success", "to: "+latestVersion+" from: "+version.Version)
-			return
-		}
-		stats.TrackEvent(ctx, "upgrade.auto", "failed", "to: "+latestVersion+" from: "+version.Version)
+		commands.UpgradeCli(ctx, latestVersion)
 	}
 }

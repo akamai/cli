@@ -28,7 +28,6 @@ linters-settings:
     - name: increment-decrement
     - name: var-naming
     - name: var-declaration
-    - name: package-comments
     - name: range
     - name: receiver-naming
     - name: time-naming

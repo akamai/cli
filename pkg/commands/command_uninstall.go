@@ -23,7 +23,6 @@ import (
 
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
@@ -45,11 +44,9 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 		}()
 		for _, cmd := range c.Args().Slice() {
 			if err := uninstallPackage(c.Context, langManager, cmd, logger); err != nil {
-				stats.TrackEvent(c.Context, "package.uninstall", "failed", cmd)
 				logger.Error(err.Error())
 				return cli.Exit(color.RedString(err.Error()), 1)
 			}
-			stats.TrackEvent(c.Context, "package.uninstall", "success", cmd)
 		}
 
 		return nil

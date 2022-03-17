@@ -52,8 +52,6 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			expectedExitCode: 1,
 		},
@@ -82,8 +80,6 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			expectedExitCode: 1,
 		},
@@ -112,8 +108,6 @@ func TestCmdUpgrade(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			expectedExitCode: 1,
 		},

@@ -19,11 +19,8 @@ package app
 
 import (
 	"context"
-
-	"github.com/akamai/cli/pkg/stats"
 )
 
 func firstRun(ctx context.Context) error {
-	stats.FirstRunCheckStats(ctx, false)
 	return nil
 }
