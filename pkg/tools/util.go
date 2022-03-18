@@ -105,3 +105,11 @@ func Githubize(repo string) string {
 
 	return "https://github.com/" + repo + ".git"
 }
+
+// CapitalizeFirstWord capitalizes only first character in the string
+func CapitalizeFirstWord(str string) string {
+	if len(str) <= 1 {
+		return strings.ToUpper(str)
+	}
+	return strings.ToUpper(string(str[0])) + str[1:]
+}

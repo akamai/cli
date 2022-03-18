@@ -133,7 +133,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.gitRepo.On("Clone", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(git2.ErrRepositoryAlreadyExists)
 			},
-			withError: "Unable to clone repository: package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
+			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
 		"error reading downloaded package, invalid cli.json": {
 			args: []string{"test-invalid-json"},

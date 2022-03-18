@@ -156,9 +156,8 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		errorMsg := "Unable to clone repository: " + err.Error()
-		logger.Error(errorMsg)
-		return nil, cli.Exit(color.RedString(errorMsg), 1)
+		logger.Error(strings.Title(err.Error()))
+		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()
 

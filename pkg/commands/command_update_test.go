@@ -173,7 +173,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "Unable to fetch updates (package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z)",
+			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
 		"error getting HEAD of repository before pull": {
 			args: []string{"echo-invalid-json"},

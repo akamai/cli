@@ -125,9 +125,9 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 
 	err = gitRepo.Pull(ctx, w)
 	if err != nil && err.Error() != alreadyUptoDate {
-		logger.Debugf("Fetch error: %s", err.Error())
+		logger.Debug(tools.CapitalizeFirstWord(err.Error()))
 		term.Spinner().Fail()
-		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+		return cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 
 	ref, err := gitRepo.Head()

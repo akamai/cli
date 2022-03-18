@@ -56,14 +56,14 @@ func (r *repository) Clone(ctx context.Context, path, repo string, isBare bool, 
 		Progress: progress,
 	})
 	if err != nil {
-		return translateError(err)
+		return translateError(err, "Unable to clone repository: %s")
 	}
 	r.gitRepo = gitRepo
 	return nil
 }
 
 func (r *repository) Pull(ctx context.Context, worktree *git.Worktree) error {
-	return translateError(worktree.PullContext(ctx, &git.PullOptions{RemoteName: DefaultRemoteName}))
+	return translateError(worktree.PullContext(ctx, &git.PullOptions{RemoteName: DefaultRemoteName}), "Unable to fetch updates (%s)")
 }
 
 func (r *repository) Head() (*plumbing.Reference, error) {
@@ -87,9 +87,9 @@ func (r *repository) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 	return r.gitRepo.CommitObject(h)
 }
 
-func translateError(err error) error {
+func translateError(err error, defaultErrorFormat string) error {
 	if err == transport.ErrAuthenticationRequired {
-		err = ErrPackageNotAvailable
+		return ErrPackageNotAvailable
 	}
-	return err
+	return fmt.Errorf(defaultErrorFormat, err.Error())
 }
