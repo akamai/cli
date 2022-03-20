@@ -179,9 +179,9 @@ Use the following commands to manage packages and the toolkit:
     These examples all install Akamai CLI for Property Manager from Github using various aliases:
 
     ```sh
-    akamai install property
-    akamai install akamai/cli-property
-    akamai install https://github.com/akamai/cli-property.git
+    akamai install cli-property-manager
+    akamai install akamai/cli-property-manager
+    akamai install https://github.com/akamai/cli-property-manager.git
     ```
 
     The `install` command accepts more than one argument, so you can install many packages at once using any of these types of syntax.
