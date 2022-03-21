@@ -4,7 +4,4 @@ import (
 	"time"
 )
 
-const (
-	alreadyUptoDate  = "already up-to-date"
-	sleep24HDuration = time.Hour * 24
-)
+const sleep24HDuration = time.Hour * 24
