@@ -174,14 +174,14 @@ Use the following commands to manage packages and the toolkit:
 
     `akamai install <package name or repository URL>` downloads and installs the command repository to the `$HOME/.akamai-cli` directory.
 
-    For Github repositories, specify `user/repo` or `organization/repo`. For official Akamai packages, you can omit the `akamai/cli-` prefix. For example, to install `akamai/cli-property`, it's enough to run `property`.
+    For Github repositories, specify `user/repo` or `organization/repo`. For official Akamai packages, you can omit the `akamai/cli-` prefix. For example, to install `akamai/cli-property-manager`, it's enough to run `property-manager`.
 
     These examples all install Akamai CLI for Property Manager from Github using various aliases:
 
     ```sh
-    akamai install property
-    akamai install akamai/cli-property
-    akamai install https://github.com/akamai/cli-property.git
+    akamai install property-manager
+    akamai install akamai/cli-property-manager
+    akamai install https://github.com/akamai/cli-property-manager.git
     ```
 
     The `install` command accepts more than one argument, so you can install many packages at once using any of these types of syntax.
@@ -227,7 +227,7 @@ Use the following commands to manage packages and the toolkit:
 This commands depend on your installed packages. To use an installed command, run `akamai <command> <action> [arguments]`, for example:
 
 ```sh
-akamai property create example.org
+akamai property-manager new-property -p example.org -g grp_123456 -c ctr_X-XXXXXX -d prd_Web_App_Accel
 ```
 For the list of supported commands, see the [documentation](https://developer.akamai.com/cli-packages) for each package.
 
@@ -255,10 +255,10 @@ To see additional log information, prepend `AKAMAI_LOG=<logging-level>` to any C
 - `info`
 - `debug`
 
-For example, to see extra debug information while updating the property package, run:
+For example, to see extra debug information while updating the property-manager package, run:
 
 ```sh
-AKAMAI_CLI_LOG=debug akamai update property
+AKAMAI_CLI_LOG=debug akamai update property-manager
 ```
 
 Each level is a progressive superset of all previous tiers. The output for `debug` also includes `fatal`, `error`, `warn`, and `info` logs.
@@ -266,7 +266,7 @@ Each level is a progressive superset of all previous tiers. The output for `debu
 If you want to redirect logs to a file, use the `AKAMAI_CLI_LOG_PATH` environmental variable:
 
 ```sh
-AKAMAI_CLI_LOG=debug AKAMAI_CLI_LOG_PATH=akamai.log akamai update property
+AKAMAI_CLI_LOG=debug AKAMAI_CLI_LOG_PATH=akamai.log akamai update property-manager
 ```
 
 ## Dependencies
