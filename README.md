@@ -19,7 +19,7 @@ Use Akamai CLI to configure Akamai platform and products directly from the comma
 
 ### Available Packages
 
-Browse the list of [available packages](https://techdocs.akamai.com/home/page/products-tools-a-z?sort=cli).
+Browse the list of [available packages](https://developer.akamai.com/cli).
 
 ## Install Akamai CLI
 
@@ -138,7 +138,7 @@ Akamai-branded packages use a `.edgerc` file for standard EdgeGrid authenticatio
 
 You can override both the file location or the credentials section by passing the `--edgerc` or `--section` flags to each command.
 
-To set up your `.edgerc` file, see [Get started with APIs](https://techdocs.akamai.com/developer/docs/set-up-authentication-credentials).
+To set up your `.edgerc` file, see [Get started with APIs](https://developer.akamai.com/api/getting-started#setup).
 
 ## Upgrade
 
@@ -212,7 +212,7 @@ Use the following commands to manage packages and the toolkit:
 
 - `search`
 
-    Search all the packages published on [developer.akamai.com](https://techdocs.akamai.com/home/page/products-tools-a-z?sort=cli) for the submitter string. Searches apply to the package name, alias, and description. Search results appear in the console output.
+    Search all the packages published on [developer.akamai.com](https://developer.akamai.com/) for the submitter string. Searches apply to the package name, alias, and description. Search results appear in the console output.
 
 - `config`
 
@@ -229,11 +229,11 @@ This commands depend on your installed packages. To use an installed command, ru
 ```sh
 akamai property-manager new-property -p example.org -g grp_123456 -c ctr_X-XXXXXX -d prd_Web_App_Accel
 ```
-For the list of supported commands, see the [documentation](https://techdocs.akamai.com/home/page/products-tools-a-z?sort=cli) for each package.
+For the list of supported commands, see the [documentation](https://developer.akamai.com/cli-packages) for each package.
 
 ### Custom commands
 
-Akamai CLI provides a framework for writing custom CLI commands. See the extended [Akamai CLI documentation](https://techdocs.akamai.com/developer/docs/about-clis) to learn how to contribute, create custom packages, and build commands.
+Akamai CLI provides a framework for writing custom CLI commands. See the extended [Akamai CLI documentation](https://developer.akamai.com/cli) to learn how to contribute, create custom packages, and build commands.
 
 Before you start to build your own commands, make sure you meet these prerequisites:
 
