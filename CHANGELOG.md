@@ -1,3 +1,10 @@
+# 1.4.1 (March 24, 2022)
+
+## Fixes
+
+* Refactor CLI error to debug statement when virtual environment deactivation fails.
+* Refactor CLI documentation by dropping usage examples of cli-property (decommissioned).
+
 # 1.4.0 (March 14, 2022)
 
 ## Enhancements

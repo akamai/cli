@@ -69,3 +69,24 @@ func TestGithubize(t *testing.T) {
 		}
 	}
 }
+
+func TestCapitalizeFirstWord(t *testing.T) {
+	capitalizeTests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},
+		{"a", "A"},
+		{"abc def", "Abc def"},
+		{"QWE RTY", "QWE RTY"},
+		{"0", "0"},
+		{"+", "+"},
+		{" ", " "},
+	}
+
+	for _, testCase := range capitalizeTests {
+		if result := CapitalizeFirstWord(testCase.input); result != testCase.expected {
+			t.Errorf("CapitalizeFirstWord(%s) => %s, wanted: %s", testCase.input, result, testCase.expected)
+		}
+	}
+}

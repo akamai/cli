@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
@@ -41,12 +40,7 @@ func cmdUpgrade(c *cli.Context) error {
 	latestVersion := CheckUpgradeVersion(c.Context, true)
 	if latestVersion != "" && latestVersion != version.Version {
 		os.Args = []string{os.Args[0], "--version"}
-		success := UpgradeCli(c.Context, latestVersion)
-		if success {
-			stats.TrackEvent(c.Context, "upgrade.user", "success", "to: "+latestVersion+" from:"+version.Version)
-		} else {
-			stats.TrackEvent(c.Context, "upgrade.user", "failed", "to: "+latestVersion+" from:"+version.Version)
-		}
+		UpgradeCli(c.Context, latestVersion)
 		return nil
 	}
 	term.Spinner().Stop(terminal.SpinnerStatusWarnOK)

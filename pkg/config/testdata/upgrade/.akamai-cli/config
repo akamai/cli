@@ -1,5 +1,4 @@
 [cli]
-enable-cli-statistics = 
 last-upgrade-check    = 2006-01-02T15:04:05-07:00
 config-version        = 1.1
 

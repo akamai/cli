@@ -212,9 +212,6 @@ func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 		cfg.SetValue("cli", "config-version", "1")
 	case "1":
 		// Upgrade to v1.1
-		if val, _ := cfg.GetValue("cli", "enable-cli-statistics"); val == "true" {
-			cfg.SetValue("cli", "stats-version", "1.0")
-		}
 		cfg.SetValue("cli", "config-version", "1.1")
 	}
 

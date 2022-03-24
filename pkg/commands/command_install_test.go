@@ -48,7 +48,6 @@ func TestCmdInstall(t *testing.T) {
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Writeln", mock.Anything).Return(0, nil)
@@ -95,7 +94,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Downloading binary...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -113,7 +111,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-installed.git"}).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 			},
 			withError: color.RedString("Package directory already exists ("),
 		},
@@ -129,15 +126,14 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
 				m.gitRepo.On("Clone", "testdata/.akamai-cli/src/cli-test-cmd",
-					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(fmt.Errorf("oops")).Once().
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(git.ErrPackageNotAvailable).Once().
 					Run(func(args mock.Arguments) {
 						mustCopyFile(t, "./testdata/repo/cli.json", "./testdata/.akamai-cli/src/cli-test-cmd")
 					})
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 				m.gitRepo.On("Clone", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(git2.ErrRepositoryAlreadyExists)
 			},
-			withError: "Unable to clone repository: oops",
+			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
 		"error reading downloaded package, invalid cli.json": {
 			args: []string{"test-invalid-json"},
@@ -154,7 +150,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -185,7 +180,6 @@ func TestCmdInstall(t *testing.T) {
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(packages.ErrUnknownLang).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("WarnOK").Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -223,7 +217,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
 				m.term.On("IsTTY").Return(true).Once()
 				m.term.On("Confirm", "Binary command(s) found, would you like to download and install it?", true).Return(false, nil).Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -260,7 +253,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Downloading binary...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -303,7 +295,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Downloading binary...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
@@ -342,7 +333,6 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.cfg.On("GetValue", "cli", "enable-cli-statistics").Return("false", true)
 
 				// list all packages
 				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()

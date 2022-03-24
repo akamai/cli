@@ -16,6 +16,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+	gogit "gopkg.in/src-d/go-git.v4"
 )
 
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
@@ -124,14 +126,14 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	}
 
 	err = gitRepo.Pull(ctx, w)
-	if err != nil && err.Error() != alreadyUptoDate {
-		logger.Debugf("Fetch error: %s", err.Error())
+	if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
+		logger.Debug(tools.CapitalizeFirstWord(err.Error()))
 		term.Spinner().Fail()
-		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
+		return cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 
 	ref, err := gitRepo.Head()
-	if err != nil && err.Error() != alreadyUptoDate {
+	if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
 		logger.Debugf("Fetch error: %s", err.Error())
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
@@ -142,7 +144,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		logger.Debugf("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
 		logger.Debugf("Latest commit: %s", commit)
 
-		if err != nil && err.Error() != alreadyUptoDate {
+		if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
 			logger.Debugf("Fetch error: %s", err.Error())
 			term.Spinner().Fail()
 			return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)

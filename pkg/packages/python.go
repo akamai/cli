@@ -305,7 +305,7 @@ func (l *langManager) deactivateVirtualEnvironment(ctx context.Context, dir, pyV
 		if _, err := l.commandExecutor.ExecCommand(cmd, true); err == nil {
 			logger.Debugf("Python virtualenv deactivated")
 		} else {
-			logger.Errorf("Error deactivating VE %s: %v", dir, err)
+			logger.Debugf("Error deactivating VE %s: %v", dir, err)
 		}
 	}
 }

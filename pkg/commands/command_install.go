@@ -26,7 +26,6 @@ import (
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/stats"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
@@ -65,18 +64,11 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 			repo = tools.Githubize(repo)
 			subCmd, err := installPackage(c.Context, git, langManager, repo, c.Bool("force"))
 			if err != nil {
-				// Only track public github repos
-				if isPublicRepo(repo) {
-					stats.TrackEvent(c.Context, "package.install", "failed", repo)
-				}
+
 				return err
 			}
 			c.App.Commands = append(c.App.Commands, subcommandToCliCommands(*subCmd, git, langManager)...)
 			sortCommands(c.App.Commands)
-
-			if isPublicRepo(repo) {
-				stats.TrackEvent(c.Context, "package.install", "success", repo)
-			}
 		}
 
 		packageListDiff(c, oldCmds)
@@ -164,9 +156,8 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		errorMsg := "Unable to clone repository: " + err.Error()
-		logger.Error(errorMsg)
-		return nil, cli.Exit(color.RedString(errorMsg), 1)
+		logger.Error(strings.Title(err.Error()))
+		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()
 
