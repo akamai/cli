@@ -343,7 +343,7 @@
             {
                 "title": "Property Manager",
                 "name": "property-manager",
-                "version": "0.7.7-RELEASE",
+                "version": "0.7.8-RELEASE",
                 "url": "https://github.com/akamai/cli-property-manager",
                 "issues": "https://github.com/akamai/cli-property-manager/issues",
                 "commands": [
