@@ -1,3 +1,9 @@
+# 1.4.2 (April XX, 2022)
+
+## Fixes
+
+* Handle recent Python versions ([GH#148](https://github.com/akamai/cli/issues/148)).
+
 # 1.4.1 (March 24, 2022)
 
 ## Fixes
