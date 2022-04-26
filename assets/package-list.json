@@ -391,7 +391,7 @@
                 "version": "0.1.0",
                 "url": "https://github.com/akamai/cli-test-center",
                 "issues": "https://github.com/akamai/cli-test-center/issues",
-                "commands": [{"name":"test-center","version":"0.1.0","description":"Test Center is a testing tool that checks the effect of configuration changes on your web property. Use this tool as part of your testing protocol to increase your confidence in the safety and accuracy of your configuration changes.","bin": "https://github.com/akamai/cli-test-center/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"}],
+                "commands": [{"name":"test-center","version":"0.1.0","description":"Test Center is a testing tool that checks the effect of configuration changes on your web property. Use this tool as part of your testing protocol to increase your confidence in the safety and accuracy of your configuration changes."}],
                 "requirements": {"go":"1.15"}
             },
 
