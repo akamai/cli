@@ -1,3 +1,11 @@
+# 1.4.2 (May 11, 2022)
+
+## Fixes
+
+* Handle recent Python versions ([GH#148](https://github.com/akamai/cli/issues/148)).
+* Handle `yes` command input ([GH#136](https://github.com/akamai/cli/issues/136)).
+* Purge directories on unit test error.
+
 # 1.4.1 (March 24, 2022)
 
 ## Fixes

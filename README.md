@@ -1,9 +1,3 @@
-<h1 style="text-align: center">
-  <br>
-      <img alt="Akamai CLI usage" src="assets/screen-1.png">
-  <br>
-</h1>
-
 # Akamai CLI
 [![Go Report Card](https://goreportcard.com/badge/github.com/akamai/cli)](https://goreportcard.com/report/github.com/akamai/cli) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fakamai%2Fcli.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fakamai%2Fcli?ref=badge_shield)
 

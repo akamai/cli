@@ -32,9 +32,9 @@ import (
 )
 
 var (
-	pythonVersionPattern = `Python (\d+\.\d+\.\d+).*`
+	pythonVersionPattern = `Python ([2,3]\.\d+\.\d+).*`
 	pythonVersionRegex   = regexp.MustCompile(pythonVersionPattern)
-	pipVersionPattern    = `^pip \d{1,2}\..+ \(python \d\.\d\)`
+	pipVersionPattern    = `^pip \d{1,2}\..+ \(python [2,3]\.\d+\)`
 	venvHelpPattern      = `usage: venv `
 	pipVersionRegex      = regexp.MustCompile(pipVersionPattern)
 	venvHelpRegex        = regexp.MustCompile(venvHelpPattern)

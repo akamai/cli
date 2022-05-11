@@ -128,8 +128,10 @@ venv: error: the following arguments are required: ENV_DIR
 	py3WindowsPipVersion := "pip 20.1.3 from c:\\Program Files\\WindowsApps\\" +
 		"PythonSoftwareFoundation.Python.3.9_3.9.1264.0_x64__qbz5n2kfra8p0\\" +
 		"lib\\site-packages\\pip (python 3.4)"
+	py310WindowsPipVersion := "pip 22.0.4 from c:\\Python\\lib\\site-packages\\pip (python 3.10)"
 	py2Version := "Python 2.7.16"
 	py34Version := "Python 3.4.0"
+	py310Version := "Python 3.10.0"
 	ver2 := "2.0.0"
 	ver3 := "3.0.0"
 	ver355 := "3.5.5"
@@ -236,6 +238,59 @@ venv: error: the following arguments are required: ENV_DIR
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "--version"},
 				}, true).Return([]byte(py34Version), nil).Twice()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "venv", "--version"},
+				}, true).Return([]byte(py3VenvHelp), nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "ensurepip", "--upgrade"},
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "pip", "install", "--no-cache", "--upgrade", "pip", "setuptools"},
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "venv", "veDir"},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("FileExists", veDir).Return(true, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: "veDir/Scripts/activate.bat",
+					Args: []string{},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("GetOS").Return("windows").Times(4)
+				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
+				m.On("FileExists", ".").Return(true, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: winVePipPath,
+					Args: []string{winVePipPath, "install", "--upgrade", "--ignore-installed", "-r", requirementsFile},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: winDeactivatePath,
+					Args: []string{winDeactivatePath},
+				}, true).Return(nil, nil).Once()
+			},
+		},
+		"with py 3.10 (windows) and pip, python 3 required": {
+			givenDir:   srcDir,
+			veDir:      veDir,
+			requiredPy: ver3,
+			goos:       "windows",
+			init: func(m *mocked) {
+				m.On("LookPath", "python3").Return("", errors.New("")).Once()
+				m.On("LookPath", "python3.exe").Return(py3BinWindows, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "pip", "--version"},
+				}, true).Return([]byte(py310WindowsPipVersion), nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "--version"},
+				}, true).Return([]byte(py310Version), nil).Twice()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "-m", "venv", "--version"},
