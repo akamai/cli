@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/apphelp"
+	"github.com/akamai/cli/pkg/autocomplete"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 
-	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
@@ -101,7 +102,7 @@ func createAppTemplate(ctx context.Context, commandName, usage, description, ver
 	app.Writer = term
 	app.ErrWriter = term.Error()
 	app.EnableBashCompletion = true
-	app.BashComplete = DefaultAutoComplete
+	app.BashComplete = autocomplete.Default
 
 	var edgercpath, section string
 	if useDefaults {
@@ -147,155 +148,9 @@ func createAppTemplate(ctx context.Context, commandName, usage, description, ver
 		Usage: "show help",
 	}
 
-	SetHelpTemplates()
+	apphelp.Setup(app)
 
 	return app
-}
-
-// DefaultAutoComplete ...
-func DefaultAutoComplete(ctx *cli.Context) {
-	term := terminal.Get(ctx.Context)
-	if ctx.Command.Name == "help" {
-		var args []string
-		args = append(args, os.Args[0])
-		if len(os.Args) > 2 {
-			args = append(args, os.Args[2:]...)
-		}
-
-		if err := ctx.App.Run(args); err != nil {
-			term.WriteError(err.Error())
-		}
-	}
-
-	commands := make([]*cli.Command, 0)
-	flags := make([]cli.Flag, 0)
-
-	if ctx.Command.Name == "" {
-		commands = ctx.App.Commands
-		flags = ctx.App.Flags
-	} else {
-		if len(ctx.Command.Subcommands) != 0 {
-			commands = ctx.Command.Subcommands
-		}
-
-		if len(ctx.Command.Flags) != 0 {
-			flags = ctx.Command.Flags
-		}
-	}
-
-	for _, command := range commands {
-		if command.Hidden {
-			continue
-		}
-
-		for _, name := range command.Names() {
-			term.Writeln(ctx.App.Writer, name)
-		}
-	}
-
-	for _, flag := range flags {
-	nextFlag:
-		for _, name := range flag.Names() {
-			name = strings.TrimSpace(name)
-
-			if len(cli.BashCompletionFlag.Names()) > 0 && name == cli.BashCompletionFlag.Names()[0] {
-				continue
-			}
-
-			for _, arg := range os.Args {
-				if arg == "--"+name || arg == "-"+name {
-					continue nextFlag
-				}
-			}
-
-			switch len(name) {
-			case 0:
-			case 1:
-				term.Writeln(ctx.App.Writer, "-"+name)
-			default:
-				term.Writeln(ctx.App.Writer, "--"+name)
-			}
-		}
-	}
-}
-
-// SetHelpTemplates sets up custom help outputs for app, commands and subcommands
-func SetHelpTemplates() {
-	cli.AppHelpTemplate = "" +
-		color.YellowString("Usage: \n") +
-		color.BlueString("	{{if .UsageText}}"+
-			"{{.UsageText}}"+
-			"{{else}}"+
-			"{{.HelpName}} "+
-			"{{if .VisibleFlags}}[global flags]{{end}}"+
-			"{{if .Commands}} command [command flags]{{end}} "+
-			"{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}"+
-			"\n\n{{end}}") +
-		"{{if .Description}}" +
-		color.YellowString("Description:\n") +
-		"   {{.Description}}" +
-		"\n\n{{end}}" +
-		"{{if .VisibleCommands}}" +
-		color.YellowString("Built-In Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"\n{{.Name}}\n" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		color.GreenString("  {{.Name}}") +
-		"{{if .Aliases}} ({{ $length := len .Aliases }}{{if eq $length 1}}alias:{{else}}aliases:{{end}} " +
-		"{{range $index, $alias := .Aliases}}" +
-		"{{if $index}}, {{end}}" +
-		color.GreenString("{{$alias}}") +
-		"{{end}}" +
-		"){{end}}\n" +
-		"{{end}}" +
-		"{{end}}" +
-		"{{end}}\n" +
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Global Flags:\n") +
-		"{{range $index, $option := .VisibleFlags}}" +
-		"{{if $index}}\n{{end}}" +
-		"   {{$option}}" +
-		"{{end}}" +
-		"\n\n{{end}}" +
-		"{{if .Copyright}}" +
-		color.HiBlackString("{{.Copyright}}") +
-		"{{end}}\n"
-
-	cli.CommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}}\n\n" +
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-		"{{if .Category}}" +
-		color.YellowString("Type: \n") +
-		"   {{.Category}}\n\n{{end}}" +
-		"{{if .Description}}" +
-		color.YellowString("Description: \n") +
-		"   {{.Description}}\n\n{{end}}" +
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags: \n") +
-		"{{range .VisibleFlags}}   {{.}}\n{{end}}{{end}}" +
-		"{{if .UsageText}}{{.UsageText}}\n{{end}}"
-
-	cli.SubcommandHelpTemplate = "" +
-		color.YellowString("Name: \n") +
-		"   {{.HelpName}} - {{.Usage}}\n\n" +
-		color.YellowString("Usage: \n") +
-		color.BlueString("   {{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}\n\n") +
-		color.YellowString("Commands:\n") +
-		"{{range .VisibleCategories}}" +
-		"{{if .Name}}" +
-		"{{.Name}}:" +
-		"{{end}}" +
-		"{{range .VisibleCommands}}" +
-		`{{join .Names ", "}}{{"\t"}}{{.Usage}}` +
-		"{{end}}\n\n" +
-		"{{end}}" +
-		"{{if .VisibleFlags}}" +
-		color.YellowString("Flags:\n") +
-		"{{range .VisibleFlags}}{{.}}\n{{end}}{{end}}"
 }
 
 func defaultAction(c *cli.Context) error {

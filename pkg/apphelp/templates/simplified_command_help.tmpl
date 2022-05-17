@@ -1,0 +1,30 @@
+{{with .Command -}}
+{{yellow "Name:"}}
+	{{.HelpName}}
+
+{{yellow "Usage:"}}
+	{{blue .HelpName}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}}
+
+{{- if .Category}}
+
+{{yellow "Type:"}}
+	{{.Category -}}
+{{end}}
+
+{{- if .Description}}
+
+{{yellow "Description:"}}
+	{{.Description -}}
+{{end}}
+
+{{- if .VisibleFlags}}
+
+{{yellow "Command Flags:"}}
+{{- range .VisibleFlags}}
+	{{.}}
+{{- end}}{{end}}
+
+{{- if .UsageText}}
+
+{{.UsageText}}
+{{- end}}{{end}}

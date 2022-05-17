@@ -70,7 +70,7 @@ func Run() int {
 	ctx = log.SetupContext(ctx, cliApp.Writer)
 
 	cmds := commands.CommandLocator(ctx)
-	cliApp.Commands = cmds
+	cliApp.Commands = append(cmds, cliApp.Commands...)
 
 	if err := firstRun(ctx); err != nil {
 		return 5

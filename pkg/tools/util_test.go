@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/akamai/cli/pkg/version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVersionCompare(t *testing.T) {
@@ -88,5 +89,46 @@ func TestCapitalizeFirstWord(t *testing.T) {
 		if result := CapitalizeFirstWord(testCase.input); result != testCase.expected {
 			t.Errorf("CapitalizeFirstWord(%s) => %s, wanted: %s", testCase.input, result, testCase.expected)
 		}
+	}
+}
+
+func TestInsertAfterNthWord(t *testing.T) {
+	tests := map[string]struct {
+		dest     string
+		val      string
+		index    int
+		expected string
+	}{
+		"insert in the middle": {
+			dest:     "test string with some words",
+			val:      "[inserted string] and",
+			index:    3,
+			expected: "test string with [inserted string] and some words",
+		},
+		"insert at last index": {
+			dest:     "test string with some words",
+			val:      "and [inserted string]",
+			index:    5,
+			expected: "test string with some words and [inserted string]",
+		},
+		"insert at index larger than size": {
+			dest:     "test string with some words",
+			val:      "and [inserted string]",
+			index:    6,
+			expected: "test string with some words and [inserted string]",
+		},
+		"insert at the beginning": {
+			dest:     "test string with some words",
+			val:      "[inserted string] and",
+			index:    0,
+			expected: "[inserted string] and test string with some words",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			res := InsertAfterNthWord(test.dest, test.val, test.index)
+			assert.Equal(t, test.expected, res)
+		})
 	}
 }

@@ -12,32 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commands
+package apphelp
 
 import (
 	"os"
 
-	"github.com/akamai/cli/pkg/log"
 	"github.com/urfave/cli/v2"
 )
 
 func cmdHelp(c *cli.Context) error {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	if c.Args().Present() {
-		cmd := c.Args().First()
-
-		builtinCmds := getBuiltinCommands(c)
-		for _, builtInCmd := range builtinCmds {
-			if builtInCmd.Commands[0].Name == cmd {
-				return cli.ShowCommandHelp(c, cmd)
-			}
+		cmdName := c.Args().First()
+		cmd := c.App.Command(cmdName)
+		if subCmd := c.Args().Get(1); subCmd != "" || len(cmd.Subcommands) > 0 {
+			os.Args = append([]string{os.Args[0], cmdName}, c.Args().Tail()...)
+			os.Args = append(os.Args, "--help")
+			return c.App.Run(os.Args)
 		}
 
-		// The arg mangling ensures that aliases are handled
-		os.Args = append([]string{os.Args[0], cmd, "help"}, c.Args().Tail()...)
-		err := c.App.RunContext(c.Context, os.Args)
-		return err
+		if !cmd.HideHelp && cli.HelpFlag != nil && !hasHelpFlag(cmd) {
+			cmd.Flags = append(cmd.Flags, cli.HelpFlag)
+		}
+		return cli.ShowCommandHelp(c, cmdName)
 	}
 
 	return cli.ShowAppHelp(c)
+}
+
+func hasHelpFlag(cmd *cli.Command) bool {
+	for _, f := range cmd.Flags {
+		if f.Names()[0] == "help" {
+			return true
+		}
+	}
+	return false
 }

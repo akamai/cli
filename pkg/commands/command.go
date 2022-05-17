@@ -25,7 +25,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/akamai/cli/pkg/app"
+	"github.com/akamai/cli/pkg/autocomplete"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
@@ -191,15 +191,7 @@ func createBuiltinCommands() []*cli.Command {
 				},
 			},
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
-		},
-		{
-			Name:         "help",
-			ArgsUsage:    "[command] [sub-command]",
-			Description:  "Displays help information",
-			Action:       cmdHelp,
-			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:        "install",
@@ -219,7 +211,7 @@ func createBuiltinCommands() []*cli.Command {
 				},
 			},
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:        "list",
@@ -232,7 +224,7 @@ func createBuiltinCommands() []*cli.Command {
 				},
 			},
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:         "search",
@@ -241,7 +233,7 @@ func createBuiltinCommands() []*cli.Command {
 			Action:       cmdSearch,
 			UsageText:    "Examples:\n\n   akamai search property",
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:         "uninstall",
@@ -249,7 +241,7 @@ func createBuiltinCommands() []*cli.Command {
 			Description:  "Uninstall package containing <command>",
 			Action:       cmdUninstall(langManager),
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:        "update",
@@ -263,7 +255,7 @@ func createBuiltinCommands() []*cli.Command {
 				},
 			},
 			HideHelp:     true,
-			BashComplete: app.DefaultAutoComplete,
+			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:        "upgrade",

@@ -113,3 +113,14 @@ func CapitalizeFirstWord(str string) string {
 	}
 	return strings.ToUpper(string(str[0])) + str[1:]
 }
+
+// InsertAfterNthWord inserts one string into another after the nth word specified by index
+func InsertAfterNthWord(s, val string, index int) string {
+	words := strings.Fields(s)
+	if len(words) <= index {
+		return strings.Join(append(words, val), " ")
+	}
+	words = append(words[:index+1], words[index:]...)
+	words[index] = val
+	return strings.Join(words, " ")
+}
