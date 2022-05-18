@@ -1,3 +1,9 @@
+# 1.4.2 (Xxx YY, 2022)
+
+## Enhancements
+
+* New darwin arm64 build (Apple M1) ([GH#127](https://github.com/akamai/cli/issues/127)).
+
 # 1.4.2 (May 11, 2022)
 
 ## Fixes

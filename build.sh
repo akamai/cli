@@ -9,6 +9,8 @@ get_version
 mkdir -p build/"$ver"
 GOOS=darwin GOARCH=amd64 go build -o build/"$ver"/akamai-v"$ver"-macamd64 ./cli/main.go
 shasum -a 256 build/"$ver"/akamai-v"$ver"-macamd64 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-macamd64.sig
+GOOS=darwin GOARCH=arm64 go build -o build/"$ver"/akamai-v"$ver"-macarm64 ./cli/main.go
+shasum -a 256 build/"$ver"/akamai-v"$ver"-macarm64 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-macarm64.sig
 GOOS=linux GOARCH=amd64 go build -o build/"$ver"/akamai-v"$ver"-linuxamd64 ./cli/main.go
 shasum -a 256 build/"$ver"/akamai-v"$ver"-linuxamd64 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-linuxamd64.sig
 GOOS=linux GOARCH=386 go build -o build/"$ver"/akamai-v"$ver"-linux386 ./cli/main.go
