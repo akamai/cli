@@ -25,6 +25,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/akamai/cli/pkg/apphelp"
 	"github.com/akamai/cli/pkg/autocomplete"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
@@ -223,8 +224,9 @@ func createBuiltinCommands() []*cli.Command {
 					Usage: "Display all available packages",
 				},
 			},
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			HideHelp:           true,
+			BashComplete:       autocomplete.Default,
+			CustomHelpTemplate: apphelp.SimplifiedHelpTemplate,
 		},
 		{
 			Name:         "search",
