@@ -4,7 +4,7 @@ import "github.com/Masterminds/semver"
 
 const (
 	// Version Application Version
-	Version = "1.4.2"
+	Version = "1.5.0"
 	// Equals p1==p2 in version.Compare(p1, p2)
 	Equals = 0
 	// Error failure parsing one of the parameters in version.Compare(p1, p2)

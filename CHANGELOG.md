@@ -1,4 +1,4 @@
-# 1.4.2 (Xxx YY, 2022)
+# 1.5.0 (May 26, 2022)
 
 ## Enhancements
 
