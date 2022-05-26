@@ -1,0 +1,37 @@
+{{with .Command -}}
+{{yellow "Name:"}}
+	{{.HelpName}}
+
+{{yellow "Usage:"}}
+	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}}{{if .ArgsUsage}} {{blue .ArgsUsage}}{{else}} {{blue "[arguments...]"}}{{end}}
+
+{{- if .Category}}
+
+{{yellow "Type:"}}
+	{{.Category -}}
+{{end}}
+
+{{- if .Description}}
+
+{{yellow "Description:"}}
+	{{.Description -}}
+{{end}}
+
+{{- if .VisibleFlags}}
+
+{{yellow "Command Flags:"}}
+{{- range .VisibleFlags}}
+	{{.}}
+{{- end}}{{end}}{{end}}
+
+{{- if .GlobalFlags}}
+
+{{yellow "Global Flags:"}}
+{{- range .GlobalFlags}}
+	{{.}}
+{{- end}}{{end -}}
+
+{{- if .Command.UsageText}}
+
+{{.Command.UsageText}}
+{{- end}}

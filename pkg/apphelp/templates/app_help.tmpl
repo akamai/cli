@@ -1,0 +1,41 @@
+{{ with .Command -}}
+{{yellow "Usage:"}}
+{{- if .UsageText}}
+	{{blue .UsageText}}
+{{- else}}
+	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .Commands}} {{blue "command [command flags]"}}{{end}}{{if .ArgsUsage}} {{blue .ArgsUsage}}{{else}} {{blue "[arguments...]"}}{{end}}
+{{- end}}
+
+{{- if .Description}}
+
+{{yellow "Description:"}}
+	{{.Description -}}
+{{end}}
+
+{{- if .VisibleCommands}}
+
+{{yellow "Commands:"}}
+{{- range .VisibleCategories -}}
+{{if .Name}}
+{{.Name}}:{{end}}
+{{- range .VisibleCommands}}
+	{{green .Name}}
+	{{- if .Aliases}} ({{if eq (len .Aliases) 1}}alias:{{else}}aliases:{{end}}
+		{{- range $index, $alias := .Aliases}}
+			{{- if $index}},{{end}} {{green $alias}}
+		{{- end -}}	
+	){{end -}}
+{{end}}{{end}}{{end}}
+
+{{- if .VisibleFlags}}
+
+{{yellow "Global Flags:"}}
+{{- range .VisibleFlags}}
+	{{.}}
+{{- end}}{{end -}}
+
+{{- if .Copyright}}
+
+{{hiBlack .Copyright}}
+{{end -}}
+{{end -}}
