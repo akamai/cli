@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-* New darwin arm64 build (Apple M1) ([GH#127](https://github.com/akamai/cli/issues/127)).
+* Support for new Apple M1(Darwin ARM64) build ([GH#127](https://github.com/akamai/cli/issues/127)). NOTE: not all CLI packages currently support Apple M1.
 
 # 1.4.2 (May 11, 2022)
 
