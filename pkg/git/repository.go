@@ -88,6 +88,9 @@ func (r *repository) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 }
 
 func translateError(err error, defaultErrorFormat string) error {
+	if err == nil {
+		return nil
+	}
 	if err == transport.ErrAuthenticationRequired {
 		return ErrPackageNotAvailable
 	}
