@@ -252,7 +252,7 @@ To see additional log information, prepend `AKAMAI_LOG=<logging-level>` to any C
 For example, to see extra debug information while updating the property-manager package, run:
 
 ```sh
-AKAMAI_CLI_LOG=debug akamai update property-manager
+AKAMAI_LOG=debug akamai update property-manager
 ```
 
 Each level is a progressive superset of all previous tiers. The output for `debug` also includes `fatal`, `error`, `warn`, and `info` logs.
@@ -260,7 +260,7 @@ Each level is a progressive superset of all previous tiers. The output for `debu
 If you want to redirect logs to a file, use the `AKAMAI_CLI_LOG_PATH` environmental variable:
 
 ```sh
-AKAMAI_CLI_LOG=debug AKAMAI_CLI_LOG_PATH=akamai.log akamai update property-manager
+AKAMAI_LOG=debug AKAMAI_CLI_LOG_PATH=akamai.log akamai update property-manager
 ```
 
 ## Dependencies

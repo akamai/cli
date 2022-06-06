@@ -31,8 +31,8 @@ func TestSetupContext(t *testing.T) {
 			expectedLevel: log.DebugLevel,
 		},
 		"invalid path passed": {
-			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": ".", "AKAMAI_CLI_LOG": "INFO"},
-			expectedLevel: log.ErrorLevel,
+			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": ".", "AKAMAI_LOG": "INFO"},
+			expectedLevel: log.InfoLevel,
 			withError:     regexp.MustCompile(`ERROR.*Invalid value of AKAMAI_CLI_LOG_PATH`),
 		},
 		"invalid log level passed, output to terminal": {
