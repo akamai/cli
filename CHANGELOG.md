@@ -1,3 +1,9 @@
+# 1.5.1 (June 8, 2022)
+
+## Fixes
+
+* `update` command does not work for some packages, ie. `cli-terraform`
+
 # 1.5.0 (May 26, 2022)
 
 ## Enhancements
