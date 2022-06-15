@@ -3,6 +3,8 @@ package commands
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/akamai/cli/pkg/config"
@@ -17,6 +19,13 @@ import (
 )
 
 func TestCmdUninstall(t *testing.T) {
+	cliEchoJSON := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo", "cli.json")
+	cliEchoUninstallRepo := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-uninstall")
+	cliEchoBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo")
+	cliEchoUninstallBinDir := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-uninstall", "bin")
+	cliEchoInUninstallBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-uninstall", "bin", "akamai-echo")
+	cliEchoUninstallBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-uninstall", "bin", "akamai-echo-uninstall")
+	cliEchoUninstallWinBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-uninstall", "bin", "akamai-echo-uninstall.cmd")
 	tests := map[string]struct {
 		args      []string
 		init      func(*testing.T, *mocked)
@@ -25,13 +34,14 @@ func TestCmdUninstall(t *testing.T) {
 		"uninstall command": {
 			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
-				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/cli.json", "./testdata/.akamai-cli/src/cli-echo-uninstall")
-				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
-				err := os.Rename("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall")
+				mustCopyFile(t, cliEchoJSON, cliEchoUninstallRepo)
+				mustCopyFile(t, cliEchoBin, cliEchoUninstallBinDir)
+				err := os.Rename(cliEchoInUninstallBin, cliEchoUninstallBin)
 				require.NoError(t, err)
-				err = os.Chmod("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall", 0755)
+				err = os.Chmod(cliEchoUninstallBin, 0755)
 				require.NoError(t, err)
 
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{cliEchoUninstallBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
@@ -41,11 +51,19 @@ func TestCmdUninstall(t *testing.T) {
 		"package does not contain cli.json": {
 			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
-				mustCopyFile(t, "./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin")
-				err := os.Rename("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo", "./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall")
-				require.NoError(t, err)
-				err = os.Chmod("./testdata/.akamai-cli/src/cli-echo-uninstall/bin/akamai-echo-uninstall", 0755)
-				require.NoError(t, err)
+				mustCopyFile(t, cliEchoBin, cliEchoUninstallBinDir)
+				var err error
+				if runtime.GOOS == "windows" {
+					err = os.Rename(cliEchoInUninstallBin, cliEchoUninstallWinBin)
+					require.NoError(t, err)
+					err = os.Chmod(cliEchoUninstallWinBin, 0755)
+					require.NoError(t, err)
+				} else {
+					err = os.Rename(cliEchoInUninstallBin, cliEchoUninstallBin)
+					require.NoError(t, err)
+					err = os.Chmod(cliEchoUninstallBin, 0755)
+					require.NoError(t, err)
+				}
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
@@ -64,7 +82,7 @@ func TestCmdUninstall(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
+			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", filepath.Join(".", "testdata")))
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   "uninstall",
@@ -72,7 +90,7 @@ func TestCmdUninstall(t *testing.T) {
 			}
 			app, ctx := setupTestApp(command, m)
 			defer func() {
-				require.NoError(t, os.RemoveAll("./testdata/.akamai-cli/src/cli-echo-uninstall"))
+				require.NoError(t, os.RemoveAll(cliEchoUninstallRepo))
 			}()
 			args := os.Args[0:1]
 			args = append(args, "uninstall")

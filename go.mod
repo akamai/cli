@@ -3,7 +3,7 @@ module github.com/akamai/cli
 go 1.17
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.7
+	github.com/AlecAivazis/survey/v2 v2.3.5
 	github.com/Masterminds/semver v1.5.0
 	github.com/apex/log v1.9.0
 	github.com/briandowns/spinner v1.11.1
@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tj/assert v0.0.3
 	github.com/urfave/cli/v2 v2.3.0
-	golang.org/x/sys v0.0.0-20210331175145-43e1dd70ce54
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
 	gopkg.in/src-d/go-git.v4 v4.13.1
 )
 
@@ -40,6 +40,7 @@ require (
 	github.com/xanzy/ssh-agent v0.2.1 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
+	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2 // indirect

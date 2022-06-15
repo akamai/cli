@@ -20,8 +20,8 @@ import (
 )
 
 var testFiles = map[string][]string{
-	"cli-echo":              {"akamai-e", "akamai-echo", "akamai-echo-cmd.cmd"},
-	"cli-echo-invalid-json": {"akamai-echo-invalid-json"},
+	"cli-echo":              {"akamai-e", "akamai-e.cmd", "akamai-echo", "akamai-echo.cmd", "akamai-echo-cmd.cmd"},
+	"cli-echo-invalid-json": {"akamai-echo-invalid-json", "akamai-echo-invalid-json.cmd"},
 }
 
 // TestMain prepares test binary used as cli command in tests and copies it to each directory specified in 'testFiles' variable

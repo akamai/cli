@@ -13,6 +13,8 @@ import (
 	"github.com/tj/assert"
 )
 
+const logPath = "./testlogs.txt"
+
 func TestSetupContext(t *testing.T) {
 	tests := map[string]struct {
 		envs          map[string]string
@@ -27,7 +29,7 @@ func TestSetupContext(t *testing.T) {
 			expectedLevel: log.DebugLevel,
 		},
 		"debug level set, write logs to a file": {
-			envs:          map[string]string{"AKAMAI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": "./testlogs.txt"},
+			envs:          map[string]string{"AKAMAI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": logPath},
 			expectedLevel: log.DebugLevel,
 		},
 		"invalid path passed": {
@@ -65,7 +67,6 @@ func TestSetupContext(t *testing.T) {
 				res, err := ioutil.ReadFile(v)
 				require.NoError(t, err)
 				assert.Contains(t, string(res), "test!")
-				require.NoError(t, os.Remove(v))
 				return
 			}
 			assert.Contains(t, buf.String(), "test!")
@@ -79,11 +80,11 @@ func TestWithCommand(t *testing.T) {
 		expected *regexp.Regexp
 	}{
 		"output to terminal": {
-			expected: regexp.MustCompile(` ERROR\[0m\[[0-9]{4}] abc[ ]*\[.{3}command\[.{2}=test`),
+			expected: regexp.MustCompile(` ERROR\[0m\[\d{4}] abc *\[.{3}command\[.{2}=test`),
 		},
 		"output to file": {
-			logFile:  "./testlogs.txt",
-			expected: regexp.MustCompile(`\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\+[0-9]{2}:[0-9]{2})?[Z]*] ERROR abc[ ]*command=test`),
+			logFile:  logPath,
+			expected: regexp.MustCompile(`\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*Z*] ERROR abc *command=test`),
 		},
 	}
 	for name, test := range tests {
@@ -100,7 +101,6 @@ func TestWithCommand(t *testing.T) {
 				res, err := ioutil.ReadFile(test.logFile)
 				require.NoError(t, err)
 				assert.Regexp(t, test.expected, string(res))
-				require.NoError(t, os.Remove(test.logFile))
 				return
 			}
 			assert.Regexp(t, test.expected, buf.String())

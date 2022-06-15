@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,14 +29,14 @@ func TestInstallJavaScript(t *testing.T) {
 					Path: "/test/nodejs",
 					Args: []string{"/test/nodejs", "-v"},
 				}).Return([]byte("v14.8.0"), nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(true, nil).Once()
 				m.On("LookPath", "yarn").Return("/test/yarn", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/yarn",
 					Args: []string{"/test/yarn", "install"},
 					Dir:  "testDir",
 				}).Return(nil, nil).Once()
-				m.On("FileExists", "testDir/package.json").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "package.json")).Return(true, nil).Once()
 				m.On("LookPath", "npm").Return("/test/npm", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/npm",
@@ -50,8 +51,8 @@ func TestInstallJavaScript(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "node").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "nodejs").Return("/test/nodejs", nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(false, nil).Once()
-				m.On("FileExists", "testDir/package.json").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "package.json")).Return(false, nil).Once()
 			},
 		},
 		"runtime not found": {
@@ -95,7 +96,7 @@ func TestInstallJavaScript(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "node").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "nodejs").Return("/test/nodejs", nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(true, nil).Once()
 				m.On("LookPath", "yarn").Return("", fmt.Errorf("not found")).Once()
 			},
 			withError: ErrPackageManagerNotFound,
@@ -106,7 +107,7 @@ func TestInstallJavaScript(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "node").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "nodejs").Return("/test/nodejs", nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(true, nil).Once()
 				m.On("LookPath", "yarn").Return("/test/yarn", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/yarn",
@@ -122,8 +123,8 @@ func TestInstallJavaScript(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "node").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "nodejs").Return("/test/nodejs", nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(false, nil).Once()
-				m.On("FileExists", "testDir/package.json").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "package.json")).Return(true, nil).Once()
 				m.On("LookPath", "npm").Return("", fmt.Errorf("not found")).Once()
 			},
 			withError: ErrPackageManagerNotFound,
@@ -134,8 +135,8 @@ func TestInstallJavaScript(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "node").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "nodejs").Return("/test/nodejs", nil).Once()
-				m.On("FileExists", "testDir/yarn.lock").Return(false, nil).Once()
-				m.On("FileExists", "testDir/package.json").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "yarn.lock")).Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "package.json")).Return(true, nil).Once()
 				m.On("LookPath", "npm").Return("/test/npm", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/npm",

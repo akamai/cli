@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,11 +28,11 @@ func TestInstallPHP(t *testing.T) {
 					Path: "/test/php",
 					Args: []string{"/test/php", "-v"},
 				}).Return([]byte("PHP 8.0.2 (cli)"), nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/php",
-					Args: []string{"/test/php", "testDir/composer.phar", "install"},
+					Args: []string{"/test/php", filepath.Join("testDir", "composer.phar"), "install"},
 					Dir:  "testDir",
 				}).Return([]byte(""), nil).Once()
 			},
@@ -41,11 +42,11 @@ func TestInstallPHP(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "php").Return("/test/php", nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/php",
-					Args: []string{"/test/php", "testDir/composer.phar", "install"},
+					Args: []string{"/test/php", filepath.Join("testDir", "composer.phar"), "install"},
 					Dir:  "testDir",
 				}).Return([]byte(""), &exec.ExitError{}).Once()
 			},
@@ -60,8 +61,8 @@ func TestInstallPHP(t *testing.T) {
 					Path: "/test/php",
 					Args: []string{"/test/php", "-v"},
 				}).Return([]byte("PHP 8.0.2 (cli)"), nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(false, nil).Once()
 				m.On("LookPath", "composer").Return("/test/composer", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/composer",
@@ -75,8 +76,8 @@ func TestInstallPHP(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "php").Return("/test/php", nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(false, nil).Once()
 				m.On("LookPath", "composer").Return("/test/composer", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/composer",
@@ -95,8 +96,8 @@ func TestInstallPHP(t *testing.T) {
 					Path: "/test/php",
 					Args: []string{"/test/php", "-v"},
 				}).Return([]byte("PHP 8.0.2 (cli)"), nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(false, nil).Once()
 				m.On("LookPath", "composer").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "composer.phar").Return("/test/phar", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
@@ -111,8 +112,8 @@ func TestInstallPHP(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "php").Return("/test/php", nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(false, nil).Once()
 				m.On("LookPath", "composer").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "composer.phar").Return("/test/phar", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
@@ -132,8 +133,8 @@ func TestInstallPHP(t *testing.T) {
 					Path: "/test/php",
 					Args: []string{"/test/php", "-v"},
 				}).Return([]byte("PHP 8.0.2 (cli)"), nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(true, nil).Once()
-				m.On("FileExists", "testDir/composer.phar").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(true, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.phar")).Return(false, nil).Once()
 				m.On("LookPath", "composer").Return("", fmt.Errorf("not found")).Once()
 				m.On("LookPath", "composer.phar").Return("", fmt.Errorf("not found")).Once()
 			},
@@ -144,7 +145,7 @@ func TestInstallPHP(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "php").Return("/test/php", nil).Once()
-				m.On("FileExists", "testDir/composer.json").Return(false, nil).Once()
+				m.On("FileExists", filepath.Join("testDir", "composer.json")).Return(false, nil).Once()
 			},
 		},
 		"no version found": {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,7 +117,7 @@ func TestInstallPython(t *testing.T) {
 	bashBin := "/test/bash"
 	py2Bin := "/test/python2"
 	py3Bin := "/test/python3"
-	py3VeBin := "veDir/bin/python"
+	py3VeBin := filepath.Join("veDir", "bin", "python")
 	py3PipVersion := "pip 21.0.1 from /usr/lib/python3.8/site-packages/pip (python 3.8)"
 	py3VenvHelp := `
 usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
@@ -124,7 +125,9 @@ usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
             ENV_DIR [ENV_DIR ...]
 venv: error: the following arguments are required: ENV_DIR
 `
-	py3BinWindows := "c:/Program files/Python/python3.exe"
+	activationScript := filepath.Join("veDir", "bin", "activate")
+	activationScriptWin := filepath.Join("veDir", "Scripts", "activate.bat")
+	py3BinWindows := filepath.Join("c:", "Program files", "Python", "python3.exe")
 	py3WindowsPipVersion := "pip 20.1.3 from c:\\Program Files\\WindowsApps\\" +
 		"PythonSoftwareFoundation.Python.3.9_3.9.1264.0_x64__qbz5n2kfra8p0\\" +
 		"lib\\site-packages\\pip (python 3.4)"
@@ -137,9 +140,9 @@ venv: error: the following arguments are required: ENV_DIR
 	ver355 := "3.5.5"
 	srcDir := "testDir"
 	veDir := "veDir"
-	requirementsFile := "testDir/requirements.txt"
-	winVePipPath := "veDir/Scripts/pip.exe"
-	winDeactivatePath := "veDir/Scripts/deactivate.bat"
+	requirementsFile := filepath.Join("testDir", "requirements.txt")
+	winVePipPath := filepath.Join("veDir", "Scripts", "pip.exe")
+	winDeactivatePath := filepath.Join("veDir", "Scripts", "deactivate.bat")
 
 	tests := map[string]struct {
 		givenDir   string
@@ -206,14 +209,14 @@ venv: error: the following arguments are required: ENV_DIR
 				m.On("FileExists", veDir).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: bashBin,
-					Args: []string{"source", "veDir/bin/activate"},
+					Args: []string{"source", activationScript},
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
-				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
+				m.On("FileExists", requirementsFile).Return(true, nil).Once()
 				m.On("FileExists", ".").Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3VeBin,
-					Args: []string{py3VeBin, "-m", "pip", "install", "--upgrade", "--ignore-installed", "-r", "testDir/requirements.txt"},
+					Args: []string{py3VeBin, "-m", "pip", "install", "--upgrade", "--ignore-installed", "-r", requirementsFile},
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
@@ -257,12 +260,12 @@ venv: error: the following arguments are required: ENV_DIR
 				}, true).Return(nil, nil).Once()
 				m.On("FileExists", veDir).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
-					Path: "veDir/Scripts/activate.bat",
+					Path: activationScriptWin,
 					Args: []string{},
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
 				m.On("GetOS").Return("windows").Times(4)
-				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
+				m.On("FileExists", requirementsFile).Return(true, nil).Once()
 				m.On("FileExists", ".").Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: winVePipPath,
@@ -310,12 +313,12 @@ venv: error: the following arguments are required: ENV_DIR
 				}, true).Return(nil, nil).Once()
 				m.On("FileExists", veDir).Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
-					Path: "veDir/Scripts/activate.bat",
+					Path: activationScriptWin,
 					Args: []string{},
 					Dir:  "",
 				}, true).Return(nil, nil).Once()
 				m.On("GetOS").Return("windows").Times(4)
-				m.On("FileExists", "testDir/requirements.txt").Return(true, nil).Once()
+				m.On("FileExists", requirementsFile).Return(true, nil).Once()
 				m.On("FileExists", ".").Return(true, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: winVePipPath,

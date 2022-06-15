@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/akamai/cli/pkg/config"
@@ -16,6 +17,8 @@ import (
 )
 
 func TestCmdSubcommand(t *testing.T) {
+	akamaiEchoBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo")
+	akamaiEBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-e")
 	tests := map[string]struct {
 		command        string
 		args           []string
@@ -30,6 +33,7 @@ func TestCmdSubcommand(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
 			},
 		},
 		"run installed akamai echo command as binary with edgerc location": {
@@ -38,6 +42,7 @@ func TestCmdSubcommand(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
 			},
 		},
 		"run installed akamai echo command as binary with alias": {
@@ -48,14 +53,15 @@ func TestCmdSubcommand(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEBin).Return([]string{akamaiEBin}, nil)
 			},
 		},
 		"run installed akamai echo command as .cmd file": {
 			command: "echo-cmd",
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
-				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
-					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
+					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
@@ -64,8 +70,8 @@ func TestCmdSubcommand(t *testing.T) {
 			command: "echo-cmd",
 			args:    []string{"abc"},
 			init: func(t *testing.T, m *mocked) {
-				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd").
-					Return([]string{"testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-cmd.cmd"}, nil)
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
+					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 			},
@@ -134,9 +140,9 @@ func TestPythonCmdSubcommand(t *testing.T) {
 		} else {
 			m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
 			m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
-			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, "testdata/.akamai-cli/src/cli-echo-python").
+			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python")).
 				Return([]string{pythonBin}, nil).Once()
-			m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(true, nil)
+			m.langManager.On("FileExists", filepath.Join("testdata", ".akamai-cli", "venv", "cli-echo-python")).Return(true, nil)
 		}
 
 		err := app.RunContext(ctx, args)

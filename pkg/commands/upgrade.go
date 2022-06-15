@@ -194,14 +194,14 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 		}
 	}()
 
-	shabody, err := ioutil.ReadAll(shaResp.Body)
+	shaBody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
 		term.Spinner().Fail()
 		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
 		return false
 	}
 
-	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
+	shaSum, err := hex.DecodeString(strings.TrimSpace(string(shaBody)))
 	if err != nil {
 		term.Spinner().Fail()
 		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
@@ -210,7 +210,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 
 	selfPath := os.Args[0]
 
-	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
+	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shaSum})
 	if err != nil {
 		term.Spinner().Fail()
 		if rerr := update.RollbackError(err); rerr != nil {

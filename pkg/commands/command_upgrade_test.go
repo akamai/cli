@@ -19,7 +19,7 @@ import (
 )
 
 func TestCmdUpgrade(t *testing.T) {
-	binURLRegexp := regexp.MustCompile(`/releases/download/[0-9]+\.[0-9]+\.[0-9]+/akamai-[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$`)
+	binURLRegexp := regexp.MustCompile(`/releases/download/\d+\.\d+\.\d+/akamai-\d+\.\d+\.\d+-[A-Za-z\d]+(\.exe)?$`)
 	tests := map[string]struct {
 		args              []string
 		respLatestVersion string
