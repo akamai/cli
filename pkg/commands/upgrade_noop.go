@@ -20,11 +20,12 @@ package commands
 import (
 	"context"
 
-	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
+	"github.com/akamai/cli/pkg/terminal"
 )
 
 func CheckUpgradeVersion(ctx context.Context, force bool) string {
+	term := terminal.Get(ctx)
+	term.Writeln("[WARNING] Upgrade command is not available for your installation. If you installed Akamai CLI with Homebrew, please run 'brew upgrade akamai' in order to perform upgrade.")
 	return ""
 }
 
@@ -34,14 +35,4 @@ func getLatestReleaseVersion() string {
 
 func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	return false
-}
-
-func getUpgradeCommand() *cli.Command {
-	return &cli.Command{
-		Name:        "upgrade",
-		Description: "Upgrade Akamai CLI to the latest version",
-		Action: func(_ *cli.Context) error {
-			return cli.Exit(color.RedString("Upgrade command is not available for your installation. If you installed Akamai CLI with Homebrew, please run 'brew upgrade akamai' in order to perform upgrade."), 1)
-		},
-	}
 }

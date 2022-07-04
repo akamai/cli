@@ -50,6 +50,8 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 		return ""
 	}
 
+	term.Spinner().Start("Checking for upgrades...")
+
 	data, _ := cfg.GetValue("cli", "last-upgrade-check")
 	data = strings.TrimSpace(data)
 

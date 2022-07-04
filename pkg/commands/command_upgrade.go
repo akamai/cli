@@ -35,8 +35,6 @@ func cmdUpgrade(c *cli.Context) error {
 	}()
 	term := terminal.Get(c.Context)
 
-	term.Spinner().Start("Checking for upgrades...")
-
 	latestVersion := CheckUpgradeVersion(c.Context, true)
 	if latestVersion != "" && latestVersion != version.Version {
 		os.Args = []string{os.Args[0], "--version"}
@@ -48,6 +46,8 @@ func cmdUpgrade(c *cli.Context) error {
 		term.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
 		return nil
 	}
-	term.Printf("Akamai CLI version: %s", color.CyanString("v"+version.Version))
+	if latestVersion != "" {
+		term.Printf("Akamai CLI version: %s", color.CyanString("v"+version.Version))
+	}
 	return nil
 }
