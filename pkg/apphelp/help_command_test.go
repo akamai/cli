@@ -107,7 +107,7 @@ Name:
   apphelp.test%s test subcommand
 
 Usage:
-  apphelp.test%s [global flags] test subcommand [command flags] [arguments...]
+  apphelp.test%s [global flags] test subcommand [command flags] 
 
 Description:
   a test subcommand without a category
@@ -156,7 +156,7 @@ Name:
   apphelp.test%s test - A new cli application
 
 Usage:
-  apphelp.test%s [global flags] test [command flags] <subcommand> [arguments...]
+  apphelp.test%s [global flags] test [command flags] <subcommand> 
 
 Subcommands:
   subcommand-no-category
