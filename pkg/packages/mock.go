@@ -12,8 +12,8 @@ type Mock struct {
 }
 
 // Install mock
-func (m *Mock) Install(_ context.Context, dir string, requirements LanguageRequirements, commands []string) error {
-	args := m.Called(dir, requirements, commands)
+func (m *Mock) Install(_ context.Context, dir string, requirements LanguageRequirements, commands, ldFlags []string) error {
+	args := m.Called(dir, requirements, commands, ldFlags)
 	return args.Error(0)
 }
 

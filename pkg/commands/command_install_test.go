@@ -50,7 +50,40 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(nil).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+
+				// list all packages
+				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(11)
+				m.term.On("Printf", mock.Anything, []interface{}{"aliases"}).Return().Twice()
+				m.term.On("Printf", mock.Anything, []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", mock.Anything, []interface{}{"commands.test help [command]"}).Return().Once()
+				m.term.On("Printf", mock.Anything, mock.Anything).Return().Twice()
+				m.term.On("Printf", mock.Anything).Return().Twice()
+			},
+			teardown: func(t *testing.T) {
+				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
+			},
+		},
+		"install from official akamai repository, build from source + ldflags": {
+			args: []string{"test-cmd"},
+			init: func(t *testing.T, m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
+					Run(func(args mock.Arguments) {
+						mustCopyFile(t, filepath.Join(".", "testdata", "repo_ldflags", "cli.json"), cliTestCmdRepo)
+					})
+				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+
+				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{"-X 'github.com/akamai/cli-test-command/cli.Version=1.0.0'"}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 
@@ -88,7 +121,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
@@ -182,7 +215,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(packages.ErrUnknownLang).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(packages.ErrUnknownLang).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("WarnOK").Return().Once()
 
@@ -215,7 +248,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
@@ -248,7 +281,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
@@ -290,7 +323,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()
@@ -332,7 +365,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}).Return(fmt.Errorf("oops")).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("oops")}).Return(0, nil).Once()

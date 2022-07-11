@@ -32,19 +32,19 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands []string) error {
+func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands, ldFlags []string) error {
 	logger := log.FromContext(ctx)
-	bin, err := l.commandExecutor.LookPath("go")
+	goBin, err := l.commandExecutor.LookPath("go")
 	if err != nil {
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
 	}
 
-	logger.Debugf("Go binary found: %s", bin)
+	logger.Debugf("Go binary found: %s", goBin)
 
 	if ver != "" && ver != "*" {
-		cmd := exec.Command(bin, "version")
+		cmd := exec.Command(goBin, "version")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s version: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
+		logger.Debugf("%s version: %s", goBin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 		r := regexp.MustCompile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
@@ -76,15 +76,25 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		}
 	}
 
-	for _, command := range commands {
+	if len(commands) != len(ldFlags) {
+		return fmt.Errorf("commands and ldFlags should have the same length")
+	}
+
+	for n, command := range commands {
+		ldFlag := ldFlags[n]
 		execName := "akamai-" + strings.ToLower(command)
 
 		var cmd *exec.Cmd
-		if len(commands) > 1 {
-			cmd = exec.Command(bin, "build", "-o", execName, "./"+command)
-		} else {
-			cmd = exec.Command(bin, "build", "-o", execName, ".")
+		params := []string{"build", "-o", execName}
+		if ldFlag != "" {
+			params = append(params, fmt.Sprintf(`-ldflags="%s"`, ldFlag))
 		}
+		if len(commands) > 1 {
+			params = append(params, "./"+command)
+		} else {
+			params = append(params, ".")
+		}
+		cmd = exec.Command(goBin, params...)
 
 		cmd.Dir = dir
 		_, err = l.commandExecutor.ExecCommand(cmd)

@@ -45,6 +45,7 @@ type (
 		Arguments    string   `json:"arguments"`
 		Bin          string   `json:"bin"`
 		AutoComplete bool     `json:"auto-complete"`
+		LdFlags      string   `json:"ldflags"`
 
 		Flags       []cli.Flag     `json:"-"`
 		Docs        string         `json:"-"`

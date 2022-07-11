@@ -54,7 +54,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}).Return(nil).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
@@ -80,7 +80,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
-					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}).Return(nil).Once()
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
