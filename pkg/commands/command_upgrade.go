@@ -38,8 +38,11 @@ func cmdUpgrade(c *cli.Context) error {
 	}()
 	term := terminal.Get(c.Context)
 
+	term.Spinner().Start("Checking for upgrades...")
+
 	latestVersion := CheckUpgradeVersion(c.Context, true)
 	if latestVersion != "" && latestVersion != version.Version {
+		term.Spinner().Stop(terminal.SpinnerStatusOK)
 		os.Args = []string{os.Args[0], "--version"}
 		UpgradeCli(c.Context, latestVersion)
 		return nil

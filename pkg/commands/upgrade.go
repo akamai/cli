@@ -37,12 +37,13 @@ import (
 func CheckUpgradeVersion(ctx context.Context, force bool) string {
 	term := terminal.Get(ctx)
 	cfg := config.Get(ctx)
+	logger := log.FromContext(ctx)
 
 	if !term.IsTTY() {
 		return ""
 	}
 
-	term.Spinner().Start("Checking for upgrades...")
+	logger.Debug("Checking for upgrades")
 
 	data, _ := cfg.GetValue("cli", "last-upgrade-check")
 	data = strings.TrimSpace(data)
