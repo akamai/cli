@@ -87,7 +87,7 @@ func TestCmdSubcommand(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   test.command,
 				Action: cmdSubcommand(m.gitRepo, m.langManager),
@@ -121,7 +121,7 @@ func TestPythonCmdSubcommand(t *testing.T) {
 	// run installed akamai echo command with python required
 	t.Run("run installed akamai echo command with python required", func(t *testing.T) {
 		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
-		m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
+		m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
 		command := &cli.Command{
 			Name:   "echo-python",
 			Action: cmdSubcommand(m.gitRepo, m.langManager),

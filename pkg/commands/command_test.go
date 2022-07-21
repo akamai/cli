@@ -36,7 +36,7 @@ func TestSubcommandsToCliCommands_packagePrefix(t *testing.T) {
 		Pkg:          "testPkg",
 	}
 
-	cmds := subcommandToCliCommands(from, &git.Mock{}, &packages.Mock{})
+	cmds := subcommandToCliCommands(from, &git.MockRepo{}, &packages.Mock{})
 
 	for _, cmd := range cmds {
 		assert.True(t, strings.HasPrefix(cmd.Aliases[0], fmt.Sprintf("%s/", from.Pkg)), "there should be an alias with the package prefix")

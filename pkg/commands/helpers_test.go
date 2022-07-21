@@ -78,7 +78,7 @@ func buildTestBinary() (string, error) {
 type mocked struct {
 	term        *terminal.Mock
 	cfg         *config.Mock
-	gitRepo     *git.Mock
+	gitRepo     *git.MockRepo
 	langManager *packages.Mock
 	cmd         *MockCmd
 }

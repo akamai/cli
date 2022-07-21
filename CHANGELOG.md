@@ -1,3 +1,9 @@
+# 1.5.2 (June 25, 2022)
+
+## Fixes
+
+* Fix `akamai update` command failures when the directory `~/.akamai-cli/src/cli-xyz` is in a git detached state.
+
 # 1.5.1 (June 8, 2022)
 
 ## Fixes

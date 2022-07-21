@@ -15,11 +15,11 @@ import (
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/fatih/color"
+	git2 "github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	git2 "gopkg.in/src-d/go-git.v4"
 )
 
 func TestCmdInstall(t *testing.T) {
@@ -395,7 +395,7 @@ func TestCmdInstall(t *testing.T) {
 			defer srv.Close()
 			require.NoError(t, os.Setenv("REPOSITORY_URL", srv.URL))
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", filepath.Join(".", "testdata")))
-			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.Mock{}, &packages.Mock{}, nil}
+			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
 			command := &cli.Command{
 				Name:   "install",
 				Action: cmdInstall(m.gitRepo, m.langManager),

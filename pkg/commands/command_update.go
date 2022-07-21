@@ -28,8 +28,8 @@ import (
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
-	gogit "gopkg.in/src-d/go-git.v4"
 )
 
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
@@ -113,6 +113,13 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
 	}
+
+	if err := gitRepo.Reset(&gogit.ResetOptions{Mode: gogit.HardReset}); err != nil {
+		logger.Debug(err.Error())
+		term.Spinner().Warn()
+		term.Writeln(color.YellowString("unable to reset the branch changes, we will try to continue anyway: %s", err.Error()))
+	}
+
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
 	refBeforePull, errBeforePull := gitRepo.Head()
