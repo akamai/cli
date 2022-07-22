@@ -1,14 +1,22 @@
 # 1.5.2 (June 25, 2022)
 
+## Enhancements
+
+* New help option without arguments.
+
 ## Fixes
 
 * Fix `akamai update` command failures when the directory `~/.akamai-cli/src/cli-xyz` is in a git detached state.
+* Show the correct version for CLI modules which version is set via ldflags.
+* Fix execution of Python submodules on Windows ([GH#159](https://github.com/akamai/cli/issues/159)).
+* Fine print update warnings for homebrew installations.
+* Fix failing unit tests on Windows.
 
 # 1.5.1 (June 8, 2022)
 
 ## Fixes
 
-* `update` command does not work for some packages, ie. `cli-terraform`
+* `update` command does not work for some packages, ie. `cli-terraform`.
 
 # 1.5.0 (May 26, 2022)
 
