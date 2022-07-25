@@ -72,7 +72,19 @@ func isBuiltinCommand(c *cli.Context, cmdName string) bool {
 		if cmd.Name == cmdName {
 			return true
 		}
+		if contains(cmd.Aliases, cmdName) {
+			return true
+		}
 	}
 
+	return false
+}
+
+func contains(slc []string, e string) bool {
+	for _, s := range slc {
+		if s == e {
+			return true
+		}
+	}
 	return false
 }
