@@ -81,6 +81,40 @@ Global Flags:
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
+		"help for specific command alias": {
+			args: []string{"test-alias"},
+			cmd: &cli.Command{
+				Name:        "test",
+				Aliases:     []string{"test-alias"},
+				Description: "test command",
+				Category:    "",
+				ArgsUsage:   "<arg1> <arg2>",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "test-flag",
+						Usage: "this is a test flag",
+					},
+				},
+			},
+			expectedOutput: fmt.Sprintf(`
+Name:
+  apphelp.test%s test
+
+Usage:
+  apphelp.test%s [global flags] test [command flags] <arg1> <arg2>
+
+Description:
+  test command
+
+Command Flags:
+  --test-flag  this is a test flag (default: false)
+  --help, -h   show help (default: false)
+
+Global Flags:
+  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+`, binarySuffix, binarySuffix),
+		},
 
 		"help for a subcommand": {
 			args: []string{"test", "subcommand"},
@@ -245,3 +279,7 @@ Command Flags:
 		}
 	}
 }
+
+//func TestIsBuiltinCommand(t *testing.T) {
+//
+//}
