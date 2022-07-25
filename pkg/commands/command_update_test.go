@@ -105,6 +105,16 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("WarnOK").Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("command \"echo\" already up-to-date")}).Return(0, nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+
+				// installing update
+				m.term.On("Start", `Installing...`, []interface{}(nil)).Return().Once()
+				m.langManager.On("Install", cliEchoRepo,
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"error checking out master, continue normally": {

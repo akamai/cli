@@ -162,7 +162,6 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
 		term.Writeln(color.CyanString(debugMessage))
-		return nil
 	}
 
 	logger.Debug("Repo updated successfully")
