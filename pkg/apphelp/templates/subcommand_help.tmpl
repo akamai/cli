@@ -1,10 +1,16 @@
 {{with .Command -}}
 {{yellow "Name:"}}
-	{{.HelpName}} - {{.Usage}}
+	{{.HelpName}}
 
 {{yellow "Usage:"}}
-	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue "<subcommand>"}} {{blue .ArgsUsage}}
-	
+	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue "<subcommand>"}}
+
+{{- if .Description}}
+
+{{yellow "Description:"}}
+	{{.Description -}}
+{{end}}
+
 {{- if .VisibleCommands}}
 
 {{yellow "Subcommands:"}}
