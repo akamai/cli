@@ -153,7 +153,7 @@ Global Flags:
 			},
 			expectedOutput: fmt.Sprintf(`
 Name:
-  apphelp.test%s test - A new cli application
+  apphelp.test%s test
 
 Usage:
   apphelp.test%s [global flags] test [command flags] <subcommand>
