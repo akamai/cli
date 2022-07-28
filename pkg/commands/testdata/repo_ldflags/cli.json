@@ -1,0 +1,15 @@
+{
+  "requirements": {
+    "go": "1.14.0"
+  },
+  "commands": [
+    {
+      "name": "app-1-cmd-1",
+      "aliases": ["ac1", "apcmd1"],
+      "description": "First command from app 1",
+      "version": "1.0.0",
+      "bin": "${REPOSITORY_URL}/akamai/cli-test-command/releases/download/{{.Version}}/akamai-{{.Name}}",
+      "ldflags": "-X 'github.com/akamai/cli-test-command/cli.Version=%s'"
+    }
+  ]
+}

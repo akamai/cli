@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestInstallRuby(t *testing.T) {
+	gemfilePath := filepath.Join("testDir", "Gemfile")
 	tests := map[string]struct {
 		givenDir  string
 		givenVer  string
@@ -27,7 +29,7 @@ func TestInstallRuby(t *testing.T) {
 					Path: "/test/ruby",
 					Args: []string{"/test/ruby", "-v"},
 				}).Return([]byte("ruby 2.6.3p62 (2021-01-01)"), nil).Once()
-				m.On("FileExists", "testDir/Gemfile").Return(true, nil).Once()
+				m.On("FileExists", gemfilePath).Return(true, nil).Once()
 				m.On("LookPath", "bundle").Return("/test/bundle", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/bundle",
@@ -41,7 +43,7 @@ func TestInstallRuby(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "ruby").Return("/test/ruby", nil).Once()
-				m.On("FileExists", "testDir/Gemfile").Return(false, nil).Once()
+				m.On("FileExists", gemfilePath).Return(false, nil).Once()
 			},
 		},
 		"runtime not found": {
@@ -81,7 +83,7 @@ func TestInstallRuby(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "ruby").Return("/test/ruby", nil).Once()
-				m.On("FileExists", "testDir/Gemfile").Return(true, nil).Once()
+				m.On("FileExists", gemfilePath).Return(true, nil).Once()
 				m.On("LookPath", "bundle").Return("", fmt.Errorf("not found")).Once()
 			},
 			withError: ErrPackageManagerNotFound,
@@ -91,7 +93,7 @@ func TestInstallRuby(t *testing.T) {
 			givenVer: "*",
 			init: func(m *mocked) {
 				m.On("LookPath", "ruby").Return("/test/ruby", nil).Once()
-				m.On("FileExists", "testDir/Gemfile").Return(true, nil).Once()
+				m.On("FileExists", gemfilePath).Return(true, nil).Once()
 				m.On("LookPath", "bundle").Return("/test/bundle", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/bundle",

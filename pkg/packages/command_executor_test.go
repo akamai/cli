@@ -2,6 +2,8 @@ package packages
 
 import (
 	"os/exec"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +11,10 @@ import (
 )
 
 func TestExecCommand(t *testing.T) {
+	// there is no echo.exe in windows
+	if runtime.GOOS == "windows" {
+		t.SkipNow()
+	}
 	executor := defaultExecutor{}
 	cmd := exec.Command("echo", "test")
 	res, err := executor.ExecCommand(cmd)
@@ -20,7 +26,11 @@ func TestLookPath(t *testing.T) {
 	executor := defaultExecutor{}
 	res, err := executor.LookPath("go")
 	assert.NoError(t, err)
-	assert.Contains(t, res, "/go")
+	if runtime.GOOS == "windows" {
+		assert.True(t, strings.HasSuffix(res, "\\go.exe"))
+	} else {
+		assert.True(t, strings.HasSuffix(res, "/go"))
+	}
 }
 
 func TestFileExists(t *testing.T) {

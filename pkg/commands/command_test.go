@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestSubcommandsToCliCommands_packagePrefix(t *testing.T) {
 		Pkg:          "testPkg",
 	}
 
-	cmds := subcommandToCliCommands(from, &git.Mock{}, &packages.Mock{})
+	cmds := subcommandToCliCommands(from, &git.MockRepo{}, &packages.Mock{})
 
 	for _, cmd := range cmds {
 		assert.True(t, strings.HasPrefix(cmd.Aliases[0], fmt.Sprintf("%s/", from.Pkg)), "there should be an alias with the package prefix")
@@ -43,6 +44,11 @@ func TestSubcommandsToCliCommands_packagePrefix(t *testing.T) {
 }
 
 func TestPassthruCommand(t *testing.T) {
+	akaEchoBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo")
+	akaEchoPythonBin := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-python")
+	cliEchoPythonRepo := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo-python")
+	cliEchoRepo := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-echo")
+	cliEchoPythonVe := filepath.Join("testdata", ".akamai-cli", "venv", "cli-echo-python")
 	tests := map[string]struct {
 		executable       []string
 		init             func(*mocked)
@@ -51,75 +57,75 @@ func TestPassthruCommand(t *testing.T) {
 		withError        error
 	}{
 		"golang binary": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo"},
+			executable: []string{akaEchoBin},
 			init: func(m *mocked) {
 				m.langManager.On(
 					"FinishExecution", packages.LanguageRequirements{Go: "1.15.0"},
-					"./testdata/.akamai-cli/src/cli-echo/").Once()
+					cliEchoRepo).Once()
 				m.cmd.On("Run").Return(nil).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Go: "1.15.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo/",
+			dirName:          cliEchoRepo,
 		},
 		"python 2": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "2.7.10"}, "./testdata/.akamai-cli/src/cli-echo-python/").Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "2.7.10"}, cliEchoPythonRepo).Once()
 				m.cmd.On("Run").Return(nil).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Python: "2.7.10"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 		},
 		"python 3, ve exists": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(true, nil)
-				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Once()
+				m.langManager.On("FileExists", cliEchoPythonVe).Return(true, nil)
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Once()
 				m.cmd.On("Run").Return(nil).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 		},
 		"python 3, ve does not exist": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(false, nil)
-				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Return(nil).Once()
-				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Once()
+				m.langManager.On("FileExists", cliEchoPythonVe).Return(false, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Once()
 				m.cmd.On("Run").Return(nil).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 		},
 		"python 3, ve does not exist - error running the external command": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(false, nil)
-				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Return(nil).Once()
-				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Return().Once()
+				m.langManager.On("FileExists", cliEchoPythonVe).Return(false, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Return(nil).Once()
+				m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Return().Once()
 				m.cmd.On("Run").Return(&exec.ExitError{ProcessState: &os.ProcessState{}}).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 			withError:        fmt.Errorf("wanted"),
 		},
 		"python 3, ve does not exist - error preparing execution": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(false, nil)
-				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "./testdata/.akamai-cli/src/cli-echo-python/").Return(packages.ErrPackageManagerExec).Once()
+				m.langManager.On("FileExists", cliEchoPythonVe).Return(false, nil)
+				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, cliEchoPythonRepo).Return(packages.ErrPackageManagerExec).Once()
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 			withError:        packages.ErrPackageManagerExec,
 		},
 		"python 3 - fs permission error to read VE": {
-			executable: []string{"./testdata/.akamai-cli/src/cli-echo/bin/akamai-echo-python"},
+			executable: []string{akaEchoPythonBin},
 			init: func(m *mocked) {
-				m.langManager.On("FileExists", "testdata/.akamai-cli/venv/cli-echo-python").Return(false, fs.ErrPermission)
+				m.langManager.On("FileExists", cliEchoPythonVe).Return(false, fs.ErrPermission)
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
-			dirName:          "./testdata/.akamai-cli/src/cli-echo-python/",
+			dirName:          cliEchoPythonRepo,
 			withError:        fs.ErrPermission,
 		},
 	}

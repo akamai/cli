@@ -17,7 +17,7 @@ type (
 	// LangManager allows operations on different programming languages
 	LangManager interface {
 		// Install builds and installs contents of a directory based on provided language requirements
-		Install(ctx context.Context, dir string, requirements LanguageRequirements, commands []string) error
+		Install(ctx context.Context, dir string, requirements LanguageRequirements, commands, ldFlags []string) error
 		// FindExec locates language's CLI executable
 		FindExec(ctx context.Context, requirements LanguageRequirements, cmdExec string) ([]string, error)
 		// PrepareExecution performs any operation required before the external command invocation
@@ -107,7 +107,7 @@ func (l *langManager) GetShell(goos string) (string, error) {
 	return "", ErrOSNotSupported
 }
 
-func (l *langManager) Install(ctx context.Context, pkgSrcPath string, reqs LanguageRequirements, commands []string) error {
+func (l *langManager) Install(ctx context.Context, pkgSrcPath string, reqs LanguageRequirements, commands, ldFlags []string) error {
 	lang, requirements := determineLangAndRequirements(reqs)
 	switch lang {
 	case PHP:
@@ -127,7 +127,7 @@ func (l *langManager) Install(ctx context.Context, pkgSrcPath string, reqs Langu
 		}
 		return err
 	case Go:
-		return l.installGolang(ctx, pkgSrcPath, requirements, commands)
+		return l.installGolang(ctx, pkgSrcPath, requirements, commands, ldFlags)
 	}
 	return ErrUnknownLang
 }
@@ -135,7 +135,6 @@ func (l *langManager) Install(ctx context.Context, pkgSrcPath string, reqs Langu
 func (l *langManager) FindExec(ctx context.Context, reqs LanguageRequirements, cmdExec string) ([]string, error) {
 	logger := log.FromContext(ctx)
 	lang, requirements := determineLangAndRequirements(reqs)
-	// FIXME: Add support for other languages defined in readme: Ruby and PHP
 	switch lang {
 	case Go:
 		return []string{cmdExec}, nil

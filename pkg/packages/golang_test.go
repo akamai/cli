@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,7 @@ func TestInstallGolang(t *testing.T) {
 		givenDir      string
 		givenVer      string
 		givenCommands []string
+		givenLdFlags  []string
 		init          func(*mocked)
 		withError     error
 	}{
@@ -23,9 +25,10 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
@@ -39,13 +42,35 @@ func TestInstallGolang(t *testing.T) {
 				}).Return(nil, nil)
 			},
 		},
+		"default version using go modules, ldFlags": {
+			givenDir:      "testDir",
+			givenVer:      "*",
+			givenCommands: []string{"test"},
+			givenLdFlags:  []string{"-X 'github.com/akamai/cli-test/cli.Version=0.1.0'"},
+			init: func(m *mocked) {
+				m.On("LookPath", "go").Return("/test/go", nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
+				m.On("LookPath", "go").Return("/test/go", nil)
+				m.On("ExecCommand", &exec.Cmd{
+					Path: "/test/go",
+					Args: []string{"/test/go", "mod", "tidy"},
+					Dir:  "testDir",
+				}).Return(nil, nil)
+				m.On("ExecCommand", &exec.Cmd{
+					Path: "/test/go",
+					Args: []string{"/test/go", "build", "-o", "akamai-test", `-ldflags="-X 'github.com/akamai/cli-test/cli.Version=0.1.0'"`, "."},
+					Dir:  "testDir",
+				}).Return(nil, nil)
+			},
+		},
 		"default version using go modules, multiple commands": {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test1", "test2"},
+			givenLdFlags:  []string{"", ""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
@@ -68,10 +93,11 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test1", "test2"},
+			givenLdFlags:  []string{"", ""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil).Once()
 				m.On("LookPath", "go").Return("", fmt.Errorf("not found")).Once()
-				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/glide",
@@ -94,16 +120,17 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test1", "test2"},
+			givenLdFlags:  []string{"", ""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil).Once()
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
 				m.On("LookPath", "go").Return("/test/go", nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
 					Args: []string{"/test/go", "mod", "tidy"},
 					Dir:  "testDir",
 				}).Return(nil, &exec.ExitError{})
-				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/glide",
@@ -126,11 +153,12 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(false, nil)
-				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
-				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/glide",
@@ -148,11 +176,12 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(false, nil)
-				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
-				m.On("FileExists", "testDir/glide.lock").Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(false, nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
 					Args: []string{"/test/go", "build", "-o", "akamai-test", "."},
@@ -164,11 +193,12 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(false, nil)
-				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
-				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
 				m.On("LookPath", "glide").Return("/test/glide", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/glide",
@@ -182,11 +212,12 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(false, nil)
-				m.On("FileExists", "testDir/Gopkg.lock").Return(false, nil)
-				m.On("FileExists", "testDir/glide.lock").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
+				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
 				m.On("LookPath", "glide").Return("", fmt.Errorf("not found"))
 			},
 			withError: ErrPackageManagerNotFound,
@@ -195,13 +226,14 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "1.14.0",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
 					Args: []string{"/test/go", "version"},
 				}).Return([]byte("go version go1.15.0 darwin/amd64"), nil)
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
@@ -219,6 +251,7 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "1.14.0",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
@@ -232,6 +265,7 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "1.14.0",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
@@ -245,6 +279,7 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "1.14.0",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", fmt.Errorf("not found"))
 			},
@@ -254,9 +289,10 @@ func TestInstallGolang(t *testing.T) {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test"},
+			givenLdFlags:  []string{""},
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", "testDir/go.sum").Return(true, nil)
+				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(true, nil)
 				m.On("LookPath", "go").Return("/test/go", nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
@@ -278,7 +314,7 @@ func TestInstallGolang(t *testing.T) {
 			m := new(mocked)
 			test.init(m)
 			l := langManager{m}
-			err := l.installGolang(context.Background(), test.givenDir, test.givenVer, test.givenCommands)
+			err := l.installGolang(context.Background(), test.givenDir, test.givenVer, test.givenCommands, test.givenLdFlags)
 			m.AssertExpectations(t)
 			if test.withError != nil {
 				assert.True(t, errors.Is(err, test.withError), "want: %s; got: %s", test.withError, err)

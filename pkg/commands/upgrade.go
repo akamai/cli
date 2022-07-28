@@ -18,37 +18,32 @@
 package commands
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/fatih/color"
-	"github.com/inconshreveable/go-update"
-	"github.com/urfave/cli/v2"
 )
 
 // CheckUpgradeVersion ...
 func CheckUpgradeVersion(ctx context.Context, force bool) string {
 	term := terminal.Get(ctx)
 	cfg := config.Get(ctx)
+	logger := log.FromContext(ctx)
 
 	if !term.IsTTY() {
 		return ""
 	}
+
+	logger.Debug("Checking for upgrades")
 
 	data, _ := cfg.GetValue("cli", "last-upgrade-check")
 	data = strings.TrimSpace(data)
@@ -134,110 +129,4 @@ func getLatestReleaseVersion(ctx context.Context) string {
 	latestVersion := filepath.Base(location)
 
 	return latestVersion
-}
-
-// UpgradeCli ...
-func UpgradeCli(ctx context.Context, latestVersion string) bool {
-	term := terminal.Get(ctx)
-	logger := log.FromContext(ctx)
-
-	term.Spinner().Start("Upgrading Akamai CLI")
-
-	repo := "https://github.com/akamai/cli"
-	if r := os.Getenv("CLI_REPOSITORY"); r != "" {
-		repo = r
-	}
-	cmd := command{
-		Version: latestVersion,
-		Bin:     fmt.Sprintf("%s/releases/download/{{.Version}}/akamai-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}", repo),
-		Arch:    runtime.GOARCH,
-		OS:      runtime.GOOS,
-	}
-
-	if runtime.GOOS == "darwin" {
-		cmd.OS = "mac"
-	}
-
-	if runtime.GOOS == "windows" {
-		cmd.BinSuffix = ".exe"
-	}
-
-	t := template.Must(template.New("url").Parse(cmd.Bin))
-	buf := &bytes.Buffer{}
-	if err := t.Execute(buf, cmd); err != nil {
-		return false
-	}
-
-	resp, err := http.Get(buf.String())
-	if err != nil || resp.StatusCode != http.StatusOK {
-		term.Spinner().Fail()
-		errMsg := color.RedString("Unable to download release, please try again.")
-		term.Writeln(errMsg)
-		logger.Error(errMsg)
-		return false
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			logger.Error(err.Error())
-		}
-	}()
-
-	shaResp, err := http.Get(fmt.Sprintf("%v%v", buf.String(), ".sig"))
-	if err != nil || shaResp.StatusCode != http.StatusOK {
-		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
-		return false
-	}
-	defer func() {
-		if err := shaResp.Body.Close(); err != nil {
-			logger.Error(err.Error())
-		}
-	}()
-
-	shabody, err := ioutil.ReadAll(shaResp.Body)
-	if err != nil {
-		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
-		return false
-	}
-
-	shasum, err := hex.DecodeString(strings.TrimSpace(string(shabody)))
-	if err != nil {
-		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
-		return false
-	}
-
-	selfPath := os.Args[0]
-
-	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shasum})
-	if err != nil {
-		term.Spinner().Fail()
-		if rerr := update.RollbackError(err); rerr != nil {
-			term.Writeln(color.RedString("Unable to install or rollback, please re-install."))
-			os.Exit(1)
-			return false
-		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			term.Writeln(color.RedString(err.Error()))
-			term.Writeln(color.RedString("Checksums do not match, please try again."))
-			return false
-		}
-		term.Writeln(color.RedString(err.Error()))
-		return false
-	}
-
-	term.Spinner().OK()
-
-	if err == nil {
-		os.Args[0] = selfPath
-	}
-
-	subCmd := createCommand(os.Args[0], os.Args[1:])
-	if err = passthruCommand(ctx, subCmd, packages.NewLangManager(), packages.LanguageRequirements{}, selfPath); err != nil {
-		cli.OsExiter(1)
-		return false
-	}
-	cli.OsExiter(0)
-
-	return true
 }

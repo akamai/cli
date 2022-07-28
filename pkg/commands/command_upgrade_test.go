@@ -19,7 +19,7 @@ import (
 )
 
 func TestCmdUpgrade(t *testing.T) {
-	binURLRegexp := regexp.MustCompile(`/releases/download/[0-9]+\.[0-9]+\.[0-9]+/akamai-[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$`)
+	binURLRegexp := regexp.MustCompile(`/releases/download/\d+\.\d+\.\d+/akamai-\d+\.\d+\.\d+-[A-Za-z\d]+(\.exe)?$`)
 	tests := map[string]struct {
 		args              []string
 		respLatestVersion string
@@ -37,6 +37,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				// Checking if cli should be upgraded
 				m.term.On("IsTTY").Return(true).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
 				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("never", true).Once()
 				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
 				m.cfg.On("Save").Return(nil).Once()
@@ -65,6 +67,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				// Checking if cli should be upgraded
 				m.term.On("IsTTY").Return(true).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
 				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("ignore", true).Once()
 				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
 				m.cfg.On("Save").Return(nil).Once()
@@ -93,6 +97,8 @@ func TestCmdUpgrade(t *testing.T) {
 
 				// Checking if cli should be upgraded
 				m.term.On("IsTTY").Return(true).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Stop", terminal.SpinnerStatusOK).Return().Once()
 				m.cfg.On("GetValue", "cli", "last-upgrade-check").Return("2021-02-10T11:55:26+01:00", true).Once()
 				m.cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
 				m.cfg.On("Save").Return(nil).Once()

@@ -1,3 +1,6 @@
+//go:build !noautoupgrade
+// +build !noautoupgrade
+
 // Copyright 2018. Akamai Technologies, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +42,7 @@ func cmdUpgrade(c *cli.Context) error {
 
 	latestVersion := CheckUpgradeVersion(c.Context, true)
 	if latestVersion != "" && latestVersion != version.Version {
+		term.Spinner().Stop(terminal.SpinnerStatusOK)
 		os.Args = []string{os.Args[0], "--version"}
 		UpgradeCli(c.Context, latestVersion)
 		return nil
@@ -48,6 +52,8 @@ func cmdUpgrade(c *cli.Context) error {
 		term.Printf("Akamai CLI (%s) is already up-to-date", color.CyanString("v"+version.Version))
 		return nil
 	}
-	term.Printf("Akamai CLI version: %s", color.CyanString("v"+version.Version))
+	if latestVersion != "" {
+		term.Printf("Akamai CLI version: %s", color.CyanString("v"+version.Version))
+	}
 	return nil
 }

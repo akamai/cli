@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"os"
@@ -17,6 +18,10 @@ import (
 )
 
 func TestCmdHelp(t *testing.T) {
+	var binarySuffix string
+	if runtime.GOOS == "windows" {
+		binarySuffix = ".exe"
+	}
 	tests := map[string]struct {
 		args           []string
 		cmd            *cli.Command
@@ -29,9 +34,9 @@ func TestCmdHelp(t *testing.T) {
 				Description: "test command",
 				Category:    "",
 			},
-			expectedOutput: `
+			expectedOutput: fmt.Sprintf(`
 Usage:
-  apphelp.test [global flags] command [command flags] [arguments...]
+  apphelp.test%s [global flags] command [command flags] [arguments...]
 
 Commands:
   help
@@ -40,7 +45,7 @@ Commands:
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-  --help, -h                 show help (default: false)`,
+  --help, -h                 show help (default: false)`, binarySuffix),
 		},
 
 		"help for specific command": {
@@ -57,12 +62,12 @@ Global Flags:
 					},
 				},
 			},
-			expectedOutput: `
+			expectedOutput: fmt.Sprintf(`
 Name:
-  apphelp.test test
+  apphelp.test%s test
 
 Usage:
-  apphelp.test [global flags] test [command flags] <arg1> <arg2>
+  apphelp.test%s [global flags] test [command flags] <arg1> <arg2>
 
 Description:
   test command
@@ -74,7 +79,41 @@ Command Flags:
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-`,
+`, binarySuffix, binarySuffix),
+		},
+		"help for specific command alias": {
+			args: []string{"test-alias"},
+			cmd: &cli.Command{
+				Name:        "test",
+				Aliases:     []string{"test-alias"},
+				Description: "test command",
+				Category:    "",
+				ArgsUsage:   "<arg1> <arg2>",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "test-flag",
+						Usage: "this is a test flag",
+					},
+				},
+			},
+			expectedOutput: fmt.Sprintf(`
+Name:
+  apphelp.test%s test
+
+Usage:
+  apphelp.test%s [global flags] test [command flags] <arg1> <arg2>
+
+Description:
+  test command
+
+Command Flags:
+  --test-flag  this is a test flag (default: false)
+  --help, -h   show help (default: false)
+
+Global Flags:
+  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+`, binarySuffix, binarySuffix),
 		},
 
 		"help for a subcommand": {
@@ -97,12 +136,12 @@ Global Flags:
 					},
 				},
 			},
-			expectedOutput: `
+			expectedOutput: fmt.Sprintf(`
 Name:
-  apphelp.test test subcommand
+  apphelp.test%s test subcommand
 
 Usage:
-  apphelp.test [global flags] test subcommand [command flags] [arguments...]
+  apphelp.test%s [global flags] test subcommand [command flags] 
 
 Description:
   a test subcommand without a category
@@ -114,7 +153,7 @@ Command Flags:
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-`,
+`, binarySuffix, binarySuffix),
 		},
 
 		"help for command with subcommands": {
@@ -146,12 +185,15 @@ Global Flags:
 					},
 				},
 			},
-			expectedOutput: `
+			expectedOutput: fmt.Sprintf(`
 Name:
-  apphelp.test test - A new cli application
+  apphelp.test%s test
 
 Usage:
-  apphelp.test [global flags] test [command flags] <subcommand> [arguments...]
+  apphelp.test%s [global flags] test [command flags] <subcommand>
+
+Description:
+  test command
 
 Subcommands:
   subcommand-no-category
@@ -168,7 +210,106 @@ Command Flags:
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-`,
+`, binarySuffix, binarySuffix),
+		},
+
+		"help for subcommand no category": {
+			args: []string{"test", "subcommand-no-category"},
+			cmd: &cli.Command{
+				Name:        "test",
+				Description: "test command",
+				Category:    "",
+				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Subcommands: []*cli.Command{
+					{
+						Name:        "subcommand-no-category",
+						Description: "a test subcommand without a category",
+					},
+					{
+						Name:        "subcommand-with-aliases",
+						Description: "a test subcommand with aliases and without a category",
+						Aliases:     []string{"sub-wa", "s-w-a"},
+					},
+					{
+						Name:        "subcommand-in-category1",
+						Description: "a test subcommand in category 1",
+						Category:    "category1",
+					},
+					{
+						Name:        "subcommand-in-category2",
+						Description: "a test subcommand in category 2",
+						Category:    "category2",
+					},
+				},
+			},
+			expectedOutput: fmt.Sprintf(`
+Name:
+  apphelp.test%s test subcommand-no-category
+
+Usage:
+  apphelp.test%s [global flags] test subcommand-no-category [command flags] 
+
+Description:
+  a test subcommand without a category
+
+Command Flags:
+  --help, -h  show help (default: false)
+
+Global Flags:
+  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+`, binarySuffix, binarySuffix),
+		},
+
+		"help for subcommands with category": {
+			args: []string{"test", "subcommand-in-category1"},
+			cmd: &cli.Command{
+				Name:        "test",
+				Description: "test command",
+				Category:    "",
+				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Subcommands: []*cli.Command{
+					{
+						Name:        "subcommand-no-category",
+						Description: "a test subcommand without a category",
+					},
+					{
+						Name:        "subcommand-with-aliases",
+						Description: "a test subcommand with aliases and without a category",
+						Aliases:     []string{"sub-wa", "s-w-a"},
+					},
+					{
+						Name:        "subcommand-in-category1",
+						Description: "a test subcommand in category 1",
+						Category:    "category1",
+					},
+					{
+						Name:        "subcommand-in-category2",
+						Description: "a test subcommand in category 2",
+						Category:    "category2",
+					},
+				},
+			},
+			expectedOutput: fmt.Sprintf(`
+Name:
+  apphelp.test%s test subcommand-in-category1
+
+Usage:
+  apphelp.test%s [global flags] test subcommand-in-category1 [command flags] 
+
+Type:
+  category1
+
+Description:
+  a test subcommand in category 1
+
+Command Flags:
+  --help, -h  show help (default: false)
+
+Global Flags:
+  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+`, binarySuffix, binarySuffix),
 		},
 
 		"help for command with simplified template": {
@@ -186,12 +327,12 @@ Global Flags:
 				},
 				CustomHelpTemplate: SimplifiedHelpTemplate,
 			},
-			expectedOutput: `
+			expectedOutput: fmt.Sprintf(`
 Name:
-  apphelp.test test
+  apphelp.test%s test
 
 Usage:
-  apphelp.test test [command flags]
+  apphelp.test%s test [command flags]
 
 Description:
   test command
@@ -199,7 +340,7 @@ Description:
 Command Flags:
   --test-flag  this is a test flag (default: false)
   --help, -h   show help (default: false)
-`,
+`, binarySuffix, binarySuffix),
 		},
 	}
 
@@ -240,3 +381,7 @@ Command Flags:
 		}
 	}
 }
+
+//func TestIsBuiltinCommand(t *testing.T) {
+//
+//}

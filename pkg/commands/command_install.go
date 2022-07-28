@@ -124,10 +124,6 @@ func packageListDiff(c *cli.Context, oldcmds []subcommands) {
 	listInstalledCommands(c, added, removed)
 }
 
-func isPublicRepo(repo string) bool {
-	return !strings.Contains(repo, ":") || strings.HasPrefix(repo, "https://github.com/")
-}
-
 func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string, forceBinary bool) (*subcommands, error) {
 	logger := log.FromContext(ctx)
 	srcPath, err := tools.GetAkamaiCliSrcPath()
@@ -189,12 +185,17 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 		return false, nil
 	}
 
-	var commands []string
+	var commands, ldFlags []string
 	for _, cmd := range cmdPackage.Commands {
 		commands = append(commands, cmd.Name)
+		ldFlag := cmd.LdFlags
+		if ldFlag != "" {
+			ldFlag = fmt.Sprintf(ldFlag, cmd.Version)
+		}
+		ldFlags = append(ldFlags, ldFlag)
 	}
 
-	err = langManager.Install(ctx, dir, cmdPackage.Requirements, commands)
+	err = langManager.Install(ctx, dir, cmdPackage.Requirements, commands, ldFlags)
 	if errors.Is(err, packages.ErrUnknownLang) {
 		term.Spinner().WarnOK()
 		warnMsg := "Package installed successfully, however package type is unknown, and may or may not function correctly."

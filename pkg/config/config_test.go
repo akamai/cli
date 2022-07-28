@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	cliHome = filepath.Join(".", "testdata")
+)
+
 func TestNewIni(t *testing.T) {
 	tests := map[string]struct {
 		configPath            string
@@ -22,12 +26,12 @@ func TestNewIni(t *testing.T) {
 	}{
 		"config does not exist in map, create empty config": {
 			configPath:            "./testdata/no_config",
-			expectedPath:          "testdata/no_config/.akamai-cli/config",
+			expectedPath:          filepath.Join("testdata", "no_config", ".akamai-cli", "config"),
 			expectedConfigVersion: "",
 		},
 		"load config from path": {
-			configPath:            "./testdata",
-			expectedPath:          "testdata/.akamai-cli/config",
+			configPath:            cliHome,
+			expectedPath:          filepath.Join("testdata", ".akamai-cli", "config"),
 			expectedConfigVersion: "1.1",
 		},
 		"invalid config": {
@@ -58,7 +62,9 @@ func TestNewIni(t *testing.T) {
 func TestSave(t *testing.T) {
 	dir, err := ioutil.TempDir(".", t.Name())
 	require.NoError(t, err)
-	defer os.RemoveAll(dir)
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
 	require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", dir))
 	cfg, err := NewIni()
 	require.NoError(t, err)
@@ -121,7 +127,7 @@ func TestValues(t *testing.T) {
 		},
 		"load ini file from path": {
 			givenConfig: func() *IniConfig {
-				require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
+				require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", cliHome))
 				defer func() {
 					require.NoError(t, os.Unsetenv("AKAMAI_CLI_HOME"))
 				}()
@@ -174,7 +180,7 @@ func TestGetValue(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
+			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", cliHome))
 			defer func() {
 				require.NoError(t, os.Unsetenv("AKAMAI_CLI_HOME"))
 			}()
@@ -292,7 +298,7 @@ func TestExportConfigEnv(t *testing.T) {
 			dir, err := ioutil.TempDir(".", "test")
 			require.NoError(t, err)
 			defer func() {
-				os.RemoveAll(dir)
+				_ = os.RemoveAll(dir)
 			}()
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", dir))
 			cfg, err := NewIni()

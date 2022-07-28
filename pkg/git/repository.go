@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/akamai/cli/pkg/terminal"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 const (
@@ -30,6 +30,7 @@ type Repository interface {
 	Head() (*plumbing.Reference, error)
 	Worktree() (*git.Worktree, error)
 	CommitObject(h plumbing.Hash) (*object.Commit, error)
+	Reset(opts *git.ResetOptions) error
 }
 
 type repository struct {
@@ -85,6 +86,17 @@ func (r *repository) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 		return nil, fmt.Errorf("repository is not yet initialized")
 	}
 	return r.gitRepo.CommitObject(h)
+}
+
+func (r *repository) Reset(opts *git.ResetOptions) error {
+	w, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+	if err := w.Reset(opts); err != nil {
+		return fmt.Errorf("unable to perform `git reset`: %s", err.Error())
+	}
+	return nil
 }
 
 func translateError(err error, defaultErrorFormat string) error {

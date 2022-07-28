@@ -29,6 +29,7 @@ func TestWrite(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, out.Close())
 		require.NoError(t, os.Remove(out.Name())) // clean up
 	}()
 
@@ -49,6 +50,7 @@ func TestPrintf(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, out.Close())
 		require.NoError(t, os.Remove(out.Name())) // clean up
 	}()
 
@@ -69,6 +71,7 @@ func TestWriteln(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, out.Close())
 		require.NoError(t, os.Remove(out.Name())) // clean up
 	}()
 
@@ -89,6 +92,7 @@ func TestWriteError(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, out.Close())
 		require.NoError(t, os.Remove(out.Name())) // clean up
 	}()
 
@@ -110,6 +114,7 @@ func TestWriteErrorf(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, out.Close())
 		require.NoError(t, os.Remove(out.Name())) // clean up
 	}()
 
@@ -132,6 +137,7 @@ func TestPrompt(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, in.Close())
 		require.NoError(t, os.Remove(in.Name())) // clean up
 	}()
 
@@ -142,7 +148,7 @@ func TestPrompt(t *testing.T) {
 
 	term := New(DiscardWriter(), in, DiscardWriter())
 
-	name, err := term.Prompt("What is your name")
+	name, err := term.Prompt("What is your name", "Tom", "Joe")
 	require.NoError(t, err)
 
 	assert.Equal(t, "Tom", name)
@@ -154,6 +160,7 @@ func TestPromptOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, in.Close())
 		require.NoError(t, os.Remove(in.Name())) // clean up
 	}()
 	_, err = in.Write(content)
@@ -177,6 +184,7 @@ func TestConfirm(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		require.NoError(t, in.Close())
 		require.NoError(t, os.Remove(in.Name())) // clean up
 	}()
 
