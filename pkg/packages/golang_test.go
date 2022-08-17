@@ -58,7 +58,7 @@ func TestInstallGolang(t *testing.T) {
 				}).Return(nil, nil)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test", `-ldflags="-X 'github.com/akamai/cli-test/cli.Version=0.1.0'"`, "."},
+					Args: []string{"/test/go", "build", "-o", "akamai-test", `-ldflags=-X 'github.com/akamai/cli-test/cli.Version=0.1.0'`, "."},
 					Dir:  "testDir",
 				}).Return(nil, nil)
 			},

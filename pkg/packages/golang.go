@@ -87,7 +87,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		var cmd *exec.Cmd
 		params := []string{"build", "-o", execName}
 		if ldFlag != "" {
-			params = append(params, fmt.Sprintf(`-ldflags="%s"`, ldFlag))
+			params = append(params, fmt.Sprintf(`-ldflags=%s`, ldFlag))
 		}
 		if len(commands) > 1 {
 			params = append(params, "./"+command)
@@ -97,6 +97,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		cmd = exec.Command(goBin, params...)
 
 		cmd.Dir = dir
+		logger.Debugf("building with command: %+v", cmd)
 		_, err = l.commandExecutor.ExecCommand(cmd)
 		if err != nil {
 			var exitErr *exec.ExitError
