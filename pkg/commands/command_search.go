@@ -16,11 +16,7 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -32,28 +28,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type packageList struct {
-	Version  float64              `json:"version"`
-	Packages []packageListPackage `json:"packages"`
-}
-
-type packageListPackage struct {
-	Title        string    `json:"title"`
-	Name         string    `json:"name"`
-	Version      string    `json:"version"`
-	URL          string    `json:"url"`
-	Issues       string    `json:"issues"`
-	Commands     []command `json:"commands"`
-	Requirements struct {
-		Go     string `json:"go"`
-		Php    string `json:"php"`
-		Node   string `json:"node"`
-		Ruby   string `json:"ruby"`
-		Python string `json:"python"`
-	} `json:"requirements"`
-}
-
 func cmdSearch(c *cli.Context) (e error) {
+	pr := newPackageReader(embeddedPackages)
+	return cmdSearchWithPackageReader(c, pr)
+}
+
+func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	start := time.Now()
 	logger := log.WithCommand(c.Context, c.Command.Name)
@@ -69,12 +49,12 @@ func cmdSearch(c *cli.Context) (e error) {
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
-	packageList, err := fetchPackageList(c.Context)
+	packages, err := pr.readPackage()
 	if err != nil {
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
-	err = searchPackages(c.Context, c.Args().Slice(), packageList)
+	err = searchPackages(c.Context, c.Args().Slice(), packages)
 	if err != nil {
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
@@ -82,41 +62,8 @@ func cmdSearch(c *cli.Context) (e error) {
 	return nil
 }
 
-func fetchPackageList(ctx context.Context) (*packageList, error) {
-	logger := log.FromContext(ctx)
-	var repo string
-	repo = "https://developer.akamai.com"
-	if customRepo := os.Getenv("AKAMAI_CLI_PACKAGE_REPO"); customRepo != "" {
-		repo = customRepo
-	}
-	repo = fmt.Sprintf("%s/cli/package-list.json", repo)
-	resp, err := http.Get(repo)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			logger.Error(err.Error())
-		}
-	}()
-
-	result := &packageList{}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
-	}
-
-	err = json.Unmarshal(body, result)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch remote Package List (%s)", err.Error())
-	}
-
-	return result, nil
-}
-
 func searchPackages(ctx context.Context, keywords []string, packageList *packageList) error {
-	results := make(map[int]map[string]packageListPackage)
+	results := make(map[int]map[string]packageListItem)
 
 	term := terminal.Get(ctx)
 
@@ -166,7 +113,7 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 
 		if hits > 0 {
 			if _, ok := results[hits]; !ok {
-				results[hits] = make(map[string]packageListPackage)
+				results[hits] = make(map[string]packageListItem)
 			}
 			results[hits][pkg.Name] = packageList.Packages[key]
 		}

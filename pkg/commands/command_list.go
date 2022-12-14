@@ -26,6 +26,11 @@ import (
 )
 
 func cmdList(c *cli.Context) (e error) {
+	pr := newPackageReader(embeddedPackages)
+	return cmdListWithPackageReader(c, pr)
+}
+
+func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	start := time.Now()
 	logger := log.WithCommand(c.Context, c.Command.Name)
@@ -43,13 +48,13 @@ func cmdList(c *cli.Context) (e error) {
 	commands := listInstalledCommands(c, nil, nil)
 
 	if c.IsSet("remote") {
-		packageList, err := fetchPackageList(c.Context)
+		packages, err := pr.readPackage()
 		if err != nil {
-			return cli.Exit("Unable to fetch remote package list", 1)
+			return cli.Exit(fmt.Sprintf("list: %s", err), 1)
 		}
 
 		foundCommands := true
-		for _, cmd := range packageList.Packages {
+		for _, cmd := range packages.Packages {
 			for _, command := range cmd.Commands {
 				if _, ok := commands[command.Name]; !ok {
 					foundCommands = false
@@ -65,7 +70,7 @@ func cmdList(c *cli.Context) (e error) {
 		term.Writeln(color.YellowString(headerMsg))
 		logger.Debug(headerMsg)
 
-		for _, remotePackage := range packageList.Packages {
+		for _, remotePackage := range packages.Packages {
 			for _, command := range remotePackage.Commands {
 				if _, ok := commands[command.Name]; ok {
 					continue
@@ -87,6 +92,7 @@ func cmdList(c *cli.Context) (e error) {
 
 	return nil
 }
+
 func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[string]bool) map[string]bool {
 	bold := color.New(color.FgWhite, color.Bold)
 

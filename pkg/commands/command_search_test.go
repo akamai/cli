@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -19,73 +16,87 @@ import (
 
 func TestCmdSearch(t *testing.T) {
 	tests := map[string]struct {
-		args         []string
-		responseFile string
-		init         func(*terminal.Mock)
-		withError    string
+		args      []string
+		init      func(*terminal.Mock)
+		packages  *packageList
+		withError string
 	}{
-		"search and find packages based on criteria": {
-			args:         []string{"test"},
-			responseFile: "packages-response.json",
+		"search and find single package - sample": {
+			args: []string{"sample"},
+			init: func(m *terminal.Mock) {
+				bold := color.New(color.FgWhite, color.Bold)
+				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{1})
+
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"sample", color.BlueString("SAMPLE")}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"2.0.0"}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for single match"}).
+					Return().Once()
+
+				m.On("Printf", "\nInstall using \"%s\".\n", []interface{}{color.BlueString("%s install [package]", tools.Self())}).
+					Return().Once()
+			},
+			packages: packagesForTest,
+		},
+		"search and find multiple packages - cli": {
+			args: []string{"cli"},
 			init: func(m *terminal.Mock) {
 				bold := color.New(color.FgWhite, color.Bold)
 				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{5})
 
-				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"Test CLI", color.BlueString("test-cli")}).
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"CLI no cmd match", color.BlueString("cli-no-cmd-match")}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"test-cmd", "(aliases: test, abc)"}).
+
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"abc-2", color.BlueString("cli-2")}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"cli-2", "(aliases: abc, abc2)"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for highest score"}).
+				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on name"}).
 					Return().Once()
 
-				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"Test no cmd match", color.BlueString("test-no-cmd-match")}).
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"cli-1", color.BlueString("abc-1")}).
 					Return().Once()
-
-				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"Test CLI", color.BlueString("cli-1")}).
-					Return().Once()
-				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"title-cmd", ""}).
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"ClI-1", ""}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on title"}).
 					Return().Once()
 
-				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"Some CLI", color.BlueString("cli-4")}).
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"abc-5", color.BlueString("abc-5")}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"test", ""}).
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"cli", ""}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on command name"}).
 					Return().Once()
 
-				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"Some CLI", color.BlueString("cli-2")}).
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"abc-3", color.BlueString("abc-3")}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"desc-cmd", ""}).
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"abc-3", ""}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test - match on description"}).
+				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"CLI - test for match on description"}).
 					Return().Once()
 
 				m.On("Printf", "\nInstall using \"%s\".\n", []interface{}{color.BlueString("%s install [package]", tools.Self())}).
 					Return().Once()
 			},
+			packages: packagesForTest,
 		},
-		"no match": {
-			args:         []string{"abc123"},
-			responseFile: "packages-response.json",
+		"search with no results - terraform": {
+			args: []string{"terraform"},
 			init: func(m *terminal.Mock) {
-				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{0}).Return().Once()
+				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{0})
 			},
-		},
-		"invalid response json": {
-			args:         []string{"abc123"},
-			responseFile: "invalid-response.json",
-			init:         func(m *terminal.Mock) {},
-			withError:    "unable to fetch remote Package List (",
+			packages: packagesForTest,
 		},
 		"no args passed": {
 			args:      []string{},
@@ -95,24 +106,19 @@ func TestCmdSearch(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "/cli/package-list.json", r.URL.String())
-			assert.Equal(t, http.MethodGet, r.Method)
-			pkgResponse, err := ioutil.ReadFile(fmt.Sprintf("./testdata/cli-search/%s", test.responseFile))
-			require.NoError(t, err)
-			_, err = w.Write(pkgResponse)
-			assert.NoError(t, err)
-		}))
-		defer srv.Close()
-		require.NoError(t, os.Setenv("AKAMAI_CLI_PACKAGE_REPO", srv.URL))
-		require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", "./testdata"))
 		t.Run(name, func(t *testing.T) {
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
-			command := &cli.Command{
-				Name:   "search",
-				Action: cmdSearch,
+			pr := &mockPackageReader{}
+			pr.On("readPackage").Return(test.packages.copy(t), nil).Once()
+
+			commandToExecute := &cli.Command{
+				Name: "search",
+				Action: func(context *cli.Context) error {
+					return cmdSearchWithPackageReader(context, pr)
+				},
 			}
-			app, ctx := setupTestApp(command, m)
+
+			app, ctx := setupTestApp(commandToExecute, m)
 			args := os.Args[0:1]
 			args = append(args, "search")
 			args = append(args, test.args...)
@@ -130,4 +136,122 @@ func TestCmdSearch(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+// copy returns copy of packageList content
+func (p *packageList) copy(t *testing.T) *packageList {
+	bytes, err := json.Marshal(p)
+	require.NoError(t, err)
+	var pl packageList
+	err = json.Unmarshal(bytes, &pl)
+	require.NoError(t, err)
+
+	return &pl
+}
+
+// packagesForTest is a package list with example packages
+var packagesForTest = &packageList{
+	Version: 1.0,
+	Packages: []packageListItem{
+		{
+			Title: "cli-1",
+			Name:  "abc-1",
+			Commands: []command{
+				{
+					Name:        "ClI-1",
+					Version:     "1.0.0",
+					Description: "test for match on title",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title:   "abc-2",
+			Name:    "cli-2",
+			Version: "1.0.0",
+			Commands: []command{
+				{
+					Name:        "cli-2",
+					Aliases:     []string{"abc", "abc2"},
+					Version:     "1.0.0",
+					Description: "test for match on name",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title: "abc-3",
+			Name:  "abc-3",
+			Commands: []command{
+				{
+					Name:        "abc-3",
+					Version:     "1.0.0",
+					Description: "CLI - test for match on description",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title: "abc-4",
+			Name:  "abc-4",
+			Commands: []command{
+				{
+					Name:        "abc-4",
+					Version:     "1.0.0",
+					Description: "abc - no match",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title: "abc-5",
+			Name:  "abc-5",
+			Commands: []command{
+				{
+					Name:        "cli",
+					Version:     "1.0.0",
+					Description: "test for match on command name",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title: "CLI no cmd match",
+			Name:  "cli-no-cmd-match",
+			Commands: []command{
+				{
+					Name:        "abc-6",
+					Version:     "1.0.0",
+					Description: "title and name match, but no match on command",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+		{
+			Title: "sample",
+			Name:  "SAMPLE",
+			Commands: []command{
+				{
+					Name:        "sample",
+					Version:     "2.0.0",
+					Description: "test for single match",
+				},
+			},
+			Requirements: requirements{
+				Node: "7.0.0",
+			},
+		},
+	},
 }
