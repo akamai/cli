@@ -25,7 +25,7 @@ GOJUNITREPORT = $(BIN)/go-junit-report
 $(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report
 
 GOLANGCILINT = $(BIN)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.41.1
+GOLANGCI_LINT_VERSION = v1.50.1
 $(BIN)/golangci-lint: ; $(info $(M) Installing golangci-lint...)
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN) $(GOLANGCI_LINT_VERSION)
 
