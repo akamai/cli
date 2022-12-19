@@ -1,27 +1,24 @@
 package autocomplete
 
 import (
+	"fmt"
 	"os"
 	"strings"
-
-	"github.com/akamai/cli/pkg/terminal"
 
 	"github.com/urfave/cli/v2"
 )
 
 // Default creates the default autocomplete
 func Default(ctx *cli.Context) {
-	term := terminal.Get(ctx.Context)
 	if ctx.Command.Name == "help" {
-		var args []string
-		args = append(args, os.Args[0])
-		if len(os.Args) > 2 {
-			args = append(args, os.Args[2:]...)
-		}
+		args := []string{"akamai"}
+		args = append(args, ctx.Args().Slice()...)
+		args = append(args, "--"+cli.BashCompletionFlag.Names()[0])
 
-		if err := ctx.App.Run(args); err != nil {
-			term.WriteError(err.Error())
+		if err := ctx.App.RunContext(ctx.Context, args); err != nil {
+			fmt.Fprintln(ctx.App.ErrWriter, err.Error())
 		}
+		return
 	}
 
 	commands := make([]*cli.Command, 0)
@@ -29,14 +26,14 @@ func Default(ctx *cli.Context) {
 
 	if ctx.Command.Name == "" {
 		commands = ctx.App.Commands
-		flags = ctx.App.Flags
+		flags = ctx.App.VisibleFlags()
 	} else {
 		if len(ctx.Command.Subcommands) != 0 {
 			commands = ctx.Command.Subcommands
 		}
 
-		if len(ctx.Command.Flags) != 0 {
-			flags = ctx.Command.Flags
+		if len(ctx.Command.VisibleFlags()) != 0 {
+			flags = ctx.Command.VisibleFlags()
 		}
 	}
 
@@ -45,9 +42,7 @@ func Default(ctx *cli.Context) {
 			continue
 		}
 
-		for _, name := range command.Names() {
-			term.Writeln(ctx.App.Writer, name)
-		}
+		fmt.Fprintln(ctx.App.Writer, command.Name)
 	}
 
 	for _, flag := range flags {
@@ -68,9 +63,9 @@ func Default(ctx *cli.Context) {
 			switch len(name) {
 			case 0:
 			case 1:
-				term.Writeln(ctx.App.Writer, "-"+name)
+				fmt.Fprintln(ctx.App.Writer, "-"+name)
 			default:
-				term.Writeln(ctx.App.Writer, "--"+name)
+				fmt.Fprintln(ctx.App.Writer, "--"+name)
 			}
 		}
 	}
