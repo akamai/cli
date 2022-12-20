@@ -172,11 +172,7 @@ autoload -U bashcompinit && bashcompinit`
 	local cur opts base
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
-	if [[ "$cur" == "-"* ]]; then
-		opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} ${cur} --generate-bash-completion )
-	else
-		opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
-	fi
+	opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
 	COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 	return 0
 }
