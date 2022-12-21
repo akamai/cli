@@ -261,9 +261,10 @@ func createBuiltinCommands() []*cli.Command {
 			BashComplete: autocomplete.Default,
 		},
 		{
-			Name:        "upgrade",
-			Description: "Upgrade Akamai CLI to the latest version",
-			Action:      cmdUpgrade,
+			Name:         "upgrade",
+			Description:  "Upgrade Akamai CLI to the latest version",
+			Action:       cmdUpgrade,
+			BashComplete: autocomplete.Default,
 		},
 	}
 }
@@ -308,7 +309,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 		if err := os.Setenv("PATH", systemPath); err != nil {
 			return nil, nil, err
 		}
-		return []string{path}, nil, nil
+		return []string{path}, &packages.LanguageRequirements{}, nil
 	}
 
 	if err := os.Setenv("PATH", systemPath); err != nil {
