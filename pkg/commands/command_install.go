@@ -180,8 +180,10 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 	term.Spinner().Start("Installing...")
 	if err != nil {
 		term.Spinner().Stop(terminal.SpinnerStatusFail)
-		term.Writeln(err.Error())
 		logger.Error(err.Error())
+		if _, err := term.Writeln(err.Error()); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false, nil
 	}
 
@@ -199,7 +201,10 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 	if errors.Is(err, packages.ErrUnknownLang) {
 		term.Spinner().WarnOK()
 		warnMsg := "Package installed successfully, however package type is unknown, and may or may not function correctly."
-		term.Writeln(color.CyanString(warnMsg))
+		if _, err := term.Writeln(color.CyanString(warnMsg)); err != nil {
+			term.WriteError(err.Error())
+			return false, nil
+		}
 		logger.Warn(warnMsg)
 		return true, &cmdPackage
 	}
@@ -215,7 +220,10 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 			if first {
 				first = false
 				term.Spinner().Stop(terminal.SpinnerStatusWarn)
-				term.Writeln(color.CyanString(err.Error()))
+				if _, err := term.Writeln(color.CyanString(err.Error())); err != nil {
+					term.WriteError(err.Error())
+					return false, nil
+				}
 				logger.Warn(err.Error())
 				if !forceBinary {
 					if !term.IsTTY() {
@@ -244,7 +252,10 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 			if err = downloadBin(ctx, filepath.Join(dir, "bin"), cmd); err != nil {
 				term.Spinner().Stop(terminal.SpinnerStatusFail)
 				errorMsg := "Unable to download binary: " + err.Error()
-				term.Writeln(color.RedString(errorMsg))
+				if _, err := term.Writeln(color.RedString(errorMsg)); err != nil {
+					term.WriteError(err.Error())
+					return false, nil
+				}
 				logger.Error(errorMsg)
 				return false, nil
 			}
@@ -252,7 +263,10 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 
 		if first {
 			term.Spinner().Stop(terminal.SpinnerStatusFail)
-			term.Writeln(color.RedString(err.Error()))
+			if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+				term.WriteError(err.Error())
+				return false, nil
+			}
 			logger.Error(err.Error())
 			return false, nil
 		}

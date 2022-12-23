@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
 
@@ -149,7 +150,8 @@ func TestComplete_help_command(t *testing.T) {
 		},
 	}
 
-	app.Run([]string{"akamai", "help", "test", "--generate-bash-completion"})
+	err := app.Run([]string{"akamai", "help", "test", "--generate-bash-completion"})
+	require.NoError(t, err)
 
 	assert.Equal(t, "--flag\n-f\n", outbuf.String())
 }

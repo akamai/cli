@@ -179,7 +179,7 @@ func TestPrepareCommand(t *testing.T) {
 			givenFlags:   []string{"flag_2"},
 			expected:     []string{"command"},
 		},
-		"flags and args not overlaping": {
+		"flags and args not overlapping": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",
@@ -238,7 +238,7 @@ func TestPrepareCommand(t *testing.T) {
 			givenFlags:   []string{"flag_2"},
 			expected:     []string{"some", "command"},
 		},
-		"script - flags and args not overlaping": {
+		"script - flags and args not overlapping": {
 			flagsInCtx: map[string]string{
 				"flag_1": "some_value",
 				"flag_2": "other_value",

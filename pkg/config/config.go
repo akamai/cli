@@ -91,7 +91,9 @@ func Get(ctx context.Context) Config {
 func (c *IniConfig) Save(ctx context.Context) error {
 	term := terminal.Get(ctx)
 	if err := c.file.SaveTo(c.path); err != nil {
-		term.Writeln(err.Error())
+		if _, err := term.Writeln(err.Error()); err != nil {
+			return err
+		}
 		log.FromContext(ctx).Error(err.Error())
 		return err
 	}

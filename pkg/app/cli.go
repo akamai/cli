@@ -182,14 +182,22 @@ complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
 	term := terminal.Get(c.Context)
 
 	if c.Bool("bash") {
-		term.Writeln(bashComments)
-		term.Writeln(bashScript)
+		if _, err = term.Writeln(bashComments); err != nil {
+			return err
+		}
+		if _, err = term.Writeln(bashScript); err != nil {
+			return err
+		}
 		return nil
 	}
 
 	if c.Bool("zsh") {
-		term.Writeln(zshScript)
-		term.Writeln(bashScript)
+		if _, err = term.Writeln(zshScript); err != nil {
+			return err
+		}
+		if _, err = term.Writeln(bashScript); err != nil {
+			return err
+		}
 		return nil
 	}
 

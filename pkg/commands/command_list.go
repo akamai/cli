@@ -67,7 +67,9 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 			return nil
 		}
 		headerMsg := "\nAvailable Commands:\n\n"
-		term.Writeln(color.YellowString(headerMsg))
+		if _, err := term.Writeln(color.YellowString(headerMsg)); err != nil {
+			return err
+		}
 		logger.Debug(headerMsg)
 
 		for _, remotePackage := range packages.Packages {
@@ -78,7 +80,9 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 				commandName := bold.Sprintf("  %s", command.Name)
 				term.Printf(commandName)
 				packageName := fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name))
-				term.Writeln(packageName)
+				if _, err := term.Writeln(packageName); err != nil {
+					return err
+				}
 				commandDescription := fmt.Sprintf("    %s\n", command.Description)
 				term.Printf(commandDescription)
 				logger.Debug(commandName)
@@ -100,7 +104,11 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 
 	commands := make(map[string]bool)
 	installedCmds := color.YellowString("\nInstalled Commands:\n")
-	term.Writeln(installedCmds)
+	if _, err := term.Writeln(installedCmds); err != nil {
+		term.WriteError(err.Error())
+		return nil
+	}
+
 	cmds := getCommands(c)
 	for _, cmd := range cmds {
 		for _, command := range cmd.Commands {
@@ -132,7 +140,11 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 				term.Printf(")")
 			}
 
-			term.Writeln()
+			if _, err := term.Writeln(); err != nil {
+				term.WriteError(err.Error())
+				return nil
+			}
+
 			if len(command.Description) > 0 {
 				cmdDescription := fmt.Sprintf("    %s\n", command.Description)
 				term.Printf(cmdDescription)

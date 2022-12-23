@@ -117,7 +117,9 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	if err := gitRepo.Reset(&gogit.ResetOptions{Mode: gogit.HardReset}); err != nil {
 		logger.Debug(err.Error())
 		term.Spinner().Warn()
-		term.Writeln(color.YellowString("unable to reset the branch changes, we will try to continue anyway: %s", err.Error()))
+		if _, err := term.Writeln(color.YellowString("unable to reset the branch changes, we will try to continue anyway: %s", err.Error())); err != nil {
+			return err
+		}
 	}
 
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
@@ -161,7 +163,9 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		term.Spinner().WarnOK()
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
-		term.Writeln(color.CyanString(debugMessage))
+		if _, err := term.Writeln(color.CyanString(debugMessage)); err != nil {
+			return err
+		}
 	}
 
 	logger.Debug("Repo updated successfully")

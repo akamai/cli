@@ -56,8 +56,10 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	if err != nil || resp.StatusCode != http.StatusOK {
 		term.Spinner().Fail()
 		errMsg := color.RedString("Unable to download release, please try again.")
-		term.Writeln(errMsg)
 		logger.Error(errMsg)
+		if _, err := term.Writeln(errMsg); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false
 	}
 	defer func() {
@@ -69,7 +71,9 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	shaResp, err := http.Get(fmt.Sprintf("%v%v", buf.String(), ".sig"))
 	if err != nil || shaResp.StatusCode != http.StatusOK {
 		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
+		if _, err := term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again.")); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false
 	}
 	defer func() {
@@ -81,14 +85,18 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	shaBody, err := ioutil.ReadAll(shaResp.Body)
 	if err != nil {
 		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
+		if _, err := term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again.")); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false
 	}
 
 	shaSum, err := hex.DecodeString(strings.TrimSpace(string(shaBody)))
 	if err != nil {
 		term.Spinner().Fail()
-		term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again."))
+		if _, err := term.Writeln(color.RedString("Unable to retrieve signature for verification, please try again.")); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false
 	}
 
@@ -98,15 +106,23 @@ func UpgradeCli(ctx context.Context, latestVersion string) bool {
 	if err != nil {
 		term.Spinner().Fail()
 		if rerr := update.RollbackError(err); rerr != nil {
-			term.Writeln(color.RedString("Unable to install or rollback, please re-install."))
+			if _, err := term.Writeln(color.RedString("Unable to install or rollback, please re-install.")); err != nil {
+				term.WriteError(err.Error())
+			}
 			os.Exit(1)
 			return false
 		} else if strings.HasPrefix(err.Error(), "Upgrade file has wrong checksum.") {
-			term.Writeln(color.RedString(err.Error()))
-			term.Writeln(color.RedString("Checksums do not match, please try again."))
+			if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+				term.WriteError(err.Error())
+			}
+			if _, err := term.Writeln(color.RedString("Checksums do not match, please try again.")); err != nil {
+				term.WriteError(err.Error())
+			}
 			return false
 		}
-		term.Writeln(color.RedString(err.Error()))
+		if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+			term.WriteError(err.Error())
+		}
 		return false
 	}
 

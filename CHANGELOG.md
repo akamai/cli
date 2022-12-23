@@ -1,3 +1,14 @@
+# X.X.X (X X, X)
+
+## Enhancements
+
+* Improve code quality - resolve issues reported by golangci-lint
+
+## Fixes
+
+* Fix `akamai search` command error ([GH#166](https://github.com/akamai/cli/issues/166))
+* Fix autocompletion for commands ([GH#166](https://github.com/akamai/cli/issues/165))
+
 # 1.5.2 (July 28, 2022)
 
 ## Enhancements
