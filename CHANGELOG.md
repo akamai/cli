@@ -1,5 +1,9 @@
 # X.X.X (X X, X)
 
+#### BREAKING CHANGES:
+
+* Migrate to go 1.18
+
 ## Enhancements
 
 * Improve code quality - resolve issues reported by golangci-lint
