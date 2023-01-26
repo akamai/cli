@@ -1,7 +1,14 @@
 linters:
   disable-all: true
   enable:
-  - revive
+    - errcheck
+    - gocyclo
+    - gofmt
+    - goimports
+    - govet
+    - ineffassign
+    - misspell
+    - revive
 
 output:
   sort-results: true

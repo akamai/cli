@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"os"
@@ -139,4 +140,32 @@ func hasFlag(app *cli.App, name string) bool {
 		}
 	}
 	return false
+}
+
+func TestAutocompletionFlag(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	term := &terminal.Mock{}
+	term.On("Error").Return(stderr)
+
+	ctx := terminal.Context(context.Background(), terminal.Terminal(term))
+
+	app := CreateApp(ctx)
+	app.Writer = stdout
+	app.ErrWriter = stderr
+
+	err := app.RunContext(ctx, []string{"akamai", "--generate-bash-completion"})
+	assert.NoError(t, err)
+
+	assert.Empty(t, stderr.String())
+
+	stdoutString := stdout.String()
+	assert.Contains(t, stdoutString, "help\n")
+	assert.Contains(t, stdoutString, "--edgerc\n")
+	assert.Contains(t, stdoutString, "-e\n")
+	assert.Contains(t, stdoutString, "--section\n")
+	assert.Contains(t, stdoutString, "-s\n")
+	assert.Contains(t, stdoutString, "--bash\n")
+	assert.Contains(t, stdoutString, "--zsh\n")
 }

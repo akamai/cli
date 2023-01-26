@@ -150,7 +150,7 @@ venv: error: the following arguments are required: ENV_DIR
 		requiredPy string
 		goos       string
 		init       func(*mocked)
-		withError  *error
+		withError  error
 	}{
 		"without python 3, python 3 required": {
 			givenDir:   "testDir",
@@ -160,7 +160,7 @@ venv: error: the following arguments are required: ENV_DIR
 				m.On("LookPath", "py.exe").Return("", errors.New("")).Once()
 				m.On("LookPath", "python3.exe").Return("", errors.New("")).Once()
 			},
-			withError: &ErrRuntimeNotFound,
+			withError: ErrRuntimeNotFound,
 		},
 		"without python 2, python 2 required": {
 			givenDir:   srcDir,
@@ -170,7 +170,7 @@ venv: error: the following arguments are required: ENV_DIR
 				m.On("LookPath", "py.exe").Return("", errors.New("")).Once()
 				m.On("LookPath", "python2.exe").Return("", errors.New("")).Once()
 			},
-			withError: &ErrRuntimeNotFound,
+			withError: ErrRuntimeNotFound,
 		},
 		"with python 3.4 and pip, python 3 required": {
 			givenDir:   srcDir,
@@ -373,7 +373,7 @@ venv: error: the following arguments are required: ENV_DIR
 			veDir:    veDir,
 			init: func(m *mocked) {
 			},
-			withError: &ErrPythonVersionNotSupported,
+			withError: ErrPythonVersionNotSupported,
 		},
 		"version not found": {
 			givenDir:   srcDir,
@@ -386,7 +386,7 @@ venv: error: the following arguments are required: ENV_DIR
 					Args: []string{py3Bin, "--version"},
 				}, true).Return([]byte{}, nil).Once()
 			},
-			withError: &ErrRuntimeNoVersionFound,
+			withError: ErrRuntimeNoVersionFound,
 		},
 		"version too low": {
 			givenDir:   srcDir,
@@ -399,7 +399,7 @@ venv: error: the following arguments are required: ENV_DIR
 					Args: []string{py3Bin, "--version"},
 				}, true).Return([]byte(py34Version), nil).Once()
 			},
-			withError: &ErrRuntimeMinimumVersionRequired,
+			withError: ErrRuntimeMinimumVersionRequired,
 		},
 		"python 2 required, pip2 bin not found": {
 			givenDir:   srcDir,
@@ -412,7 +412,7 @@ venv: error: the following arguments are required: ENV_DIR
 					Args: []string{py2Bin, "--version"},
 				}, true).Return([]byte(py2Version), nil).Once()
 			},
-			withError: &ErrPackageManagerNotFound,
+			withError: ErrPackageManagerNotFound,
 		},
 		"python 2 required, just python 3 is installed": {
 			givenDir:   srcDir,
@@ -423,7 +423,7 @@ venv: error: the following arguments are required: ENV_DIR
 				m.On("LookPath", "py.exe").Return(py2Bin, nil).Once()
 				m.On("ExecCommand", &exec.Cmd{Path: py2Bin, Args: []string{"/test/python2", "--version"}}, true).Return([]byte(py34Version), nil).Once()
 			},
-			withError: &ErrRuntimeNotFound,
+			withError: ErrRuntimeNotFound,
 		},
 	}
 
@@ -435,7 +435,7 @@ venv: error: the following arguments are required: ENV_DIR
 			err := l.installPython(context.Background(), test.veDir, test.givenDir, test.requiredPy)
 			m.AssertExpectations(t)
 			if test.withError != nil {
-				assert.True(t, errors.As(err, test.withError), "want: %s; got: %s", test.withError, err)
+				assert.True(t, errors.Is(err, test.withError), "want: %s; got: %s", test.withError, err)
 				return
 			}
 			require.NoError(t, err)

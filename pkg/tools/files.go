@@ -7,7 +7,7 @@ import (
 )
 
 // MoveFile must copy+unlink the file because moving files is broken across filesystems
-func MoveFile(src, dst string) error {
+func MoveFile(src, dst string) (err error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -21,13 +21,23 @@ func MoveFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func(source *os.File) {
+		e := source.Close()
+		if e != nil {
+			err = e
+		}
+	}(source)
 
 	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destination.Close()
+	defer func(destination *os.File) {
+		e := destination.Close()
+		if e != nil {
+			err = e
+		}
+	}(destination)
 	_, err = io.Copy(destination, source)
 
 	if err != nil {

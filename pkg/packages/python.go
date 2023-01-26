@@ -145,7 +145,7 @@ func (l *langManager) installVeRequirements(ctx context.Context, srcPath, vePath
 			term := terminal.Get(ctx)
 			_, _ = term.Writeln(string(output))
 			logger.Errorf("failed to run pip install --upgrade --ignore-installed -r requirements.txt")
-			return fmt.Errorf("%v: %s", ErrRequirementsInstall, string(output))
+			return fmt.Errorf("%w: %s", ErrRequirementsInstall, string(output))
 		}
 		return nil
 	}
@@ -156,7 +156,7 @@ func (l *langManager) installVeRequirements(ctx context.Context, srcPath, vePath
 	}, true); err != nil {
 		logger.Errorf("failed to run pip install --upgrade --ignore-installed -r requirements.txt")
 		logger.Errorf(string(output))
-		return fmt.Errorf("%v: %v", ErrRequirementsInstall, string(output))
+		return fmt.Errorf("%w: %v", ErrRequirementsInstall, string(output))
 	}
 
 	return nil
@@ -223,7 +223,7 @@ func (l *langManager) validatePythonDeps(ctx context.Context, logger log.Logger,
 	default:
 		// not supported
 		logger.Errorf("%s: %s", ErrPythonVersionNotSupported.Error(), requiredPy)
-		return "", "", fmt.Errorf("%v: %s", ErrPythonVersionNotSupported, requiredPy)
+		return "", "", fmt.Errorf("%w: %s", ErrPythonVersionNotSupported, requiredPy)
 	}
 }
 
@@ -234,7 +234,7 @@ func (l *langManager) findVenvPackage(ctx context.Context, pythonBin string) err
 	logger.Debugf("%s %s %s: %s", pythonBin, "-m venv --version", bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 	matches := venvHelpRegex.FindStringSubmatch(string(output))
 	if len(matches) == 0 {
-		return fmt.Errorf("%v: %s", ErrVenvNotFound, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
+		return fmt.Errorf("%w: %s", ErrVenvNotFound, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 	}
 	return nil
 }
@@ -250,7 +250,7 @@ func (l *langManager) findPipPackage(ctx context.Context, requiredPy string, pyt
 		logger.Debugf("%s %s %s: %s", pythonBin, "-m pip --version", bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 		matches := pipVersionRegex.FindStringSubmatch(string(output))
 		if len(matches) == 0 {
-			return fmt.Errorf("%v: %s", ErrPipNotFound, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
+			return fmt.Errorf("%w: %s", ErrPipNotFound, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
 		}
 	}
 
@@ -325,13 +325,13 @@ func (l *langManager) resolveBinVersion(bin, cmdReq, arg string, logger log.Logg
 	case version.Greater:
 		// python required > python installed
 		logger.Errorf("%s version found: %s", bin, matches[1])
-		return fmt.Errorf("%v: required: %s:%s, have: %s. Please install the required Python branch", ErrRuntimeMinimumVersionRequired, bin, cmdReq, matches[1])
+		return fmt.Errorf("%w: required: %s:%s, have: %s. Please install the required Python branch", ErrRuntimeMinimumVersionRequired, bin, cmdReq, matches[1])
 	case version.Smaller:
 		// python required < python installed
 		if version.Compare(cmdReq, "3.0.0") == 1 && version.Compare(matches[1], "3.0.0") <= 0 {
 			// required: py2; found: py3. The user still needs to install py2
 			logger.Errorf("Python version %s found, %s version required. Please, install the %s Python branch.")
-			return fmt.Errorf("%v: Please install the following Python branch: %s", ErrRuntimeNotFound, cmdReq)
+			return fmt.Errorf("%w: Please install the following Python branch: %s", ErrRuntimeNotFound, cmdReq)
 		}
 		return nil
 	case version.Equals:
@@ -344,7 +344,7 @@ func (l *langManager) upgradePipAndSetuptools(ctx context.Context, python3Bin st
 	logger := log.FromContext(ctx)
 
 	// if python3 > v3.4, ensure pip
-	if err := l.resolveBinVersion(python3Bin, "3.4.0", "--version", logger); err != nil && errors.As(err, &ErrRuntimeNotFound) {
+	if err := l.resolveBinVersion(python3Bin, "3.4.0", "--version", logger); err != nil && errors.Is(err, ErrRuntimeNotFound) {
 		return err
 	}
 
@@ -361,7 +361,7 @@ func (l *langManager) upgradePipAndSetuptools(ctx context.Context, python3Bin st
 	cmdSetuptools := exec.Command(python3Bin, "-m", "pip", "install" /*, "--user"*/, "--no-cache", "--upgrade", "pip", "setuptools")
 	if output, err := l.commandExecutor.ExecCommand(cmdSetuptools, true); err != nil {
 		logger.Errorf("%v: %s", ErrPipSetuptoolsUpgrade, string(output))
-		return fmt.Errorf("%v: %s", ErrPipSetuptoolsUpgrade, string(output))
+		return fmt.Errorf("%w: %s", ErrPipSetuptoolsUpgrade, string(output))
 	}
 
 	return nil
@@ -376,7 +376,7 @@ func (l *langManager) createVirtualEnvironment(ctx context.Context, python3Bin s
 		logger.Debugf("%s does not exist; let's create it", venvPath)
 		if err := os.Mkdir(venvPath, 0755); err != nil {
 			logger.Errorf("%v %s: %v", ErrDirectoryCreation, venvPath, err)
-			return fmt.Errorf("%v %s: %v", ErrDirectoryCreation, venvPath, err)
+			return fmt.Errorf("%w %s: %v", ErrDirectoryCreation, venvPath, err)
 		}
 		logger.Debugf("%s directory created", venvPath)
 	} else {
@@ -389,7 +389,7 @@ func (l *langManager) createVirtualEnvironment(ctx context.Context, python3Bin s
 	cmdVenv := exec.Command(python3Bin, "-m", "venv", pkgVenvPath)
 	if output, err := l.commandExecutor.ExecCommand(cmdVenv, true); err != nil {
 		logger.Errorf("%v %s: %s", ErrVirtualEnvCreation, pkgVenvPath, string(output))
-		return fmt.Errorf("%v %s: %s", ErrVirtualEnvCreation, pkgVenvPath, string(output))
+		return fmt.Errorf("%w %s: %s", ErrVirtualEnvCreation, pkgVenvPath, string(output))
 	}
 	logger.Debugf("Python virtualenv successfully created: %s", pkgVenvPath)
 
@@ -458,7 +458,7 @@ func findPipBin(ctx context.Context, cmdExecutor executor, requiredPy string) (s
 	case version.Smaller:
 		bin, err = lookForBins(cmdExecutor, "pip2")
 		if err != nil {
-			return "", fmt.Errorf("%v, %s", ErrPackageManagerNotFound, "pip2")
+			return "", fmt.Errorf("%w, %s", ErrPackageManagerNotFound, "pip2")
 		}
 	}
 

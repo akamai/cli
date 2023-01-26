@@ -15,6 +15,7 @@ import (
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/stretchr/testify/require"
 	"github.com/tj/assert"
+	"github.com/urfave/cli/v2"
 )
 
 func TestCommandsLocator(t *testing.T) {
@@ -107,7 +108,7 @@ func TestPassthruCommand(t *testing.T) {
 			},
 			langRequirements: packages.LanguageRequirements{Python: "3.0.0"},
 			dirName:          cliEchoPythonRepo,
-			withError:        fmt.Errorf("wanted"),
+			withError:        cli.Exit("", 0),
 		},
 		"python 3, ve does not exist - error preparing execution": {
 			executable: []string{akaEchoPythonBin},
@@ -153,7 +154,15 @@ func TestPassthruCommand(t *testing.T) {
 			m.langManager.AssertExpectations(t)
 
 			if test.withError != nil {
-				assert.True(t, errors.As(err, &test.withError), "want: '%s'; got '%s'", test.withError.Error(), err.Error())
+				actualErr, actualIsExitCoder := err.(cli.ExitCoder)
+				expectedErr, expectedIsExitCoder := test.withError.(cli.ExitCoder)
+
+				if actualIsExitCoder && expectedIsExitCoder {
+					assert.Equal(t, expectedErr.Error(), actualErr.Error())
+					assert.Equal(t, expectedErr.ExitCode(), actualErr.ExitCode())
+				} else {
+					assert.True(t, errors.Is(err, test.withError), "wanted: '%s'; got: '%s'", test.withError.Error(), err.Error())
+				}
 				return
 			}
 			assert.NoError(t, err)

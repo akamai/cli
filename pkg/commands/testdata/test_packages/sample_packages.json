@@ -1,0 +1,37 @@
+{
+  "version": 1.0,
+  "packages": [
+    {
+      "title": "Test title 1",
+      "name": "Test name 1",
+      "commands": [
+        {
+          "name": "Test 1",
+          "version": "1.1.0",
+          "description": "Test description 1"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "Test title 2",
+      "name": "Test name 2",
+      "version": "2.0.0",
+      "commands": [
+        {
+          "aliases": ["test", "test2"],
+          "name": "test 2",
+          "version": "2.5.0",
+          "description": "Test description 2"
+        }
+      ],
+      "url": "test.url.com",
+      "issues": "issue 1",
+      "requirements": {
+        "go": "1.17.0"
+      }
+    }
+  ]
+}

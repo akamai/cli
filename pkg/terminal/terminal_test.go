@@ -35,7 +35,8 @@ func TestWrite(t *testing.T) {
 
 	term := New(out, nil, DiscardWriter())
 
-	term.Write([]byte(t.Name()))
+	_, err = term.Write([]byte(t.Name()))
+	require.NoError(t, err)
 
 	_, err = out.Seek(0, 0)
 	require.NoError(t, err)
@@ -77,7 +78,8 @@ func TestWriteln(t *testing.T) {
 
 	term := New(out, nil, DiscardWriter())
 
-	term.Writeln(t.Name())
+	_, err = term.Writeln(t.Name())
+	require.NoError(t, err)
 
 	_, err = out.Seek(0, 0)
 	require.NoError(t, err)

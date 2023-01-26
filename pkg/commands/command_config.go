@@ -69,7 +69,9 @@ func cmdConfigGet(c *cli.Context) (e error) {
 		return cli.Exit(color.RedString(fmt.Sprintf("Unable to get config value: %s", err)), 1)
 	}
 	val, _ := cfg.GetValue(section, key)
-	terminal.Get(c.Context).Writeln(val)
+	if _, err := terminal.Get(c.Context).Writeln(val); err != nil {
+		return err
+	}
 	logger.Debug(val)
 	return nil
 }

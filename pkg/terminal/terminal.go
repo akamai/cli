@@ -107,7 +107,7 @@ func Color() *DefaultTerminal {
 	return New(wr, os.Stdin, colorable.NewColorableStderr())
 }
 
-// New returns a new terminal with the specifed streams
+// New returns a new terminal with the specified streams
 func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 	t := DefaultTerminal{
 		out:   out,
@@ -124,7 +124,9 @@ func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 
 // Printf writes a formatted message to the output stream
 func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
-	t.Write([]byte(fmt.Sprintf(f, args...)))
+	if _, err := t.Write([]byte(fmt.Sprintf(f, args...))); err != nil {
+		t.WriteError(err)
+	}
 }
 
 // Writeln writes a line to the terminal
@@ -261,7 +263,9 @@ func (w *colorWriter) Fd() uintptr {
 func ShowBanner(ctx context.Context) {
 	term := Get(ctx)
 
-	term.Writeln()
+	if _, err := term.Writeln(); err != nil {
+		term.WriteError(err.Error())
+	}
 	bg := color.New(color.BgMagenta)
 	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
 	fg := bg.Add(color.FgWhite)
@@ -269,5 +273,7 @@ func ShowBanner(ctx context.Context) {
 	ws := strings.Repeat(" ", 16)
 	term.Printf(fg.Sprintf(ws + title + ws + "\n"))
 	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
-	term.Writeln()
+	if _, err := term.Writeln(); err != nil {
+		term.WriteError(err.Error())
+	}
 }

@@ -140,7 +140,7 @@ func createAppTemplate(ctx context.Context, commandName, usage, description, ver
 		Usage: "Output CLI version",
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
-		Name:   "generate-auto-complete",
+		Name:   "generate-bash-completion",
 		Hidden: true,
 	}
 	cli.HelpFlag = &cli.BoolFlag{
@@ -169,12 +169,12 @@ autoload -U bashcompinit && bashcompinit`
 # We recommend adding this to your .bashrc or .bash_profile file`
 
 	bashScript := `_akamai_cli_bash_autocomplete() {
-    local cur opts base
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-auto-complete )
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
+	local cur opts base
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
+	COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	return 0
 }
 
 complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
@@ -182,14 +182,22 @@ complete -F _akamai_cli_bash_autocomplete ` + tools.Self()
 	term := terminal.Get(c.Context)
 
 	if c.Bool("bash") {
-		term.Writeln(bashComments)
-		term.Writeln(bashScript)
+		if _, err = term.Writeln(bashComments); err != nil {
+			return err
+		}
+		if _, err = term.Writeln(bashScript); err != nil {
+			return err
+		}
 		return nil
 	}
 
 	if c.Bool("zsh") {
-		term.Writeln(zshScript)
-		term.Writeln(bashScript)
+		if _, err = term.Writeln(zshScript); err != nil {
+			return err
+		}
+		if _, err = term.Writeln(bashScript); err != nil {
+			return err
+		}
 		return nil
 	}
 

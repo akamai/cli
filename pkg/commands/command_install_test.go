@@ -406,10 +406,10 @@ func TestCmdInstall(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(t, m)
-			err := app.RunContext(ctx, args)
 			if test.teardown != nil {
-				test.teardown(t)
+				defer test.teardown(t)
 			}
+			err := app.RunContext(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {

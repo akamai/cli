@@ -2,11 +2,11 @@
   "version": 1.0,
   "packages": [
     {
-      "title": "Test CLI",
-      "name": "cli-1",
+      "title": "cli-1",
+      "name": "abc-1",
       "commands": [
         {
-          "name": "title-cmd",
+          "name": "ClI-1",
           "version": "1.0.0",
           "description": "test for match on title"
         }
@@ -16,15 +16,15 @@
       }
     },
     {
-      "title": "Test CLI",
-      "name": "test-cli",
+      "title": "abc-2",
+      "name": "cli-2",
       "version": "1.0.0",
       "commands": [
         {
-          "aliases": ["test", "abc"],
-          "name": "test-cmd",
+          "aliases": ["abc", "abc2"],
+          "name": "cli-2",
           "version": "1.0.0",
-          "description": "test for highest score"
+          "description": "test for match on name"
         }
       ],
       "requirements": {
@@ -32,13 +32,13 @@
       }
     },
     {
-      "title": "Some CLI",
-      "name": "cli-2",
+      "title": "abc-3",
+      "name": "abc-3",
       "commands": [
         {
-          "name": "desc-cmd",
+          "name": "abc-3",
           "version": "1.0.0",
-          "description": "test - match on description"
+          "description": "CLI - test for match on description"
         }
       ],
       "requirements": {
@@ -46,13 +46,13 @@
       }
     },
     {
-      "title": "Unmatched CLI",
-      "name": "cli-3",
+      "title": "abc-4",
+      "name": "abc-4",
       "commands": [
         {
-          "name": "some-cmd",
+          "name": "abc-4",
           "version": "1.0.0",
-          "description": "no match"
+          "description": "abc - no match"
         }
       ],
       "requirements": {
@@ -60,11 +60,11 @@
       }
     },
     {
-      "title": "Some CLI",
-      "name": "cli-4",
+      "title": "abc-5",
+      "name": "abc-5",
       "commands": [
         {
-          "name": "test",
+          "name": "cli",
           "version": "1.0.0",
           "description": "test for match on command name"
         }
@@ -74,13 +74,27 @@
       }
     },
     {
-      "title": "Test no cmd match",
-      "name": "test-no-cmd-match",
+      "title": "CLI no cmd match",
+      "name": "cli-no-cmd-match",
       "commands": [
         {
-          "name": "cmd-5",
+          "name": "abc-6",
           "version": "1.0.0",
           "description": "title and name match, but no match on command"
+        }
+      ],
+      "requirements": {
+        "node": "7.0.0"
+      }
+    },
+    {
+      "title": "sample",
+      "name": "SAMPLE",
+      "commands": [
+        {
+          "name": "sample",
+          "version": "2.0.0",
+          "description": "test for single match"
         }
       ],
       "requirements": {

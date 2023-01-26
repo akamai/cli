@@ -47,7 +47,7 @@ func firstRun(ctx context.Context) error {
 		return err
 	}
 
-	bannerShown, err = firstRunCheckUpgrade(ctx, cfg, bannerShown)
+	_, err = firstRunCheckUpgrade(ctx, cfg, bannerShown)
 	if err != nil {
 		return err
 	}
@@ -144,11 +144,17 @@ func firstRunCheckInPath(ctx context.Context) (bool, error) {
 
 func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 	term := terminal.Get(ctx)
-	term.Writeln(color.YellowString("Choose where you would like to install Akamai CLI:"))
+
+	if _, err := term.Writeln(color.YellowString("Choose where you would like to install Akamai CLI:")); err != nil {
+		term.WriteError(err.Error())
+		return
+	}
 	answer, err := term.Prompt("Choose where you would like to install Akamai CLI:", writablePaths...)
 	if err != nil {
 		term.Spinner().Start(string(terminal.SpinnerStatusFail))
-		term.Writeln(color.RedString(err.Error()))
+		if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+			term.WriteError(err.Error())
+		}
 		return
 	}
 
@@ -164,7 +170,9 @@ func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 	os.Args[0] = newPath
 	if err != nil {
 		term.Spinner().Fail()
-		term.Writeln(color.RedString(err.Error()))
+		if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+			term.WriteError(err.Error())
+		}
 		return
 	}
 	term.Spinner().OK()
