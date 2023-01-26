@@ -1,6 +1,6 @@
 # RELEASE NOTES
 
-## 1.5.3 (January 24, 2023)
+## 1.5.3 (January 26, 2023)
 
 ### Enhancements
 
