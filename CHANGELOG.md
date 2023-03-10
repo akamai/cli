@@ -1,5 +1,12 @@
 # RELEASE NOTES
 
+## 1.5.4 (March 16, 2023)
+
+### Enhancements
+
+* Various dependencies updated
+* Update cli-diagnostics version to v1.1.0
+
 ## 1.5.3 (January 26, 2023)
 
 ### Enhancements
