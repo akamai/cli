@@ -102,10 +102,10 @@
     {
       "title": "Diagnostics",
       "name": "diagnostics",
-      "version": "v1.0.0",
+      "version": "v1.1.0",
       "url": "https://github.com/akamai/cli-diagnostics",
       "issues": "https://github.com/akamai/cli-diagnostics/issues",
-      "commands": [{"name":"diagnostics","aliases":["diag", "edge-diagnostics"],"version":"v1.0.0","description":"Edge Diagnostics enables you to identify, analyze, and troubleshoot common content delivery network issues that your users may encounter.","bin": "https://github.com/akamai/cli-diagnostics/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"}],
+      "commands": [{"name":"diagnostics","aliases":["diag", "edge-diagnostics"],"version":"v1.1.0","description":"Edge Diagnostics enables you to identify, analyze, and troubleshoot common content delivery network issues that your users may encounter.","bin": "https://github.com/akamai/cli-diagnostics/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"}],
       "requirements": {"go":"1.17.1"}
     },
     {
