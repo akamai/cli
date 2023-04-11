@@ -11,21 +11,18 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	wr := bytes.Buffer{}
 	s := DefaultSpinner{
-		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 	}
+	t.Cleanup(func() {
+		s.spinner.Stop()
+	})
+
 	s.Start("spinner %s", "test")
-	for i := 0; i < 10; i++ {
-		time.Sleep(100 * time.Millisecond)
-		s.spinner.Lock()
-		if wr.Len() > 0 {
-			assert.Contains(t, wr.String(), "spinner test .")
-			return
-		}
-		s.spinner.Unlock()
-	}
-	t.Fatal("no input on writer")
+
+	s.spinner.Lock()
+	assert.Contains(t, s.spinner.Prefix, "spinner test")
+	s.spinner.Unlock()
 }
 
 func TestStop(t *testing.T) {
@@ -35,73 +32,68 @@ func TestStop(t *testing.T) {
 	}{
 		"stop spinner OK": {
 			spinnerStatus: SpinnerStatusOK,
-			expected:      "... [OK]",
+			expected:      "[OK]",
 		},
 		"stop spinner WARN OK": {
 			spinnerStatus: SpinnerStatusWarnOK,
-			expected:      "... [OK]",
+			expected:      "[OK]",
 		},
 		"stop spinner WARN": {
 			spinnerStatus: SpinnerStatusWarn,
-			expected:      "... [WARN]",
+			expected:      "[WARN]",
 		},
 		"stop spinner FAIL": {
 			spinnerStatus: SpinnerStatusFail,
-			expected:      "... [FAIL]",
+			expected:      "[FAIL]",
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			wr := bytes.Buffer{}
 			s := DefaultSpinner{
-				spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+				spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 			}
 			s.Start("spinner %s", "test")
 			s.Stop(test.spinnerStatus)
-			assert.Contains(t, wr.String(), fmt.Sprintf("spinner test %s", test.expected))
+			assert.Contains(t, s.spinner.FinalMSG, fmt.Sprintf("spinner test %s", test.expected))
 		})
 	}
 }
 
 func TestOK(t *testing.T) {
-	wr := bytes.Buffer{}
 	s := DefaultSpinner{
-		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 	}
 	s.Start("spinner %s", "test")
 	s.OK()
-	assert.Contains(t, wr.String(), "spinner test ... [OK]")
+	assert.Contains(t, s.spinner.FinalMSG, "spinner test [OK]")
 }
 
 func TestWarn(t *testing.T) {
-	wr := bytes.Buffer{}
 	s := DefaultSpinner{
-		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 	}
 	s.Start("spinner %s", "test")
 	s.Warn()
-	assert.Contains(t, wr.String(), "spinner test ... [WARN]")
+	assert.Contains(t, s.spinner.FinalMSG, "spinner test [WARN]")
 }
 
 func TestWarnOK(t *testing.T) {
-	wr := bytes.Buffer{}
 	s := DefaultSpinner{
-		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 	}
 	s.Start("spinner %s", "test")
 	s.WarnOK()
-	assert.Contains(t, wr.String(), "spinner test ... [OK]")
+	assert.Contains(t, s.spinner.FinalMSG, "spinner test [OK]")
 }
 
 func TestFail(t *testing.T) {
-	wr := bytes.Buffer{}
 	s := DefaultSpinner{
-		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute, spnr.WithWriter(&wr)),
+		spinner: spnr.New(spnr.CharSets[26], 1*time.Minute),
 	}
 	s.Start("spinner %s", "test")
 	s.Fail()
-	assert.Contains(t, wr.String(), fmt.Sprintf("spinner test ... [FAIL]"))
+	assert.Contains(t, s.spinner.FinalMSG, fmt.Sprintf("spinner test [FAIL]"))
 }
 
 func TestSpinnerWrite(t *testing.T) {

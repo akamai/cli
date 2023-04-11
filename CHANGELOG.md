@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## X.Y.Z (Xxxx XX, 2023)
+
+### Enhancements
+
+* Improve the way spinner output is displayed. NOTE: the spinner will not print output if not attached to a tty.
+
 ## 1.5.4 (March 16, 2023)
 
 ### Enhancements
