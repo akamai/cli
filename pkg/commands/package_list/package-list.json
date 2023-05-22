@@ -46,10 +46,10 @@
     {
       "title": "Application Security",
       "name": "appsec",
-      "version": "2.3.0",
+      "version": "2.7.0",
       "url": "https://github.com/akamai/cli-appsec",
       "issues": "https://github.com/akamai/cli-appsec/issues",
-      "commands": [{"name":"appsec","version":"2.3.0","description":"Manage security configurations for Kona Site Defender and Client Reputation."}],
+      "commands": [{"name":"appsec","version":"2.7.0","description":"Akamai Security tools for protecting websites."}],
       "requirements": {"node":"7.0.0"}
     },
     {
@@ -67,13 +67,13 @@
       "version": "v1.0.8",
       "url": "https://github.com/akamai/cli-cac",
       "issues": "https://github.com/akamai/cli-cac/issues",
-      "commands": [{"name":"cac","aliases":["cac"],"version":"v1.0.8","description":"Interface for Client Access Control (CAC) in the Akamai CLI tool"}],
+      "commands": [{"name":"cac","aliases":["cac"],"version":"v1.0.8","description":"An Akamai CLI package for Client Access Control"}],
       "requirements": {"python":"3.0.0"}
     },
     {
       "title": "Certificate Provisioning Service (CPS)",
       "name": "cps",
-      "version": "v1.0.9",
+      "version": "v2.0.0",
       "url": "https://github.com/akamai/cli-cps",
       "issues": "https://github.com/akamai/cli-cps/issues",
       "commands": [
@@ -82,7 +82,7 @@
           "aliases": [
             "certs"
           ],
-          "version": "1.0.9",
+          "version": "2.0.0",
           "description": "Access Certificate Provisioning System (CPS) Information"
         }
       ],
@@ -93,10 +93,10 @@
     {
       "title": "Cloudlets",
       "name": "cloudlets",
-      "version": "v1.0.0",
+      "version": "v1.0.1",
       "url": "https://github.com/akamai/cli-cloudlets",
       "issues": "https://github.com/akamai/cli-cloudlets/issues",
-      "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.0.0","description":"Manage cloudlet configurations"}],
+      "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.0.1","description":"Manage Akamai Cloudlets"}],
       "requirements": {"python":"3.0.0"}
     },
     {
@@ -111,43 +111,43 @@
     {
       "title": "EdgeWorkers",
       "name": "edgeworkers",
-      "version": "1.3.1",
+      "version": "1.7.3",
       "url": "https://github.com/akamai/cli-edgeworkers",
       "issues": "https://github.com/akamai/cli-edgeworkers/issues",
       "commands": [
-        {"name":"edgeworkers","aliases":["ew", "edgeworkers"],"version":"1.3.1","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeWorkers code bundles"},
-        {"name":"edgekv","aliases":["ekw", "edgekv"],"version":"1.3.1","description":"Akamai CLI for EdgeWorkers, allows you to interact with Akamai EdgeKV database"}
+        {"name":"edgeworkers","aliases":["ew", "edgeworkers"],"version":"1.7.3","description":"Manage Akamai EdgeWorkers code bundles."},
+        {"name":"edgekv","aliases":["ekv", "edgekv"],"version":"1.7.3","description":"Manage Akamai EdgeKV database."}
       ],
       "requirements": {"node":"7.0.0"}
     },
     {
       "title": "Akamai Sandbox",
       "name": "sandbox",
-      "version": "v1.5.0",
+      "version": "v1.7.1",
       "url": "https://github.com/akamai/cli-sandbox",
       "issues": "https://github.com/akamai/cli-sandbox/issues",
-      "commands": [{"name":"sandbox","aliases":[""],"version":"1.5.0","description":"The Sandbox command line interface (CLI) expedites the process of creating an isolated development environment for testing changes to your website or property"}],
-      "requirements": {"node":"8.4.0"}
+      "commands": [{"name":"sandbox","version":"1.7.1","description":"Manage Akamai Sandbox environments.","bin": "https://github.com/akamai/cli-sandbox/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}-{{.Arch}}{{.BinSuffix}}"}],
+      "requirements": {"node":"14.21.3"}
     },
     {
       "title": "Edge DNS",
       "name": "dns",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "url": "https://github.com/akamai/cli-dns",
       "issues": "https://github.com/akamai/cli-dns/issues",
-      "commands": [{"name":"dns","version":"0.4.0","description":"Manage DNS zones with Edge DNS","bin":"https://github.com/akamai/cli-dns/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
-      "requirements": {"go":"1.12.0"}
+      "commands": [{"name":"dns","version":"0.5.0","description":"Manage DNS zones with Edge DNS","bin":"https://github.com/akamai/cli-dns/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
+      "requirements": {"go":"1.18.0"}
     },
     {
       "title": "Enterprise Application Access",
       "name": "eaa",
-      "version": "0.4.2",
+      "version": "0.5.7",
       "url": "https://github.com/akamai/cli-eaa",
       "issues": "https://github.com/akamai/cli-eaa/issues",
       "commands": [
         {
           "name": "eaa",
-          "version": "0.4.2",
+          "version": "0.5.7",
           "description": "Akamai CLI for Enterprise Application Access (EAA)"
         }
       ],
@@ -162,19 +162,19 @@
       "url": "https://github.com/akamai/cli-firewall",
       "issues": "https://github.com/akamai/cli-firewall/issues",
       "commands": [
-        {"name":"firewall","aliases":["fw"],"version":"0.2.1","description":"Access Akamai Firewall Rules Services, Subscriptions, and CIDRs"},
-        {"name":"site-shield","aliases":["ss"],"version":"0.2.1","description":"Access details of Site-Shield Maps, CIDRs and acknowledgement"}
+        {"name":"firewall","aliases":["fw"],"version":"0.2.3","description":"Access Akamai Firewall Rules Services, Subscriptions, and CIDRs"},
+        {"name":"site-shield","aliases":["ss"],"version":"0.2.3","description":"Access details of Site-Shield Maps, CIDRs and acknowledgement"}
       ],
       "requirements": {"python":"3.0.0"}
     },
     {
       "title": "Global Traffic Management",
       "name": "gtm",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "url": "https://github.com/akamai/cli-gtm",
       "issues": "https://github.com/akamai/cli-gtm/issues",
-      "commands": [{"name":"gtm","version":"0.4.0","description":"Limited Management of GTM domains","bin":"https://github.com/akamai/cli-gtm/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
-      "requirements": {"go":"1.8.0"}
+      "commands": [{"name":"gtm","version":"0.5.0","description":"Manage GTM Domains","bin":"https://github.com/akamai/cli-gtm/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
+      "requirements": {"go":"1.18.0"}
     },
     {
       "title": "Image Manager",
@@ -191,7 +191,7 @@
     {
       "title": "Jsonnet",
       "name": "jsonnet",
-      "version": "0.4.3",
+      "version": "0.8.0",
       "url": "https://github.com/akamai/cli-jsonnet",
       "issues": "https://github.com/akamai/cli-jsonnet/issues",
       "commands": [
@@ -200,12 +200,12 @@
           "aliases": [
             "jsonnet"
           ],
-          "version": "0.4.3",
+          "version": "0.8.0",
           "description": "Utilities for managing Akamai as jsonnet"
         }
       ],
       "requirements": {
-        "python": "3.0.0"
+        "python": "3.4.0"
       }
     },
     {
@@ -220,11 +220,11 @@
     {
       "title": "Onboard",
       "name": "onboard",
-      "version": "1.0.3",
+      "version": "2.2.0",
       "url": "https://github.com/akamai/cli-onboard",
       "issues": "https://github.com/akamai/cli-onboard/issues",
-      "commands": [{"name":"onboard","aliases":["onboard"],"version":"1.0.3","description":"Onboard Akamai delivery and WAF configuration"}],
-      "requirements": {"python":"3.0.0"}
+      "commands": [{"name":"onboard","aliases":["onboard"],"version":"2.2.0","description":"Onboard Akamai delivery and WAF configuration"}],
+      "requirements": {"python":"3.6.0"}
     },
     {
       "title": "Property Manager 1.0",
@@ -242,28 +242,28 @@
       "url": "https://github.com/akamai/cli-property-manager",
       "issues": "https://github.com/akamai/cli-property-manager/issues",
       "commands": [
-        {"name":"snippets","aliases":["pm","property-manager"],"version":"0.7.7-RELEASE","description":"Property Manager CLI for DevOps"},
-        {"name":"pipeline","aliases":["pl","pipeline","pd","proddeploy"],"version":"0.7.7-RELEASE","description":"Akamai Pipeline for DevOps"}
+        {"name":"snippets","aliases":["pm","property-manager"],"version":"0.7.8-RELEASE","description":"Property Manager CLI for DevOps"},
+        {"name":"pipeline","aliases":["pl","pipeline","pd","proddeploy"],"version":"0.7.8-RELEASE","description":"Akamai Pipeline for DevOps"}
       ],
       "requirements": {"node":"8.9.1"}
     },
     {
       "title": "Purge",
       "name": "purge",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "url": "https://github.com/akamai/cli-purge",
       "issues": "https://github.com/akamai/cli-purge/issues",
-      "commands": [{"name":"purge","version":"1.0.1","description":"Purge content from the Edge","bin":"https://github.com/akamai/cli-purge/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
-      "requirements": {"go":"1.8.0"}
+      "commands": [{"name":"purge","version":"1.1.0","description":"Purge content from the Edge","bin":"https://github.com/akamai/cli-purge/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
+      "requirements": {"go":"1.18.0"}
     },
     {
       "title": "Terraform Client Configuration",
-      "name": "terraform",
-      "version": "0.3.0",
+      "name": "cli terraform",
+      "version": "1.5.0",
       "url": "https://github.com/akamai/cli-terraform",
       "issues": "https://github.com/akamai/cli-terraform/issues",
-      "commands": [{"name":"terraform","version":"0.3.0","description":"Create TF Configurations for Existing GTM domains, EdgeDNS zones and Property Manager properties","bin":"https://github.com/akamai/cli-terraform/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true}],
-      "requirements": {"go":"1.12.0"}
+      "commands": [{"name":"terraform","version":"1.5.0","description":"Administer and Manage Akamai Terraform configurations","bin":"https://github.com/akamai/cli-terraform/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true,"ldflags": "-X 'github.com/akamai/cli-terraform/cli.Version=%s'"}],
+      "requirements": {"go":"1.18.0"}
     },
     {
       "title": "Test Center",
