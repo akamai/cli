@@ -213,6 +213,65 @@ Global Flags:
 `, binarySuffix, binarySuffix),
 		},
 
+		"help for command with optional subcommands": {
+			args: []string{"test"},
+			cmd: &cli.Command{
+				Name:        "test",
+				Description: "test command",
+				Category:    "",
+				ArgsUsage:   "<usage>",
+				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Subcommands: []*cli.Command{
+					{
+						Name:        "subcommand-no-category",
+						Description: "a test subcommand without a category",
+					},
+					{
+						Name:        "subcommand-with-aliases",
+						Description: "a test subcommand with aliases and without a category",
+						Aliases:     []string{"sub-wa", "s-w-a"},
+					},
+					{
+						Name:        "subcommand-in-category1",
+						Description: "a test subcommand in category 1",
+						Category:    "category1",
+					},
+					{
+						Name:        "subcommand-in-category2",
+						Description: "a test subcommand in category 2",
+						Category:    "category2",
+					},
+				},
+			},
+			expectedOutput: fmt.Sprintf(`
+Name:
+  apphelp.test%s test
+
+Usage:
+  apphelp.test%s [global flags] test [command flags] <usage>
+  apphelp.test%s [global flags] test [command flags] <subcommand>
+
+Description:
+  test command
+
+Subcommands:
+  subcommand-no-category
+  subcommand-with-aliases (aliases: sub-wa, s-w-a)
+  help (alias: h)
+category1:
+  subcommand-in-category1
+category2:
+  subcommand-in-category2
+
+Command Flags:
+  --help, -h  show help (default: false)
+
+Global Flags:
+  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+`, binarySuffix, binarySuffix, binarySuffix),
+		},
+
 		"help for subcommand no category": {
 			args: []string{"test", "subcommand-no-category"},
 			cmd: &cli.Command{
@@ -381,7 +440,3 @@ Command Flags:
 		}
 	}
 }
-
-//func TestIsBuiltinCommand(t *testing.T) {
-//
-//}

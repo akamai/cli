@@ -3,6 +3,9 @@
 	{{.HelpName}}
 
 {{yellow "Usage:"}}
+{{- if .ArgsUsage}}
+	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue .ArgsUsage}}
+{{- end}}
 	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue "<subcommand>"}}
 
 {{- if .Description}}
