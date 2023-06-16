@@ -1,10 +1,11 @@
 # RELEASE NOTES
 
-## X.Y.Z (Xxxx XX, 2023)
+## 1.5.5 (June 21, 2023)
 
 ### Enhancements
 
 * Improve the way spinner output is displayed. NOTE: the spinner will not print output if not attached to a tty.
+* Update the versions and descriptions of the dependencies in the `packages-list.json`
 
 ## 1.5.4 (March 16, 2023)
 
