@@ -31,10 +31,10 @@ type (
 
 // SpinnerStatus strings
 var (
-	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.GreenString("OK")))
-	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("OK")))
-	SpinnerStatusWarn   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.CyanString("WARN")))
-	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("... [%s]\n", color.RedString("FAIL")))
+	SpinnerStatusOK     = SpinnerStatus(fmt.Sprintf("[%s]\n", color.GreenString("OK")))
+	SpinnerStatusWarnOK = SpinnerStatus(fmt.Sprintf("[%s]\n", color.CyanString("OK")))
+	SpinnerStatusWarn   = SpinnerStatus(fmt.Sprintf("[%s]\n", color.CyanString("WARN")))
+	SpinnerStatusFail   = SpinnerStatus(fmt.Sprintf("[%s]\n", color.RedString("FAIL")))
 )
 
 // StandardSpinner returns a default spinner for Akamai CLI
