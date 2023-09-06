@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## 1.5.6 (XXX, 2023)
+
+### Enhancements
+
+* Enhanced README with information about global flags 
+
 ## 1.5.5 (June 21, 2023)
 
 ### Enhancements

@@ -151,8 +151,44 @@ For information on manual upgrade and the supported Homebrew command, see `akama
 All CLI commands start with the `akamai` binary, followed by a command, and optionally an action or other arguments.
 
 ```sh
-akamai [command] [action] [arguments...]
+akamai [global flags] [command] [action] [arguments...]
 ```
+
+### Global flags
+
+Use following flags to modify the Akamai CLI behaviour or get additional information:
+
+- `--edgerc value, -e value`
+
+    `akamai --edgerc ~/.edgerc2 ...` enables to use different configuration file than default `~/.edgerc` (in this case `~/.edgerc2`)
+
+- `--section value, -s value`
+
+  `akamai --section cps ...` enables to use different section in configuration file than default `default` (in this case `cps`)
+
+- `--accountkey value, --account-key value`
+
+  `akamai --accountkey 1-ABCD:Z-XYZ ...` enables to use account switch key (in this case `1-ABCD:Z-XYZ`)
+
+- `--help`
+
+  `akamai --help` shows basic usage info and available commands
+
+- `--bash`
+
+  `akamai --bash` shows help on using auto-complete with bash
+
+- `--zsh`
+
+  `akamai --zsh` shows help on using auto-complete with zsh
+
+- `--proxy value`
+
+  `akamai --proxy http://example.com:8080 ...` sets a proxy to use (in this case `http://example.com:8080`)
+
+- `--version`
+
+  `akamai --version` shows version number of currently installed Akamai CLI
 
 ### Built-in commands
 
