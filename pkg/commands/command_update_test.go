@@ -26,8 +26,7 @@ import (
 func TestCmdUpdate(t *testing.T) {
 	cliEchoRepo := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo")
 	cliEchoBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo")
-	cliEchoInvalidJSONRepo := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-invalid-json")
-	cliEchoInvalidJSONBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-invalid-json", "bin", "akamai-echo-invalid-json")
+
 	tests := map[string]struct {
 		args      []string
 		init      func(*testing.T, *mocked)
@@ -152,13 +151,15 @@ func TestCmdUpdate(t *testing.T) {
 			},
 		},
 		"error installing package": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Reset", &gogit.ResetOptions{Mode: gogit.HardReset}).Return(nil).Once()
 				m.gitRepo.On("Head").Return(plumbing.NewHashReference("", plumbing.Hash{0}), nil).Once()
@@ -168,23 +169,30 @@ func TestCmdUpdate(t *testing.T) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
-
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.term.On("Writeln", mock.Anything).Return(0, nil).Once()
+
+				m.langManager.On("Install", cliEchoRepo,
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(fmt.Errorf("oops")).Once()
+
+				m.term.On("OK").Return().Once()
 			},
 			withError: "Unable to update command",
 		},
 		"error fetching commit by hash": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Reset", &gogit.ResetOptions{Mode: gogit.HardReset}).Return(nil).Once()
 				m.gitRepo.On("Head").Return(plumbing.NewHashReference("", plumbing.Hash{0}), nil).Once()
@@ -198,13 +206,15 @@ func TestCmdUpdate(t *testing.T) {
 			withError: "Unable to fetch updates (oops)",
 		},
 		"error getting HEAD of repository after pull": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Reset", &gogit.ResetOptions{Mode: gogit.HardReset}).Return(nil).Once()
 				m.gitRepo.On("Head").Return(plumbing.NewHashReference("", plumbing.Hash{0}), nil).Once()
@@ -217,13 +227,15 @@ func TestCmdUpdate(t *testing.T) {
 			withError: "Unable to fetch updates (oops)",
 		},
 		"error pulling repository": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Reset", &gogit.ResetOptions{Mode: gogit.HardReset}).Return(nil).Once()
 				m.gitRepo.On("Head").Return(plumbing.NewHashReference("", plumbing.Hash{0}), nil).Once()
@@ -235,13 +247,15 @@ func TestCmdUpdate(t *testing.T) {
 			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
 		"error getting HEAD of repository before pull": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(worktree, nil).Once()
 				m.gitRepo.On("Reset", &gogit.ResetOptions{Mode: gogit.HardReset}).Return(nil).Once()
 				m.gitRepo.On("Head").Return(nil, fmt.Errorf("oops")).Once()
@@ -252,27 +266,30 @@ func TestCmdUpdate(t *testing.T) {
 			withError: "Unable to fetch updates (oops)",
 		},
 		"error getting worktree": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(nil).Once()
 				m.gitRepo.On("Worktree").Return(nil, fmt.Errorf("oops")).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
-				m.langManager.On("FindExec", mock.Anything, packages.LanguageRequirements{Go: "1.14.0"}, cliEchoInvalidJSONBin).Return([]string{cliEchoInvalidJSONBin}, nil).Once()
 			},
 			withError: "unable to update, there an issue with the package repo: oops",
 		},
 		"error opening repository": {
-			args: []string{"echo-invalid-json"},
+			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
-				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo-invalid-json"}).Return().Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				m.gitRepo.On("Open", cliEchoInvalidJSONRepo).Return(fmt.Errorf("oops")).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(fmt.Errorf("oops")).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()

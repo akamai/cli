@@ -51,6 +51,13 @@ func TestCmdUninstall(t *testing.T) {
 		"package does not contain cli.json": {
 			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
+			},
+			withError: fmt.Sprintf(`command "echo-uninstall" not found. Try "%s help"`, tools.Self()),
+		},
+		"unable to uninstall": {
+			args: []string{"echo-uninstall"},
+			init: func(t *testing.T, m *mocked) {
+				mustCopyFile(t, cliEchoJSON, cliEchoUninstallRepo)
 				mustCopyFile(t, cliEchoBin, cliEchoUninstallBinDir)
 				var err error
 				if runtime.GOOS == "windows" {
@@ -64,11 +71,13 @@ func TestCmdUninstall(t *testing.T) {
 					err = os.Chmod(cliEchoUninstallBin, 0755)
 					require.NoError(t, err)
 				}
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{}, nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
+				m.term.On("OK").Return().Once()
 			},
 			withError: "unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?",
 		},

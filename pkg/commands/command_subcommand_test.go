@@ -140,8 +140,10 @@ func TestPythonCmdSubcommand(t *testing.T) {
 		} else {
 			m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
 			m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
+			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python", "bin", "akamai-echo-python")).
+				Return([]string{pythonBin, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python", "bin", "akamai-echo-python")}, nil).Once()
 			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python")).
-				Return([]string{pythonBin}, nil).Once()
+				Return([]string{pythonBin, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python", "bin", "akamai-echo-python")}, nil).Once()
 			m.langManager.On("FileExists", filepath.Join("testdata", ".akamai-cli", "venv", "cli-echo-python")).Return(true, nil)
 		}
 
