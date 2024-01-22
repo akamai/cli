@@ -1,5 +1,13 @@
 # RELEASE NOTES
 
+## 1.5.6 (January 22, 2024)
+
+### Enhancements
+
+* Migrated to go 1.20
+* Enhanced README with information about global flags
+* Various dependencies updated
+
 ## 1.5.5 (June 21, 2023)
 
 ### Enhancements
