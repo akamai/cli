@@ -95,6 +95,17 @@ clean: ; $(info $(M) Removing 'bin' directory and test results...) @ ## Cleanup 
 clean-tools: ## Cleanup installed packages
 	@rm -rf $(BIN)/go*
 
+.PHONY: dockerized
+dockerized: ; $(info $(M) Running `make $(target)` in docker...) @
+	@echo "$(target)"
+	@if [ "$(target)" = "dockerized"]; then \
+		echo "Please do not hurt yourself.";\
+		exit 1;\
+	fi
+	@docker build -t local/akamai-cli-build .
+	@docker run --rm -v $(CURDIR):/go/src/github.com/akamai/cli -w /go/src/github.com/akamai/cli local/akamai-cli-build \
+		make "$(target)"
+
 .PHONY: help
 help: ## List all make targets
 	echo $(MAKEFILE_LIST)
