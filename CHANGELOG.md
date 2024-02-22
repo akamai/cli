@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## X.X.X (X X, X)
+
+### Fixes
+
+* Updated the versions, descriptions, requirements and packages of the dependencies in the `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192))
+
 ## 1.5.6 (January 22, 2024)
 
 ### Enhancements

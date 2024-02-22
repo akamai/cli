@@ -46,20 +46,11 @@
     {
       "title": "Application Security",
       "name": "appsec",
-      "version": "2.7.0",
+      "version": "2.8.0",
       "url": "https://github.com/akamai/cli-appsec",
       "issues": "https://github.com/akamai/cli-appsec/issues",
-      "commands": [{"name":"appsec","version":"2.7.0","description":"Akamai Security tools for protecting websites."}],
-      "requirements": {"node":"7.0.0"}
-    },
-    {
-      "title": "Authentication",
-      "name": "auth",
-      "version": "0.0.3",
-      "url": "https://github.com/akamai/cli-auth",
-      "issues": "https://github.com/akamai/cli-auth/issues",
-      "commands": [{"name":"auth","version":"0.0.3","description":"Interface for Akamai Edgegrid Authentication","bin":"https://github.com/akamai/cli-auth/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}-{{.Arch}}{{.BinSuffix}}"}],
-      "requirements": {"node":"7.0.0"}
+      "commands": [{"name":"appsec","version":"2.8.0","description":"Akamai Security tools for protecting websites."}],
+      "requirements": {"node":"10.0.0"}
     },
     {
       "title": "Client Access Control (CAC)",
@@ -93,11 +84,11 @@
     {
       "title": "Cloudlets",
       "name": "cloudlets",
-      "version": "v1.0.1",
+      "version": "v1.1.1",
       "url": "https://github.com/akamai/cli-cloudlets",
       "issues": "https://github.com/akamai/cli-cloudlets/issues",
-      "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.0.1","description":"Manage Akamai Cloudlets"}],
-      "requirements": {"python":"3.0.0"}
+      "commands": [{"name":"cloudlets","aliases":["cloudlets"],"version":"1.1.1","description":"Manage Akamai Cloudlets"}],
+      "requirements": {"python":"3.6.0"}
     },
     {
       "title": "Diagnostics",
@@ -105,7 +96,16 @@
       "version": "v1.1.0",
       "url": "https://github.com/akamai/cli-diagnostics",
       "issues": "https://github.com/akamai/cli-diagnostics/issues",
-      "commands": [{"name":"diagnostics","aliases":["diag", "edge-diagnostics"],"version":"v1.1.0","description":"Edge Diagnostics enables you to identify, analyze, and troubleshoot common content delivery network issues that your users may encounter.","bin": "https://github.com/akamai/cli-diagnostics/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"}],
+      "commands": [
+        {
+          "name":"diagnostics",
+          "aliases":["diag", "edge-diagnostics"],
+          "version":"v1.1.0",
+          "description":"Edge Diagnostics enables you to identify, analyze, and troubleshoot common content delivery network issues that your users may encounter.",
+          "bin": "https://github.com/akamai/cli-diagnostics/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}",
+          "auto-complete": true
+        }
+      ],
       "requirements": {"go":"1.17.1"}
     },
     {
@@ -118,7 +118,7 @@
         {"name":"edgeworkers","aliases":["ew", "edgeworkers"],"version":"1.7.3","description":"Manage Akamai EdgeWorkers code bundles."},
         {"name":"edgekv","aliases":["ekv", "edgekv"],"version":"1.7.3","description":"Manage Akamai EdgeKV database."}
       ],
-      "requirements": {"node":"7.0.0"}
+      "requirements": {"node":"14.0.0"}
     },
     {
       "title": "Akamai Sandbox",
@@ -141,13 +141,13 @@
     {
       "title": "Enterprise Application Access",
       "name": "eaa",
-      "version": "0.5.7",
+      "version": "0.6.3",
       "url": "https://github.com/akamai/cli-eaa",
       "issues": "https://github.com/akamai/cli-eaa/issues",
       "commands": [
         {
           "name": "eaa",
-          "version": "0.5.7",
+          "version": "0.6.3",
           "description": "Akamai CLI for Enterprise Application Access (EAA)"
         }
       ],
@@ -158,7 +158,7 @@
     {
       "title": "Firewall and Site Shield",
       "name": "firewall",
-      "version": "v0.2.1",
+      "version": "v0.2.2",
       "url": "https://github.com/akamai/cli-firewall",
       "issues": "https://github.com/akamai/cli-firewall/issues",
       "commands": [
@@ -184,14 +184,14 @@
       "issues": "https://github.com/akamai/cli-image-manager/issues",
       "commands": [
         {"name":"image-manager","aliases":["im"],"version":"0.1.9","description":"An Akamai CLI package for Image Manager"},
-        {"name":"video-manager","aliases":["im"],"version":"0.1.9","description":"An Akamai CLI package for Video Manager"}
+        {"name":"video-manager","aliases":["vm"],"version":"0.1.9","description":"An Akamai CLI package for Video Manager"}
       ],
       "requirements": {"python":"3.0.0"}
     },
     {
       "title": "Jsonnet",
       "name": "jsonnet",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "url": "https://github.com/akamai/cli-jsonnet",
       "issues": "https://github.com/akamai/cli-jsonnet/issues",
       "commands": [
@@ -200,7 +200,7 @@
           "aliases": [
             "jsonnet"
           ],
-          "version": "0.8.0",
+          "version": "0.9.0",
           "description": "Utilities for managing Akamai as jsonnet"
         }
       ],
@@ -220,20 +220,11 @@
     {
       "title": "Onboard",
       "name": "onboard",
-      "version": "2.2.0",
+      "version": "2.3.1",
       "url": "https://github.com/akamai/cli-onboard",
       "issues": "https://github.com/akamai/cli-onboard/issues",
-      "commands": [{"name":"onboard","aliases":["onboard"],"version":"2.2.0","description":"Onboard Akamai delivery and WAF configuration"}],
+      "commands": [{"name":"onboard","aliases":["onboard"],"version":"2.3.1","description":"Onboard Akamai delivery and WAF configuration"}],
       "requirements": {"python":"3.6.0"}
-    },
-    {
-      "title": "Property Manager 1.0",
-      "name": "property",
-      "version": "1.1.6",
-      "url": "https://github.com/akamai/cli-property",
-      "issues": "https://github.com/akamai/cli-property/issues",
-      "commands": [{"name":"property","version":"1.1.6","description":"Manage configurations for Akamai properties","bin":"https://github.com/akamai/cli-property/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}-{{.Arch}}{{.BinSuffix}}"}],
-      "requirements": {"node":"7.0.0"}
     },
     {
       "title": "Property Manager",
@@ -242,8 +233,8 @@
       "url": "https://github.com/akamai/cli-property-manager",
       "issues": "https://github.com/akamai/cli-property-manager/issues",
       "commands": [
-        {"name":"snippets","aliases":["pm","property-manager"],"version":"0.7.8-RELEASE","description":"Property Manager CLI for DevOps"},
-        {"name":"pipeline","aliases":["pl","pipeline","pd","proddeploy"],"version":"0.7.8-RELEASE","description":"Akamai Pipeline for DevOps"}
+        {"name":"property-manager","aliases":["pm","snippets"],"version":"0.7.8-RELEASE","description":"Property Manager CLI for DevOps"},
+        {"name":"pipeline","aliases":["pl","pd","proddeploy"],"version":"0.7.8-RELEASE","description":"Akamai Pipeline for DevOps"}
       ],
       "requirements": {"node":"8.9.1"}
     },
@@ -259,22 +250,22 @@
     {
       "title": "Terraform Client Configuration",
       "name": "cli terraform",
-      "version": "1.5.0",
+      "version": "1.12.0",
       "url": "https://github.com/akamai/cli-terraform",
       "issues": "https://github.com/akamai/cli-terraform/issues",
-      "commands": [{"name":"terraform","version":"1.5.0","description":"Administer and Manage Akamai Terraform configurations","bin":"https://github.com/akamai/cli-terraform/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true,"ldflags": "-X 'github.com/akamai/cli-terraform/cli.Version=%s'"}],
+      "commands": [{"name":"terraform","version":"1.12.0","description":"Administer and Manage Akamai Terraform configurations","bin":"https://github.com/akamai/cli-terraform/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true,"ldflags": "-X 'github.com/akamai/cli-terraform/cli.Version=%s'"}],
       "requirements": {"go":"1.18.0"}
     },
     {
       "title": "Test Center",
       "name": "test-center",
-      "version": "0.2.0",
+      "version": "1.0.0",
       "url": "https://github.com/akamai/cli-test-center",
       "issues": "https://github.com/akamai/cli-test-center/issues",
       "commands": [
         {
           "name": "test-center",
-          "version": "0.2.0",
+          "version": "1.0.0",
           "description": "Test Center is a testing tool that checks the effect of configuration changes on your web property. Use this tool as part of your testing protocol to increase your confidence in the safety and accuracy of your configuration changes.",
           "bin": "https://github.com/akamai/cli-test-center/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
         }
@@ -288,6 +279,33 @@
       "url": "https://github.com/akamai/cli-visitor-prioritization",
       "issues": "https://github.com/akamai/cli-visitor-prioritization/issues",
       "commands": [{"name":"visitor-prioritization","aliases":["vp"],"version":"0.3.0","description":"Access and control Visitor Prioritization cloudlet"}],
+      "requirements": {"python":"3.0.0"}
+    },
+    {
+      "title": "Enterprise Threat Protector",
+      "name": "etp",
+      "version": "v0.4.5",
+      "url": "https://github.com/akamai/cli-etp",
+      "issues": "https://github.com/akamai/cli-etp/issues",
+      "commands": [{"name":"etp","version":"v0.4.5", "description":"Akamai CLI for Secure Internet Access Enterprise (f.k.a. Enterprise Threat Protector)"}],
+      "requirements": {"python":"3.6.0"}
+    },
+    {
+      "title": "Akamai MFA",
+      "name": "mfa",
+      "version": "v0.1.1",
+      "url": "https://github.com/akamai/cli-mfa",
+      "issues": "https://github.com/akamai/cli-mfa/issues",
+      "commands": [{"name":"mfa", "version":"v0.1.1", "description":"Akamai CLI for Akamai MFA"}],
+      "requirements": {"python":"3.7.0"}
+    },
+    {
+      "title": "mPulse",
+      "name": "mpulse",
+      "version": "v0.2.0",
+      "url": "https://github.com/akamai/cli-mpulse",
+      "issues": "https://github.com/akamai/cli-mpulse/issues",
+      "commands": [{"name":"mpulse", "aliases": ["mp"], "version":"v0.2.0", "description":"Get mPulse reports for your applications"}],
       "requirements": {"python":"3.0.0"}
     }
   ]
