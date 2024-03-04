@@ -2,6 +2,10 @@
 
 ## X.X.X (X X, X)
 
+### Enhancements
+
+* Migrated to go 1.21
+
 ### Fixes
 
 * Updated the versions, descriptions, requirements and packages of the dependencies in the `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192))
