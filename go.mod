@@ -3,7 +3,7 @@ module github.com/akamai/cli
 go 1.21
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.5
+	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver v1.5.0
 	github.com/apex/log v1.9.0
 	github.com/briandowns/spinner v1.23.0

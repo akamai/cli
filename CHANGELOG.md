@@ -5,6 +5,7 @@
 ### Enhancements
 
 * Migrated to go 1.21
+* Updated various dependencies
 
 ### Fixes
 
