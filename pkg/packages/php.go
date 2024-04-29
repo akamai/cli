@@ -34,12 +34,12 @@ func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error 
 
 	logger := log.FromContext(ctx)
 
-	logger.Debugf("PHP binary found: %s", bin)
+	logger.Debug(fmt.Sprintf("PHP binary found: %s", bin))
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s -v: %s", bin, output)
+		logger.Debug(fmt.Sprintf("%s -v: %s", bin, output))
 		r := regexp.MustCompile("PHP (.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
@@ -48,7 +48,7 @@ func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error 
 		}
 
 		if version.Compare(cmdReq, matches[1]) == version.Greater {
-			logger.Debugf("PHP Version found: %s", matches[1])
+			logger.Debug(fmt.Sprintf("PHP Version found: %s", matches[1]))
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "php", cmdReq, matches[1])
 		}
 	}
@@ -72,7 +72,7 @@ func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, d
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable to execute package manager (%s %s install): \n%s", phpBin, phar, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "composer")
 		}
@@ -87,7 +87,7 @@ func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, d
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable to execute package manager (%s install): \n%s", bin, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable to execute package manager (%s install): \n%s", bin, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "composer")
 		}
@@ -102,7 +102,7 @@ func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, d
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable to execute package manager (%s install): %s", bin, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable to execute package manager (%s install): %s", bin, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "composer")
 		}

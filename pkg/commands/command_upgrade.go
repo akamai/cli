@@ -18,6 +18,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -30,11 +31,11 @@ import (
 
 func cmdUpgrade(c *cli.Context) error {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("UPGRADE START")
 	defer func() {
-		logger.Debugf("UPGRADE FINISH: %v", time.Since(start))
+		logger.Debug(fmt.Sprintf("UPGRADE FINISH: %v", time.Since(start)))
 	}()
 	term := terminal.Get(c.Context)
 

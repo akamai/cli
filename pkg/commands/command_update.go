@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -37,14 +38,14 @@ import (
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) (e error) {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger := log.FromContext(c.Context)
 		start := time.Now()
 		logger.Debug("UPDATE START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("UPDATE FINISH: %v", time.Since(start))
+				logger.Debug(fmt.Sprintf("UPDATE FINISH: %v", time.Since(start)))
 			} else {
-				logger.Errorf("UPDATE ERROR: %v", e.Error())
+				logger.Error(fmt.Sprintf("UPDATE ERROR: %v", e.Error()))
 			}
 		}()
 		if !c.Args().Present() {
@@ -76,14 +77,14 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 	}
 }
 
-func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger log.Logger, cmd string) error {
+func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger *slog.Logger, cmd string) error {
 	term := terminal.Get(ctx)
 	exec, _, err := findExec(ctx, langManager, cmd)
 	if err != nil {
 		return cli.Exit(color.RedString("Command \"%s\" not found. Try \"%s help\".\n", cmd, tools.Self()), 1)
 	}
 
-	logger.Debugf("Command found: %s", filepath.Join(exec...))
+	logger.Debug(fmt.Sprintf("Command found: %s", filepath.Join(exec...)))
 
 	term.Spinner().Start("Attempting to update \"%s\" command...", cmd)
 
@@ -100,7 +101,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		return cli.Exit(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
-	logger.Debugf("Repo found: %s", repoDir)
+	logger.Debug(fmt.Sprintf("Repo found: %s", repoDir))
 
 	err = gitRepo.Open(repoDir)
 	if err != nil {
@@ -141,7 +142,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 		}
 
 		tempDir := filepath.Dir(repoDir) + "/.tmp_" + filepath.Base(repoDir)
-		logger.Debugf("Moving package to temporary dir: %s", tempDir)
+		logger.Debug(fmt.Sprintf("Moving package to temporary dir: %s", tempDir))
 		if err = os.Rename(repoDir, tempDir); err != nil {
 			return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
 		}
@@ -171,16 +172,15 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	}
 
 	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, logger); !ok {
-		logger.Trace("Error updating dependencies")
+		logger.Debug("Error updating dependencies")
 		return cli.Exit("Unable to update command", 1)
 	}
 	logger.Debug("Repo updated successfully")
-	term.Spinner().OK()
 
 	return nil
 }
 
-func updateRepo(ctx context.Context, gitRepo git.Repository, logger log.Logger, term terminal.Terminal, cmd string) error {
+func updateRepo(ctx context.Context, gitRepo git.Repository, logger *slog.Logger, term terminal.Terminal, cmd string) error {
 	w, err := gitRepo.Worktree()
 	if err != nil {
 		logger.Debug("Unable to open repo")
@@ -199,11 +199,11 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger log.Logger, 
 	refName := "refs/remotes/" + git.DefaultRemoteName + "/master"
 
 	refBeforePull, errBeforePull := gitRepo.Head()
-	logger.Debugf("Fetching from remote: %s", git.DefaultRemoteName)
-	logger.Debugf("Using ref: %s", refName)
+	logger.Debug(fmt.Sprintf("Fetching from remote: %s", git.DefaultRemoteName))
+	logger.Debug(fmt.Sprintf("Using ref: %s", refName))
 
 	if errBeforePull != nil {
-		logger.Debugf("Fetch error: %s", errBeforePull.Error())
+		logger.Debug(fmt.Sprintf("Fetch error: %s", errBeforePull.Error()))
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", errBeforePull.Error()), 1)
 	}
@@ -217,23 +217,23 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger log.Logger, 
 
 	ref, err := gitRepo.Head()
 	if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
-		logger.Debugf("Fetch error: %s", err.Error())
+		logger.Debug(fmt.Sprintf("Fetch error: %s", err.Error()))
 		term.Spinner().Fail()
 		return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 	}
 
 	if refBeforePull.Hash() != ref.Hash() {
 		commit, err := gitRepo.CommitObject(ref.Hash())
-		logger.Debugf("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
-		logger.Debugf("Latest commit: %s", commit)
+		logger.Debug(fmt.Sprintf("HEAD differs: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String()))
+		logger.Debug(fmt.Sprintf("Latest commit: %s", commit))
 
 		if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
-			logger.Debugf("Fetch error: %s", err.Error())
+			logger.Debug(fmt.Sprintf("Fetch error: %s", err.Error()))
 			term.Spinner().Fail()
 			return cli.Exit(color.RedString("Unable to fetch updates (%s)", err.Error()), 1)
 		}
 	} else {
-		logger.Debugf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String())
+		logger.Debug(fmt.Sprintf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String()))
 		term.Spinner().WarnOK()
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
@@ -241,5 +241,6 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger log.Logger, 
 			return err
 		}
 	}
+	term.Spinner().OK()
 	return nil
 }

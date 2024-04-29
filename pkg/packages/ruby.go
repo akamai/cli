@@ -35,12 +35,12 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "ruby")
 	}
 
-	logger.Debugf("Ruby binary found: %s", bin)
+	logger.Debug(fmt.Sprintf("Ruby binary found: %s", bin))
 
 	if cmdReq != "" && cmdReq != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s -v: %s", bin, output)
+		logger.Debug(fmt.Sprintf("%s -v: %s", bin, output))
 		r := regexp.MustCompile("^ruby (.*?)(p.*?) (.*)")
 		matches := r.FindStringSubmatch(string(output))
 
@@ -49,7 +49,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 		}
 
 		if version.Compare(cmdReq, matches[1]) == version.Greater {
-			logger.Debugf("Ruby Version found: %s", matches[1])
+			logger.Debug(fmt.Sprintf("Ruby Version found: %s", matches[1]))
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "ruby", cmdReq, matches[1])
 		}
 	}
@@ -63,7 +63,7 @@ func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir strin
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "Gemfile")); !ok {
 		return nil
 	}
-	logger.Debugf("Gemfile found, running yarn package manager")
+	logger.Debug("Gemfile found, running yarn package manager")
 	bin, err := cmdExecutor.LookPath("bundle")
 	if err == nil {
 		cmd := exec.Command(bin, "install")
@@ -72,7 +72,7 @@ func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir strin
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable execute package manager (bundle install): \n%s", exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable execute package manager (bundle install): \n%s", exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "bundler")
 		}

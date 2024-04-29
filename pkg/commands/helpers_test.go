@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,9 +13,9 @@ import (
 
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
+	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
-	"github.com/apex/log"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
@@ -28,33 +29,40 @@ var testFiles = map[string][]string{
 // The reason why binaries are not included in the repository is to make the tests pass on different operating systems
 // After tests are executed, all generated binaries are removed
 func TestMain(m *testing.M) {
+	log := slog.New(log.NewHandler(os.Stderr, false, nil))
 	binaryPath, err := buildTestBinary()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Error(err.Error())
+		os.Exit(1)
 	}
 
 	for dir, files := range testFiles {
 		for _, file := range files {
 			targetDir := filepath.Join("testdata", ".akamai-cli", "src", dir, "bin")
 			if err := copyFile(binaryPath, targetDir); err != nil {
-				log.Fatal(err.Error())
+				log.Error(err.Error())
+				os.Exit(1)
 			}
 			if err := os.Rename(filepath.Join(targetDir, filepath.Base(binaryPath)), filepath.Join(targetDir, file)); err != nil {
-				log.Fatal(err.Error())
+				log.Error(err.Error())
+				os.Exit(1)
 			}
 			if err := os.Chmod(filepath.Join(targetDir, file), 0755); err != nil {
-				log.Fatal(err.Error())
+				log.Error(err.Error())
+				os.Exit(1)
 			}
 		}
 	}
 	exitCode := m.Run()
 	if err := os.RemoveAll(binaryPath); err != nil {
-		log.Fatal(err.Error())
+		log.Error(err.Error())
+		os.Exit(1)
 	}
 	for dir := range testFiles {
 		targetDir := filepath.Join("testdata", ".akamai-cli", "src", dir, "bin")
 		if err := os.RemoveAll(targetDir); err != nil {
-			log.Fatal(err.Error())
+			log.Error(err.Error())
+			os.Exit(1)
 		}
 	}
 	os.Exit(exitCode)
@@ -105,6 +113,7 @@ func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {
 }
 
 func copyFile(src, dst string) error {
+	log := slog.New(log.NewHandler(os.Stderr, false, nil))
 	err := os.MkdirAll(dst, 0755)
 	if err != nil {
 		return err

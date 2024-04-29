@@ -27,7 +27,7 @@ func Run() int {
 
 	var pathErr *os.PathError
 	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
-		logger.Debugf("Unable to remove old executable: %s", err.Error())
+		logger.Debug(fmt.Sprintf("Unable to remove old executable: %s", err.Error()))
 	}
 
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {

@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,12 +40,12 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
 	}
 
-	logger.Debugf("Go binary found: %s", goBin)
+	logger.Debug(fmt.Sprintf("Go binary found: %s", goBin))
 
 	if ver != "" && ver != "*" {
 		cmd := exec.Command(goBin, "version")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s version: %s", goBin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
+		logger.Debug(fmt.Sprintf("%s version: %s", goBin, bytes.ReplaceAll(output, []byte("\n"), []byte(""))))
 		r := regexp.MustCompile("go version go(.*?) .*")
 		matches := r.FindStringSubmatch(string(output))
 
@@ -53,7 +54,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		}
 
 		if version.Compare(ver, matches[1]) == version.Greater {
-			logger.Debugf("Go Version found: %s", matches[1])
+			logger.Debug(fmt.Sprintf("Go Version found: %s", matches[1]))
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "go", ver, matches[1])
 		}
 	}
@@ -97,12 +98,12 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		cmd = exec.Command(goBin, params...)
 
 		cmd.Dir = dir
-		logger.Debugf("building with command: %+v", cmd)
+		logger.Debug(fmt.Sprintf("building with command: %+v", cmd))
 		_, err = l.commandExecutor.ExecCommand(cmd)
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable to build binary (%s): \n%s", execName, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable to build binary (%s): \n%s", execName, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageCompileFailure, command)
 		}
@@ -111,7 +112,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 	return nil
 }
 
-func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string) error {
+func installGolangDepsGlide(logger *slog.Logger, cmdExecutor executor, dir string) error {
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "glide.lock")); !ok {
 		return nil
 	}
@@ -124,7 +125,7 @@ func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string)
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable execute package manager (glide install): \n %s", exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable execute package manager (glide install): \n %s", exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "glide")
 		}
@@ -136,7 +137,7 @@ func installGolangDepsGlide(logger log.Logger, cmdExecutor executor, dir string)
 	return nil
 }
 
-func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) error {
+func installGolangModules(logger *slog.Logger, cmdExecutor executor, dir string) error {
 	bin, err := cmdExecutor.LookPath("go")
 	if err != nil {
 		err = fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
@@ -156,7 +157,7 @@ func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) e
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable execute 'go mod init': \n %s", exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable execute 'go mod init': \n %s", exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "go mod init")
 		}
@@ -168,7 +169,7 @@ func installGolangModules(logger log.Logger, cmdExecutor executor, dir string) e
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			logger.Debugf("Unable execute 'go mod tidy': \n %s", exitErr.Stderr)
+			logger.Debug(fmt.Sprintf("Unable execute 'go mod tidy': \n %s", exitErr.Stderr))
 		}
 		return fmt.Errorf("%w: %s", ErrPackageManagerExec, "go mod")
 	}

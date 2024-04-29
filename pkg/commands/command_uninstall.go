@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,14 +36,14 @@ import (
 func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) (e error) {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger := log.FromContext(c.Context)
 		start := time.Now()
 		logger.Debug("UNINSTALL START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("UNINSTALL FINISH: %v", time.Since(start))
+				logger.Debug(fmt.Sprintf("UNINSTALL FINISH: %v", time.Since(start)))
 			} else {
-				logger.Errorf("UNINSTALL ERROR: %v", e.Error())
+				logger.Error(fmt.Sprintf("UNINSTALL ERROR: %v", e.Error()))
 			}
 		}()
 		for _, cmd := range c.Args().Slice() {
@@ -56,7 +57,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 	}
 }
 
-func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger log.Logger) error {
+func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger *slog.Logger) error {
 	term := terminal.Get(ctx)
 
 	home, err := homedir.Dir()
@@ -87,7 +88,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 	}
 
 	term.Spinner().Start(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
-	logger.Debugf("Attempting to uninstall \"%s\" command...", cmd)
+	logger.Debug(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
 
 	var repoDir string
 	if len(exec) == 1 {
@@ -104,7 +105,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 
 	if err := os.RemoveAll(repoDir); err != nil {
 		term.Spinner().Fail()
-		logger.Errorf("unable to remove directory: %s", repoDir)
+		logger.Error(fmt.Sprintf("unable to remove directory: %s", repoDir))
 		return fmt.Errorf("unable to remove directory: %s", repoDir)
 	}
 
@@ -113,10 +114,10 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 		return err
 	}
 	if _, err := os.Stat(venvPath); err == nil || !os.IsNotExist(err) {
-		logger.Debugf("Attempting to remove package virtualenv directory")
+		logger.Debug(fmt.Sprintf("Attempting to remove package virtualenv directory"))
 		if err := os.RemoveAll(venvPath); err != nil {
 			term.Spinner().Fail()
-			logger.Errorf("unable to remove virtualenv directory: %s", venvPath)
+			logger.Error(fmt.Sprintf("unable to remove virtualenv directory: %s", venvPath))
 			return fmt.Errorf("unable to remove virtualenv directory: %s", repoDir)
 		}
 	}

@@ -4,6 +4,9 @@
 
 ### Enhancements
 
+* Changed logger from `apex` to `slog`
+  * Log output has not been changed
+
 * Migrated to go 1.22
 
 * Updated vulnerable dependencies

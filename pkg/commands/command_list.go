@@ -33,13 +33,13 @@ func cmdList(c *cli.Context) (e error) {
 func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	start := time.Now()
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	logger.Debug("LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("LIST FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("LIST FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("LIST ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("LIST ERROR: %v", e.Error()))
 		}
 	}()
 	term := terminal.Get(c.Context)

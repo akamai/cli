@@ -32,7 +32,7 @@ import (
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger := log.FromContext(c.Context)
 		term := terminal.Get(c.Context)
 
 		commandName := strings.ToLower(c.Command.Name)
@@ -78,7 +78,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 			if err == nil {
 				answer, err := term.Confirm("Would you like to reinstall it", true)
-				logger.Debugf("Would you like to reinstall it? %v", answer)
+				logger.Debug(fmt.Sprintf("Would you like to reinstall it? %v", answer))
 				if err != nil {
 					return err
 				}

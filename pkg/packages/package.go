@@ -155,7 +155,7 @@ func (l *langManager) FindExec(ctx context.Context, reqs LanguageRequirements, c
 		}
 		return []string{pythonBin, cmdExec}, nil
 	case Undefined:
-		logger.Debugf("command language is not defined")
+		logger.Debug("command language is not defined")
 		return []string{cmdExec}, nil
 	default:
 		return []string{cmdExec}, nil
@@ -166,7 +166,7 @@ func (l *langManager) PrepareExecution(ctx context.Context, languageRequirements
 	if languageRequirements.Python != "" {
 		logger := log.FromContext(ctx)
 
-		logger.Debugf("Validating python dependencies")
+		logger.Debug("Validating python dependencies")
 		python34Bin, pipBin, err := l.validatePythonDeps(ctx, logger, languageRequirements.Python, dirName)
 		if err != nil {
 			return err
@@ -184,7 +184,7 @@ func (l *langManager) PrepareExecution(ctx context.Context, languageRequirements
 			return err
 		}
 
-		logger.Debugf("Adding any missing element to the virtual environment")
+		logger.Debug("Adding any missing element to the virtual environment")
 		return l.setup(ctx, pkgVePath, pkgSrcPath, python34Bin, pipBin, languageRequirements.Python, true)
 	}
 	return nil

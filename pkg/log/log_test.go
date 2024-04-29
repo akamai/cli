@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"log/slog"
 	"os"
 	"regexp"
 	"testing"
 
-	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,28 +18,28 @@ const logPath = "./testlogs.txt"
 func TestSetupContext(t *testing.T) {
 	tests := map[string]struct {
 		envs          map[string]string
-		expectedLevel log.Level
+		expectedLevel slog.Level
 		withError     *regexp.Regexp
 	}{
 		"no envs passed, defaults are used": {
-			expectedLevel: log.ErrorLevel,
+			expectedLevel: slog.LevelError,
 		},
 		"debug level set": {
 			envs:          map[string]string{"AKAMAI_LOG": "DEBUG"},
-			expectedLevel: log.DebugLevel,
+			expectedLevel: slog.LevelDebug,
 		},
 		"debug level set, write logs to a file": {
 			envs:          map[string]string{"AKAMAI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": logPath},
-			expectedLevel: log.DebugLevel,
+			expectedLevel: slog.LevelDebug,
 		},
 		"invalid path passed": {
 			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": ".", "AKAMAI_LOG": "INFO"},
-			expectedLevel: log.InfoLevel,
+			expectedLevel: slog.LevelInfo,
 			withError:     regexp.MustCompile(`ERROR.*Invalid value of AKAMAI_CLI_LOG_PATH`),
 		},
 		"invalid log level passed, output to terminal": {
 			envs:          map[string]string{"AKAMAI_LOG": "abc"},
-			expectedLevel: log.ErrorLevel,
+			expectedLevel: slog.LevelError,
 			withError:     regexp.MustCompile(`ERROR.*Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
 		},
 	}
@@ -56,8 +56,8 @@ func TestSetupContext(t *testing.T) {
 			}()
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
-			logger := log.FromContext(ctx).(*log.Logger)
-			assert.Equal(t, test.expectedLevel, logger.Level)
+			logger := FromContext(ctx)
+			assert.True(t, logger.Enabled(ctx, test.expectedLevel))
 			if test.withError != nil {
 				assert.Regexp(t, test.withError, buf.String())
 				return

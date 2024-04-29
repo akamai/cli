@@ -47,13 +47,13 @@ func cmdSearch(c *cli.Context) (e error) {
 func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 	start := time.Now()
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	logger.Debug("SEARCH START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("SEARCH FINISHED: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("SEARCH FINISHED: %v", time.Since(start)))
 		} else {
-			logger.Errorf("SEARCH ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("SEARCH ERROR: %v", e.Error()))
 		}
 	}()
 	if !c.Args().Present() {

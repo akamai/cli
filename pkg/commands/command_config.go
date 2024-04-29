@@ -28,14 +28,14 @@ import (
 
 func cmdConfigSet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG SET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG SET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG SET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG SET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG SET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
@@ -53,14 +53,14 @@ func cmdConfigSet(c *cli.Context) (e error) {
 
 func cmdConfigGet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG GET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG GET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG GET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG GET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG GET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
@@ -78,14 +78,14 @@ func cmdConfigGet(c *cli.Context) (e error) {
 
 func cmdConfigUnset(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG UNSET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG UNSET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG UNSET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG UNSET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG UNSET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
@@ -103,14 +103,14 @@ func cmdConfigUnset(c *cli.Context) (e error) {
 
 func cmdConfigList(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG LIST FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG LIST FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG LIST ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG LIST ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
