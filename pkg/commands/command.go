@@ -209,7 +209,7 @@ func createBuiltinCommands() []*cli.Command {
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "force",
-					Usage: "Force binary installation if available when source installation fails",
+					Usage: "[deprecated] Force binary installation if available when source installation fails",
 				},
 			},
 			HideHelp:     true,
@@ -254,7 +254,7 @@ func createBuiltinCommands() []*cli.Command {
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "force",
-					Usage: "Force binary installation if available when source installation fails",
+					Usage: "[deprecated] Force binary installation if available when source installation fails",
 				},
 			},
 			HideHelp:     true,

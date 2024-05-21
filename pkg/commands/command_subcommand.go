@@ -91,7 +91,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 					return err
 				}
 
-				if _, err = installPackage(c.Context, git, langManager, commandName, false); err != nil {
+				if _, err = installPackage(c.Context, git, langManager, commandName); err != nil {
 					return err
 				}
 			}

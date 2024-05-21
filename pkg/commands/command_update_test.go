@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/akamai/cli/pkg/config"
@@ -26,7 +27,7 @@ import (
 func TestCmdUpdate(t *testing.T) {
 	cliEchoRepo := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo")
 	cliEchoBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo")
-
+	tempTestDir := filepath.Join(".", "testdata", "temp")
 	tests := map[string]struct {
 		args      []string
 		init      func(*testing.T, *mocked)
@@ -177,6 +178,7 @@ func TestCmdUpdate(t *testing.T) {
 
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(fmt.Errorf("oops")).Once()
+				m.term.On("WriteError", "oops")
 
 				m.term.On("OK").Return().Once()
 			},
@@ -279,22 +281,133 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "unable to update, there an issue with the package repo: oops",
+			withError: "unable to update, there was an issue with the package repo: oops",
 		},
-		"error opening repository": {
+		"error opening repository, up to date with remote": {
 			args: []string{"echo"},
 			init: func(t *testing.T, m *mocked) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
+					require.NoError(t, err)
+					_, err = w.Write(configJSON)
+					require.NoError(t, err)
+				}))
+
+				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(fmt.Errorf("oops")).Once()
+
+				m.term.On("Writeln", []interface{}{color.CyanString("command \"echo\" already up-to-date")}).Return(0, nil).Once()
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("WarnOK").Return().Once()
+			},
+		},
+		"error opening repository, update from remote, success": {
+			args: []string{"echo"},
+			init: func(t *testing.T, m *mocked) {
+
+				mustCopyDirectory(t, cliEchoRepo, tempTestDir)
+
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
+				configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
+				require.NoError(t, err)
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					output := strings.ReplaceAll(string(configJSON), "1.0.0", "9.9.9")
+					_, err = w.Write([]byte(output))
+					require.NoError(t, err)
+				}))
+
+				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
 
 				m.gitRepo.On("Open", cliEchoRepo).Return(fmt.Errorf("oops")).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Fail").Return().Once()
+				m.term.On("Start", `Attempting to fetch package configuration from %s...`, []interface{}{"https://github.com/akamai/cli-echo.git"}).Return().Once()
+				m.term.On("OK").Return().Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-echo.git"}).Return().Once()
+				m.term.On("OK").Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+
+				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
+					"https://github.com/akamai/cli-echo.git", false, m.term).Return(nil).Once().
+					Run(func(args mock.Arguments) {
+						mustCopyFile(t, filepath.Join(tempTestDir, "cli.json"), cliEchoRepo)
+					})
+				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+
 			},
-			withError: "unable to update, there an issue with the package repo: oops",
+			teardown: func(t *testing.T) {
+				require.NoError(t, os.RemoveAll(cliEchoRepo))
+				require.NoError(t, os.Rename(tempTestDir, cliEchoRepo))
+
+			},
+		},
+		"error opening repository, update from remote, fail": {
+			args: []string{"echo"},
+			init: func(t *testing.T, m *mocked) {
+
+				mustCopyDirectory(t, cliEchoRepo, tempTestDir)
+
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
+				configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
+				require.NoError(t, err)
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					output := strings.ReplaceAll(string(configJSON), "1.0.0", "9.9.9")
+					_, err = w.Write([]byte(output))
+					require.NoError(t, err)
+				}))
+
+				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
+
+				m.gitRepo.On("Open", cliEchoRepo).Return(fmt.Errorf("oops")).Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to fetch package configuration from %s...`, []interface{}{"https://github.com/akamai/cli-echo.git"}).Return().Once()
+				m.term.On("OK").Return().Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-echo.git"}).Return().Once()
+				m.term.On("OK").Return().Once()
+				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
+
+				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
+					"https://github.com/akamai/cli-echo.git", false, m.term).Return(nil).Once().
+					Run(func(args mock.Arguments) {
+						mustCopyFile(t, filepath.Join(tempTestDir, "cli.json"), cliEchoRepo)
+					})
+				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+
+				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
+					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(fmt.Errorf("oops")).Once()
+				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Fail").Return().Once()
+				m.term.On("WriteError", "oops")
+
+			},
+			teardown: func(t *testing.T) {
+				require.NoError(t, os.RemoveAll(cliEchoRepo))
+				require.NoError(t, os.Rename(tempTestDir, cliEchoRepo))
+			},
+			withError: "unable to update: Unable to install selected package",
 		},
 		"error finding executable": {
 			args:      []string{"not-found"},
@@ -339,7 +452,9 @@ func TestCmdUpdate(t *testing.T) {
 				assert.Contains(t, err.Error(), test.withError)
 				return
 			}
+
 			require.NoError(t, err)
 		})
 	}
+
 }

@@ -18,7 +18,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -54,7 +56,7 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 			for _, cmd := range getCommands(c) {
 				for _, command := range cmd.Commands {
 					if _, ok := builtinCmds[command.Name]; !ok {
-						if err := updatePackage(c.Context, gitRepo, langManager, logger, command.Name, c.Bool("force")); err != nil {
+						if err := updatePackage(c.Context, gitRepo, langManager, logger, command.Name); err != nil {
 							return err
 						}
 					}
@@ -65,7 +67,7 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 		}
 
 		for _, cmd := range c.Args().Slice() {
-			if err := updatePackage(c.Context, gitRepo, langManager, logger, cmd, c.Bool("force")); err != nil {
+			if err := updatePackage(c.Context, gitRepo, langManager, logger, cmd); err != nil {
 				return err
 			}
 		}
@@ -74,7 +76,7 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 	}
 }
 
-func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger log.Logger, cmd string, forceBinary bool) error {
+func updatePackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, logger log.Logger, cmd string) error {
 	term := terminal.Get(ctx)
 	exec, _, err := findExec(ctx, langManager, cmd)
 	if err != nil {
@@ -102,16 +104,88 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 
 	err = gitRepo.Open(repoDir)
 	if err != nil {
+
 		logger.Debug("Unable to open repo")
-		term.Spinner().Fail()
-		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
+
+		cmdPackage, err := readPackage(repoDir)
+		if err != nil {
+			return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
+		}
+
+		packageVersions := map[string]string{}
+		for _, command := range cmdPackage.Commands {
+			packageVersions[command.Name] = command.Version
+		}
+
+		repo := filepath.Base(repoDir)
+		url := fmt.Sprintf(githubRawURLTemplate, repo)
+
+		remotePackage, err := readPackageFromGithub(url, repoDir)
+		if err != nil {
+			return cli.Exit(color.RedString("unable to update, there was an issue with fetching latest configuration file: %s", err.Error()), 1)
+		}
+
+		remoteVersions := map[string]string{}
+		for _, command := range remotePackage.Commands {
+			remoteVersions[command.Name] = command.Version
+		}
+
+		if reflect.DeepEqual(packageVersions, remoteVersions) {
+			term.Spinner().WarnOK()
+			debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
+			logger.Warn(debugMessage)
+			if _, err := term.Writeln(color.CyanString(debugMessage)); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		tempDir := filepath.Dir(repoDir) + "/.tmp_" + filepath.Base(repoDir)
+		logger.Debugf("Moving package to temporary dir: %s", tempDir)
+		if err = os.Rename(repoDir, tempDir); err != nil {
+			return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
+		}
+
+		_, err = installPackage(ctx, gitRepo, langManager, tools.Githubize(cmd))
+		if err != nil {
+			term.Spinner().Fail()
+			if err := os.Rename(tempDir, repoDir); err != nil {
+				return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
+			}
+			return cli.Exit(color.RedString("unable to update: %s", err.Error()), 1)
+		}
+
+		if err := os.RemoveAll(tempDir); err != nil {
+			return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
+		}
+
+		logger.Debug("Repo updated successfully")
+		term.Spinner().OK()
+		return nil
+
 	}
 
+	err = updateRepo(ctx, gitRepo, logger, term, cmd)
+	if err != nil {
+		return err
+	}
+
+	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, logger); !ok {
+		logger.Trace("Error updating dependencies")
+		return cli.Exit("Unable to update command", 1)
+	}
+	logger.Debug("Repo updated successfully")
+	term.Spinner().OK()
+
+	return nil
+}
+
+func updateRepo(ctx context.Context, gitRepo git.Repository, logger log.Logger, term terminal.Terminal, cmd string) error {
 	w, err := gitRepo.Worktree()
 	if err != nil {
 		logger.Debug("Unable to open repo")
 		term.Spinner().Fail()
-		return cli.Exit(color.RedString("unable to update, there an issue with the package repo: %s", err.Error()), 1)
+		return cli.Exit(color.RedString("unable to update, there was an issue with the package repo: %s", err.Error()), 1)
 	}
 
 	if err := gitRepo.Reset(&gogit.ResetOptions{Mode: gogit.HardReset}); err != nil {
@@ -167,14 +241,5 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			return err
 		}
 	}
-
-	logger.Debug("Repo updated successfully")
-	term.Spinner().OK()
-
-	if ok, _ := installPackageDependencies(ctx, langManager, repoDir, forceBinary, logger); !ok {
-		logger.Trace("Error updating dependencies")
-		return cli.Exit("Unable to update command", 1)
-	}
-
 	return nil
 }

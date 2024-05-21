@@ -6,7 +6,8 @@
     {
       "name": "installed",
       "aliases": ["ac2"],
-      "description": "Test command"
+      "description": "Test command",
+      "version": "1.0.0"
     }
   ]
 }

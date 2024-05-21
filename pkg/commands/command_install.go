@@ -34,6 +34,7 @@ import (
 
 var (
 	thirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
+	githubRawURLTemplate = "https://raw.githubusercontent.com/akamai/%s/master/cli.json"
 )
 
 func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
@@ -62,7 +63,7 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 
 		for _, repo := range c.Args().Slice() {
 			repo = tools.Githubize(repo)
-			subCmd, err := installPackage(c.Context, git, langManager, repo, c.Bool("force"))
+			subCmd, err := installPackage(c.Context, git, langManager, repo)
 			if err != nil {
 
 				return err
@@ -124,7 +125,7 @@ func packageListDiff(c *cli.Context, oldcmds []subcommands) {
 	listInstalledCommands(c, added, removed)
 }
 
-func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string, forceBinary bool) (*subcommands, error) {
+func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string) (*subcommands, error) {
 	logger := log.FromContext(ctx)
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
@@ -132,19 +133,48 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	}
 
 	term := terminal.Get(ctx)
-
 	spin := term.Spinner()
-
-	spin.Start("Attempting to fetch command from %s...", repo)
 
 	dirName := strings.TrimSuffix(filepath.Base(repo), ".git")
 	packageDir := filepath.Join(srcPath, dirName)
+
 	if _, err = os.Stat(packageDir); err == nil {
-		spin.Stop(terminal.SpinnerStatusWarn)
 		warningMsg := fmt.Sprintf("Package directory already exists (%s). To reinstall this package, first run 'akamai uninstall' command.", packageDir)
 		return nil, cli.Exit(color.YellowString(warningMsg), 0)
 	}
 
+	spin.Start("Attempting to fetch package configuration from %s...", repo)
+
+	base := filepath.Base(dirName)
+	url := fmt.Sprintf(githubRawURLTemplate, base)
+	cmdPackage, err := readPackageFromGithub(url, dirName)
+	if err != nil {
+		spin.Stop(terminal.SpinnerStatusFail)
+		logger.Error(err.Error())
+		if _, err := term.Writeln(err.Error()); err != nil {
+			term.WriteError(err.Error())
+		}
+		return nil, cli.Exit("Unable to install selected package", 1)
+	}
+	spin.OK()
+
+	if isBinary(cmdPackage) {
+
+		ok, subCmd := installPackageBinaries(ctx, packageDir, cmdPackage, logger)
+		if ok {
+			return subCmd, nil
+		}
+		// delete package directory
+		if err := os.RemoveAll(packageDir); err != nil {
+			return nil, err
+		}
+
+	}
+	spin.Start("Attempting to fetch command from %s...", repo)
+
+	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
+		term.Printf(color.CyanString(thirdPartyDisclaimer))
+	}
 	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)
 	if err != nil {
 		if err := os.RemoveAll(packageDir); err != nil {
@@ -157,11 +187,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	}
 	spin.OK()
 
-	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
-		term.Printf(color.CyanString(thirdPartyDisclaimer))
-	}
-
-	ok, subCmd := installPackageDependencies(ctx, langManager, packageDir, forceBinary, logger)
+	ok, subCmd := installPackageDependencies(ctx, langManager, packageDir, logger)
 	if !ok {
 		if err := os.RemoveAll(packageDir); err != nil {
 			return nil, err
@@ -172,7 +198,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	return subCmd, nil
 }
 
-func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, forceBinary bool, logger log.Logger) (bool, *subcommands) {
+func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, logger log.Logger) (bool, *subcommands) {
 	cmdPackage, err := readPackage(dir)
 
 	term := terminal.Get(ctx)
@@ -209,70 +235,57 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 		return true, &cmdPackage
 	}
 
-	if err == nil {
-		term.Spinner().OK()
-		return true, &cmdPackage
+	if err != nil {
+		term.Spinner().Stop(terminal.SpinnerStatusFail)
+		term.WriteError(err.Error())
+		return false, nil
+
 	}
 
-	first := true
+	term.Spinner().OK()
+	return true, &cmdPackage
+
+}
+
+func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcommands, logger log.Logger) (bool, *subcommands) {
+
+	term := terminal.Get(ctx)
+	spin := term.Spinner()
+	spin.Start("Installing Binaries...")
+
+	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+		return false, nil
+	}
+
 	for _, cmd := range cmdPackage.Commands {
-		if cmd.Bin != "" {
-			if first {
-				first = false
-				term.Spinner().Stop(terminal.SpinnerStatusWarn)
-				if _, err := term.Writeln(color.CyanString(err.Error())); err != nil {
-					term.WriteError(err.Error())
-					return false, nil
-				}
-				logger.Warn(err.Error())
-				if !forceBinary {
-					if !term.IsTTY() {
-						return false, nil
-					}
-
-					answer, err := term.Confirm("Binary command(s) found, would you like to download and install it?", true)
-					if err != nil {
-						term.WriteError(err.Error())
-						logger.Error(err.Error())
-						return false, nil
-					}
-
-					if !answer {
-						return false, nil
-					}
-				}
-
-				if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
-					return false, nil
-				}
-
-				term.Spinner().Start("Downloading binary...")
-			}
-
-			if err = downloadBin(ctx, filepath.Join(dir, "bin"), cmd); err != nil {
-				term.Spinner().Stop(terminal.SpinnerStatusFail)
-				errorMsg := "Unable to download binary: " + err.Error()
-				if _, err := term.Writeln(color.RedString(errorMsg)); err != nil {
-					term.WriteError(err.Error())
-					return false, nil
-				}
-				logger.Error(errorMsg)
-				return false, nil
-			}
-		}
-
-		if first {
-			term.Spinner().Stop(terminal.SpinnerStatusFail)
-			if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
+		err := downloadBin(ctx, filepath.Join(dir, "bin"), cmd)
+		if err != nil {
+			warnMsg := fmt.Sprintf("Unable to download binary: %v", err.Error())
+			spin.Stop(terminal.SpinnerStatusWarn)
+			if _, err := term.Writeln(color.YellowString(warnMsg)); err != nil {
 				term.WriteError(err.Error())
 				return false, nil
 			}
-			logger.Error(err.Error())
+			logger.Warn(warnMsg)
+
 			return false, nil
+
 		}
 	}
 
-	term.Spinner().Stop(terminal.SpinnerStatusOK)
+	err := os.WriteFile(filepath.Join(dir, "cli.json"), cmdPackage.raw, 0644)
+	if err != nil {
+		spin.Stop(terminal.SpinnerStatusWarn)
+		warnMsg := "Unable to save configuration file " + err.Error()
+		if _, err := term.Writeln(color.YellowString(warnMsg)); err != nil {
+			term.WriteError(err.Error())
+			return false, nil
+		}
+		logger.Warn(warnMsg)
+		return false, nil
+	}
 
+	spin.OK()
 	return true, &cmdPackage
+
 }
