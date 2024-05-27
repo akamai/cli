@@ -81,11 +81,22 @@ func TestCmdUninstall(t *testing.T) {
 			},
 			withError: "unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?",
 		},
-		"executable not found": {
-			args: []string{"invalid"},
+		"uninstall command when executable not found": {
+			args: []string{"echo-uninstall"},
 			init: func(t *testing.T, m *mocked) {
+				mustCopyFile(t, cliEchoJSON, cliEchoUninstallRepo)
+				mustCopyFile(t, cliEchoBin, cliEchoUninstallBinDir)
+				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, "echo-uninstall").Return([]string{}, packages.ErrNoExeFound).Once()
+				m.langManager.On("GetPackageBinPaths").Return("/path/to/echo-uninstall").Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
+
+				m.term.On("RemoveAll", "/path/to/echo-uninstall").Return(nil).Once()
+
 			},
-			withError: fmt.Sprintf(`command "invalid" not found. Try "%s help"`, tools.Self()),
 		},
 	}
 

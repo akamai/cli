@@ -8,6 +8,7 @@
     * --force flag has been deprecated for both install and update
 * Migrated to go 1.21
 * Updated various dependencies
+* Enabled uninstall command when binaries were not found
 
 ### Fixes
 
