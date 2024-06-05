@@ -154,7 +154,10 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		if _, err := term.Writeln(err.Error()); err != nil {
 			term.WriteError(err.Error())
 		}
-		return nil, cli.Exit("Unable to install selected package", 1)
+		if strings.Contains(err.Error(), "404") {
+			return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(git.ErrPackageNotAvailable.Error())), 1)
+		}
+		return nil, cli.Exit(color.RedString("Unable to install selected package"), 1)
 	}
 	spin.OK()
 
