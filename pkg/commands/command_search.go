@@ -16,7 +16,12 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -26,6 +31,10 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	githubURLTemplate = "https://raw.githubusercontent.com/akamai/%s/master/cli.json"
 )
 
 func cmdSearch(c *cli.Context) (e error) {
@@ -148,7 +157,14 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 					}
 
 					term.Printf(bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
-					term.Printf(bold.Sprintf("  Version:")+" %s\n", cmd.Version)
+
+					url := results[hits][pkgName].URL
+					latestVersion, err := getLatestVersion(url)
+					if err != nil {
+						return cli.Exit(color.RedString(err.Error()), 1)
+					}
+					term.Printf(bold.Sprintf("  Latest Version:")+" %s\n", latestVersion)
+
 					term.Printf(bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
@@ -160,4 +176,57 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 	}
 
 	return nil
+}
+
+func getLatestVersion(s string) (string, error) {
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL: %s", err.Error())
+	}
+
+	// extract the last string of the package URL
+	lastSegment := path.Base(u.Path)
+
+	repoURL := fmt.Sprintf(githubURLTemplate, lastSegment)
+	resp, err := http.Get(repoURL)
+	if err != nil {
+		return "", fmt.Errorf("error fetching the URL: %s", err.Error())
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Println("error closing the response body:", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("error: status code %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading the response body: %w", err)
+	}
+
+	var cli CLI
+	if err := json.Unmarshal(body, &cli); err != nil {
+		return "", fmt.Errorf("error parsing the JSON: %w", err)
+	}
+
+	if len(cli.CommandList) > 0 {
+		return cli.CommandList[0].Version, nil
+	}
+	return "", fmt.Errorf("no latest version found")
+}
+
+// CLI struct represents an individual command object in package-list.json
+type CLI struct {
+	CommandList []CommandObject `json:"commands"`
+}
+
+// CommandObject contains details for particular command
+type CommandObject struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
 }

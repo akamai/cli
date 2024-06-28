@@ -3,6 +3,7 @@
 ## X.X.X (X X, X)
 
 ### Enhancements
+* Removed commands and packages versions from `package-list.json`
 * Changed package installation order
     * Cli will first check if new binaries are available, if the package has no binaries or no valid binaries can be found, it will build the package locally.
     * --force flag has been deprecated for both install and update

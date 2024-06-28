@@ -2,6 +2,8 @@ package commands
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -31,8 +33,11 @@ func TestCmdSearch(t *testing.T) {
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"2.0.0"}).
-					Return().Once()
+
+				h := mockedServer("sample", "2.0.0", t)
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+
+				m.On("Printf", bold.Sprintf("  Latest Version:")+" %s\n", []interface{}{"2.0.0"}).Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for single match"}).
 					Return().Once()
 
@@ -54,7 +59,11 @@ func TestCmdSearch(t *testing.T) {
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"cli-2", "(aliases: abc, abc2)"}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
+
+				h := mockedServer("cli-2", "1.0.0", t)
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+
+				m.On("Printf", bold.Sprintf("  Latest Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on name"}).
 					Return().Once()
@@ -63,7 +72,10 @@ func TestCmdSearch(t *testing.T) {
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"ClI-1", ""}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
+				h = mockedServer("CLI-1", "1.0.0", t)
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+
+				m.On("Printf", bold.Sprintf("  Latest Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on title"}).
 					Return().Once()
@@ -72,7 +84,10 @@ func TestCmdSearch(t *testing.T) {
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"cli", ""}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
+				h = mockedServer("cli", "1.0.0", t)
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+
+				m.On("Printf", bold.Sprintf("  Latest Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"test for match on command name"}).
 					Return().Once()
@@ -81,7 +96,10 @@ func TestCmdSearch(t *testing.T) {
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"abc-3", ""}).
 					Return().Once()
-				m.On("Printf", bold.Sprintf("  Version:")+" %s\n", []interface{}{"1.0.0"}).
+
+				h = mockedServer("abc-3", "1.0.0", t)
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				m.On("Printf", bold.Sprintf("  Latest Version:")+" %s\n", []interface{}{"1.0.0"}).
 					Return().Once()
 				m.On("Printf", bold.Sprintf("  Description:")+" %s\n\n", []interface{}{"CLI - test for match on description"}).
 					Return().Once()
@@ -102,6 +120,49 @@ func TestCmdSearch(t *testing.T) {
 			args:      []string{},
 			init:      func(m *terminal.Mock) {},
 			withError: "You must specify one or more keywords",
+		},
+		"search and find single package - 404": {
+			args: []string{"sample"},
+			init: func(m *terminal.Mock) {
+				bold := color.New(color.FgWhite, color.Bold)
+				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{1})
+
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"sample", color.BlueString("SAMPLE")}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
+					Return().Once()
+
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.Error(w, "Not Found", http.StatusNotFound)
+				}))
+				defer h.Close()
+			},
+			packages:  packagesForTest,
+			withError: "error: status code 400",
+		},
+		"search and find single package - when no latest version found": {
+			args: []string{"sample"},
+			init: func(m *terminal.Mock) {
+				bold := color.New(color.FgWhite, color.Bold)
+				m.On("Printf", color.YellowString("Results Found:")+" %d\n\n", []interface{}{1})
+
+				m.On("Printf", color.GreenString("Package: ")+"%s [%s]\n", []interface{}{"sample", color.BlueString("SAMPLE")}).
+					Return().Once()
+				m.On("Printf", bold.Sprintf("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
+					Return().Once()
+
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mockResponse := CLI{
+						CommandList: []CommandObject{},
+					}
+					respBody, _ := json.Marshal(mockResponse)
+					w.WriteHeader(http.StatusOK)
+					var _, _ = w.Write(respBody)
+				}))
+				githubURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+			},
+			withError: "no latest version found",
+			packages:  packagesForTest,
 		},
 	}
 
@@ -254,4 +315,31 @@ var packagesForTest = &packageList{
 			},
 		},
 	},
+}
+
+func mockedServer(name, version string, t *testing.T) *httptest.Server {
+	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockResponse := CLI{
+			CommandList: []CommandObject{
+				{
+					Name:    name,
+					Version: version,
+				},
+			},
+		}
+		respBody, err := json.Marshal(mockResponse)
+		if err != nil {
+			t.Errorf("Error marshalling the response: %v", err)
+			t.Fail()
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write(respBody)
+		if err != nil {
+			t.Errorf("Error writing the response: %v", err)
+			t.Fail()
+		}
+
+	}))
+	return h
 }
