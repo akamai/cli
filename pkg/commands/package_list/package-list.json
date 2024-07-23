@@ -11,7 +11,7 @@
     },
     {
       "title": "API Gateway",
-      "name": "akamai/api-gateway",
+      "name": "api-gateway",
       "url": "https://github.com/akamai/cli-api-gateway",
       "issues": "https://github.com/akamai/cli-api-gateway/issues",
       "commands": [

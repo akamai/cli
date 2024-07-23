@@ -21,7 +21,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -143,28 +145,39 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 
 	term.Printf(color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
+	return printResult(resultHits, resultPkgs, results, term, bold)
+}
+
+func printResult(resultHits []int, resultPkgs []string, results map[int]map[string]packageListItem, term terminal.Terminal, bold *color.Color) error {
+	var installedVersion, availableVersion string
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
 				term.Printf(color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
-				for _, cmd := range results[hits][pkgName].Commands {
+				for _, cmd := range pkg.Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
 						aliases = fmt.Sprintf("(alias: %s)", cmd.Aliases[0])
 					} else if len(cmd.Aliases) > 1 {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
-
 					term.Printf(bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
 
-					url := results[hits][pkgName].URL
-					latestVersion, err := getLatestVersion(url)
+					url := pkg.URL
+					var err error
+					availableVersion, err = getLatestVersion(url)
 					if err != nil {
 						return cli.Exit(color.RedString(err.Error()), 1)
 					}
-					term.Printf(bold.Sprintf("  Latest Version:")+" %s\n", latestVersion)
-
+					term.Printf(bold.Sprintf("  Available Version:")+" %s\n", availableVersion)
+					installedVersion, err = getVersionFromSystem(pkg.Name)
+					if err != nil {
+						return cli.Exit(color.RedString(err.Error()), 1)
+					}
+					if installedVersion != "" {
+						term.Printf(bold.Sprintf("  Installed Version:")+" %s\n", installedVersion)
+					}
 					term.Printf(bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
@@ -172,9 +185,14 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 	}
 
 	if len(resultHits) > 0 {
-		term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		if installedVersion == "" {
+			term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		} else if installedVersion != availableVersion {
+			term.Printf("\nUpdate using \"%s\".\n", color.BlueString("%s update [package]", tools.Self()))
+		} else {
+			term.Printf(color.BlueString("Package is already up-to-date on your system"))
+		}
 	}
-
 	return nil
 }
 
@@ -229,4 +247,32 @@ type CommandObject struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
+}
+
+func getVersionFromSystem(command string) (string, error) {
+	paths := filepath.SplitList(getPackageBinPaths())
+	suffix := "cli-" + command
+	finalPath := ""
+	for _, path := range paths {
+		if strings.HasSuffix(path, suffix) {
+			finalPath = path
+			break
+		}
+	}
+
+	if finalPath == "" {
+		return "", nil
+	}
+	body, err := os.ReadFile(filepath.Join(finalPath, "cli.json"))
+	if err != nil {
+		return "", fmt.Errorf("Error reading the file: %s", err.Error())
+
+	}
+
+	var cli CLI
+	if err := json.Unmarshal(body, &cli); err != nil {
+		return "", fmt.Errorf("Error parsing the JSON: %s", err.Error())
+	}
+
+	return cli.CommandList[0].Version, nil
 }
