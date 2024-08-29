@@ -1,20 +1,22 @@
 # RELEASE NOTES
 
-## X.X.X (X X, X)
+## 1.6.0 (September 5, 2024)
 
 ### Enhancements
-* Support to show the `Installed Version` of commands during `search`
-* Removed commands and packages versions from `package-list.json`
+
+* Added support to show the `Installed Version` of commands during `search`
+* Updated the list of packages in `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192))
+* Removed versions of the packages from `package-list.json`
 * Changed package installation order
-    * Cli will first check if new binaries are available, if the package has no binaries or no valid binaries can be found, it will build the package locally.
+    * Cli will first check if new binaries are available. If the package has no binaries or no valid
+      binaries can be found, it will build the package locally
     * --force flag has been deprecated for both install and update
 * Migrated to go 1.21
 * Updated various dependencies
-* Enabled uninstall command when binaries were not found
 
 ### Fixes
 
-* Updated the versions, descriptions, requirements and packages of the dependencies in the `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192))
+* Fixed uninstalling of a command when binaries are not found
 
 ## 1.5.6 (January 22, 2024)
 
