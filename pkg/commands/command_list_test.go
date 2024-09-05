@@ -75,6 +75,10 @@ func TestCmdListWithRemote(t *testing.T) {
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("SAMPLE"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for single match\n", []interface{}(nil)).Return().Once()
 
+				m.term.On("Printf", bold.Sprint("  echo-uninstall"), []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("echo"))}).Return(0, nil).Once()
+				m.term.On("Printf", "    test for single match\n", []interface{}(nil)).Return().Once()
+
 				m.term.On("Printf", "\nInstall using \"%s\".\n", []interface{}{color.BlueString("%s install [package]", tools.Self())}).Return().Once()
 			},
 			packages: packagesForTest,

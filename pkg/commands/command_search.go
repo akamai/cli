@@ -16,7 +16,14 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -26,6 +33,10 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+)
+
+var (
+	githubURLTemplate = "https://raw.githubusercontent.com/akamai/%s/master/cli.json"
 )
 
 func cmdSearch(c *cli.Context) (e error) {
@@ -134,21 +145,39 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 
 	term.Printf(color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
+	return printResult(resultHits, resultPkgs, results, term, bold)
+}
+
+func printResult(resultHits []int, resultPkgs []string, results map[int]map[string]packageListItem, term terminal.Terminal, bold *color.Color) error {
+	var installedVersion, availableVersion string
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
 				term.Printf(color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
-				for _, cmd := range results[hits][pkgName].Commands {
+				for _, cmd := range pkg.Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
 						aliases = fmt.Sprintf("(alias: %s)", cmd.Aliases[0])
 					} else if len(cmd.Aliases) > 1 {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
-
 					term.Printf(bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
-					term.Printf(bold.Sprintf("  Version:")+" %s\n", cmd.Version)
+
+					url := pkg.URL
+					var err error
+					availableVersion, err = getLatestVersion(url)
+					if err != nil {
+						return cli.Exit(color.RedString(err.Error()), 1)
+					}
+					term.Printf(bold.Sprintf("  Available Version:")+" %s\n", availableVersion)
+					installedVersion, err = getVersionFromSystem(pkg.Name)
+					if err != nil {
+						return cli.Exit(color.RedString(err.Error()), 1)
+					}
+					if installedVersion != "" {
+						term.Printf(bold.Sprintf("  Installed Version:")+" %s\n", installedVersion)
+					}
 					term.Printf(bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
@@ -156,8 +185,94 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 	}
 
 	if len(resultHits) > 0 {
-		term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		if installedVersion == "" {
+			term.Printf("\nInstall using \"%s\".\n", color.BlueString("%s install [package]", tools.Self()))
+		} else if installedVersion != availableVersion {
+			term.Printf("\nUpdate using \"%s\".\n", color.BlueString("%s update [package]", tools.Self()))
+		} else {
+			term.Printf(color.BlueString("Package is already up-to-date on your system"))
+		}
+	}
+	return nil
+}
+
+func getLatestVersion(s string) (string, error) {
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL: %s", err.Error())
 	}
 
-	return nil
+	// extract the last string of the package URL
+	lastSegment := path.Base(u.Path)
+
+	repoURL := fmt.Sprintf(githubURLTemplate, lastSegment)
+	resp, err := http.Get(repoURL)
+	if err != nil {
+		return "", fmt.Errorf("error fetching the URL: %s", err.Error())
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Println("error closing the response body:", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("error: status code %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading the response body: %w", err)
+	}
+
+	var cli CLI
+	if err := json.Unmarshal(body, &cli); err != nil {
+		return "", fmt.Errorf("error parsing the JSON: %w", err)
+	}
+
+	if len(cli.CommandList) > 0 {
+		return cli.CommandList[0].Version, nil
+	}
+	return "", fmt.Errorf("no latest version found")
+}
+
+// CLI struct represents an individual command object in package-list.json
+type CLI struct {
+	CommandList []CommandObject `json:"commands"`
+}
+
+// CommandObject contains details for particular command
+type CommandObject struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
+func getVersionFromSystem(command string) (string, error) {
+	paths := filepath.SplitList(getPackageBinPaths())
+	suffix := "cli-" + command
+	finalPath := ""
+	for _, path := range paths {
+		if strings.HasSuffix(path, suffix) {
+			finalPath = path
+			break
+		}
+	}
+
+	if finalPath == "" {
+		return "", nil
+	}
+	body, err := os.ReadFile(filepath.Join(finalPath, "cli.json"))
+	if err != nil {
+		return "", fmt.Errorf("Error reading the file: %s", err.Error())
+
+	}
+
+	var cli CLI
+	if err := json.Unmarshal(body, &cli); err != nil {
+		return "", fmt.Errorf("Error parsing the JSON: %s", err.Error())
+	}
+
+	return cli.CommandList[0].Version, nil
 }

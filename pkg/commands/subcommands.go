@@ -39,6 +39,7 @@ type subcommands struct {
 	Requirements packages.LanguageRequirements `json:"requirements"`
 	Action       cli.ActionFunc                `json:"-"`
 	Pkg          string                        `json:"pkg"`
+	raw          []byte
 }
 
 func readPackage(dir string) (subcommands, error) {
@@ -69,6 +70,39 @@ func readPackage(dir string) (subcommands, error) {
 	return packageData, nil
 }
 
+func readPackageFromGithub(url, dir string) (subcommands, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		return subcommands{}, err
+	}
+	if response.StatusCode == http.StatusOK {
+		cliJSON, err := io.ReadAll(response.Body)
+		if err != nil {
+			return subcommands{}, err
+		}
+
+		var packageData subcommands
+
+		err = json.Unmarshal(cliJSON, &packageData)
+		if err != nil {
+			return subcommands{}, err
+		}
+
+		packageData.raw = cliJSON
+
+		for key := range packageData.Commands {
+			packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
+		}
+
+		packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
+
+		return packageData, nil
+
+	}
+
+	return subcommands{}, fmt.Errorf("Invalid response status while fetching cli.json: %d", response.StatusCode)
+}
+
 func getPackagePaths() []string {
 	akamaiCliPath, err := tools.GetAkamaiCliSrcPath()
 	if err == nil && akamaiCliPath != "" {
@@ -81,6 +115,16 @@ func getPackagePaths() []string {
 	return []string{}
 }
 
+func isBinary(cmdPackage subcommands) bool {
+	for _, cmd := range cmdPackage.Commands {
+		if len(cmd.Bin) == 0 {
+			return false
+		}
+	}
+	return true
+
+}
+
 func findPackageDir(dir string) string {
 	if stat, err := os.Stat(dir); err == nil && stat != nil && !stat.IsDir() {
 		dir = filepath.Dir(dir)
@@ -88,7 +132,7 @@ func findPackageDir(dir string) string {
 
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		if os.IsNotExist(err) {
-			if filepath.Dir(dir) == "" || filepath.Dir(dir) == "." {
+			if filepath.Dir(dir) == "" || filepath.Dir(dir) == "." || filepath.Dir(dir) == "/" {
 				return ""
 			}
 

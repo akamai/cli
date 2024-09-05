@@ -16,9 +16,11 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/akamai/cli/pkg/log"
@@ -26,6 +28,7 @@ import (
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/fatih/color"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -56,8 +59,30 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger log.Logger) error {
 	term := terminal.Get(ctx)
 
+	home, err := homedir.Dir()
+	if err != nil {
+		return fmt.Errorf("no home directory detected: %s", err)
+	}
+	home += string(filepath.Separator)
 	exec, _, err := findExec(ctx, langManager, cmd)
 	if err != nil {
+		if !errors.Is(err, packages.ErrNoExeFound) {
+			return fmt.Errorf("command \"%s\" not found. Try \"%s help\" : %s", cmd, tools.Self(), err)
+		}
+		// err = ErrNoExeFound - there is a directory but without any executables
+		paths := filepath.SplitList(getPackageBinPaths())
+		for i, path := range paths {
+
+			// trim home directory part of a path to exclude cases where command name could be a part of it
+			path = strings.TrimPrefix(path, home)
+			// if trimmed path (akamai-cli defined) contains name of command to uninstall, delete directory
+			if strings.Contains(path, cmd) {
+				if err = os.RemoveAll(paths[i]); err != nil {
+					return fmt.Errorf("could not remove directory %s: %s", paths[i], err)
+				}
+				return nil
+			}
+		}
 		return fmt.Errorf("command \"%s\" not found. Try \"%s help\"", cmd, tools.Self())
 	}
 

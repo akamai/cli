@@ -136,3 +136,55 @@ func copyFile(src, dst string) error {
 func mustCopyFile(t *testing.T, src, dst string) {
 	require.NoError(t, copyFile(src, dst))
 }
+
+func mustCopyDirectory(t *testing.T, src, dst string) {
+	require.NoError(t, copyDirectory(src, dst))
+}
+
+func copyDirectory(src, dst string) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		sourcePath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dst, entry.Name())
+
+		fileInfo, err := os.Stat(sourcePath)
+		if err != nil {
+			return err
+		}
+
+		if fileInfo.Mode().IsDir() {
+			perm := fileInfo.Mode().Perm()
+			if err := createIfNotExists(destPath, perm); err != nil {
+				return err
+			}
+			if err := copyDirectory(sourcePath, destPath); err != nil {
+				return err
+			}
+		} else {
+			if err := copyFile(sourcePath, dst); err != nil {
+				return err
+			}
+		}
+
+	}
+	return nil
+}
+
+func exists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func createIfNotExists(dir string, perm os.FileMode) error {
+	if exists(dir) {
+		return nil
+	}
+
+	err := os.MkdirAll(dir, perm)
+	return err
+}

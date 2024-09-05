@@ -6,7 +6,8 @@
     {
       "name": "echo-python",
       "aliases": ["e"],
-      "description": "echo command"
+      "description": "echo command",
+      "version": "1.0.0"
     }
   ]
 }
