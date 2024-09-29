@@ -130,6 +130,28 @@ To compile Akamai CLI from source:
 
 5. Move the `akamai` or `akamai.exe` binary so that it's available in your `$PATH`.
 
+### Contributing to Akamai's CLI
+
+**Prerequisite:** You must have `docker` installed.
+
+To ensure consistency in how this project builds, use this [Dockerfile](./Dockerfile). 
+
+1. Write your code, and include tests.
+
+1. Verify linting passes
+    ```sh
+    $ make dockerized target=lint
+    ```
+1. Verify your tests pass
+    ```sh
+    $ make dockerized target=test
+    ```
+1. Ensure that the project builds in its entirety.
+    ```sh
+    $ make dockerized target=all
+    ```
+1. Submit your PR
+
 ### API credentials
 
 Akamai-branded packages use a `.edgerc` file for standard EdgeGrid authentication. By default, CLI looks for credentials in your `$HOME` directory.
