@@ -7,22 +7,19 @@ M = $(shell echo ">")
 $(BIN):
 	@mkdir -p $@
 $(BIN)/%: | $(BIN) ; $(info $(M) Installing $(PACKAGE)...)
-	@tmp=$$(mktemp -d); \
-	   env GO111MODULE=off GOPATH=$$tmp GOBIN=$(BIN) $(GOCMD) get $(PACKAGE) \
-		|| ret=$$?; \
-	   rm -rf $$tmp ; exit $$ret
+	env GOBIN=$(BIN) $(GOCMD) install $(PACKAGE)
 
 GOIMPORTS = $(BIN)/goimports
-$(BIN)/goimports: PACKAGE=golang.org/x/tools/cmd/goimports
+$(BIN)/goimports: PACKAGE=golang.org/x/tools/cmd/goimports@v0.24.0
 
 GOCOV = $(BIN)/gocov
-$(BIN)/gocov: PACKAGE=github.com/axw/gocov/...
+$(BIN)/gocov: PACKAGE=github.com/axw/gocov/gocov@v1.1.0
 
 GOCOVXML = $(BIN)/gocov-xml
-$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml
+$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml@v1.1.0
 
 GOJUNITREPORT = $(BIN)/go-junit-report
-$(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report
+$(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report/v2@v2.1.0
 
 GOLANGCILINT = $(BIN)/golangci-lint
 GOLANGCI_LINT_VERSION = v1.55.2
