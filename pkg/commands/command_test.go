@@ -13,8 +13,8 @@ import (
 
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 	"github.com/urfave/cli/v2"
 )
 

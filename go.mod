@@ -16,7 +16,6 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.8.4
-	github.com/tj/assert v0.0.3
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/sys v0.18.0
 )
