@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## X.X.X (X X, X)
+
+### Enhancements
+
+* Migrated to go 1.22
+
 ## 1.6.0 (September 5, 2024)
 
 ### Enhancements

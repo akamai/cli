@@ -101,7 +101,7 @@ This command installs the CLI and persists the configuration and packages in `$H
 
 ### Compile from Source
 
-**Prerequisite:** Make sure you install Go 1.21 or later.
+**Prerequisite:** Make sure you install Go 1.22 or later.
 
 To compile Akamai CLI from source:
 
