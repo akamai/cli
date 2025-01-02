@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tj/assert"
 )
 
 const logPath = "./testlogs.txt"
