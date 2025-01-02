@@ -1,6 +1,6 @@
 # RELEASE NOTES
 
-## 1.6.1 (December 2, 2025)
+## 1.6.1 (January 2, 2025)
 
 * Fixed security vulnerability ([GH#198](https://github.com/akamai/cli/pull/198))
 
