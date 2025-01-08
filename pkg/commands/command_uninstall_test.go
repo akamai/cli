@@ -7,12 +7,12 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"

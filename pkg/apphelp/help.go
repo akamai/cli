@@ -9,7 +9,7 @@ import (
 	"github.com/akamai/cli/pkg/autocomplete"
 	"github.com/akamai/cli/pkg/tools"
 
-	"github.com/fatih/color"
+	"github.com/akamai/cli/pkg/color"
 	"github.com/urfave/cli/v2"
 )
 

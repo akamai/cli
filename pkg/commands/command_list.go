@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
@@ -43,7 +43,6 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 		}
 	}()
 	term := terminal.Get(c.Context)
-	bold := color.New(color.FgWhite, color.Bold)
 
 	commands := listInstalledCommands(c, nil, nil)
 
@@ -77,7 +76,7 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 				if _, ok := commands[command.Name]; ok {
 					continue
 				}
-				commandName := bold.Sprintf("  %s", command.Name)
+				commandName := color.BoldString("  %s", command.Name)
 				term.Printf(commandName)
 				packageName := fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name))
 				if _, err := term.Writeln(packageName); err != nil {
@@ -98,8 +97,6 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 }
 
 func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[string]bool) map[string]bool {
-	bold := color.New(color.FgWhite, color.Bold)
-
 	term := terminal.Get(c.Context)
 
 	commands := make(map[string]bool)
@@ -118,7 +115,7 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 			} else if _, ok := removed[command.Name]; ok {
 				term.Printf(color.RedString("  %s", command.Name))
 			} else {
-				term.Printf(bold.Sprintf("  %s", command.Name))
+				term.Printf(color.BoldString("  %s", command.Name))
 			}
 
 			if len(command.Aliases) > 0 {
@@ -132,7 +129,7 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 
 				term.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
-					term.Printf(bold.Sprintf(alias))
+					term.Printf(color.BoldString(alias))
 					if i < len(command.Aliases)-1 {
 						term.Printf(", ")
 					}

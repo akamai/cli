@@ -12,10 +12,10 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
-	"github.com/fatih/color"
 	"github.com/inconshreveable/go-update"
 	"github.com/urfave/cli/v2"
 )

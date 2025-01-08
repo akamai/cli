@@ -28,10 +28,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
@@ -141,14 +141,13 @@ func searchPackages(ctx context.Context, keywords []string, packageList *package
 
 	sort.Sort(sort.Reverse(sort.IntSlice(resultHits)))
 	sort.Strings(resultPkgs)
-	bold := color.New(color.FgWhite, color.Bold)
 
 	term.Printf(color.YellowString("Results Found:")+" %d\n\n", len(resultPkgs))
 
-	return printResult(resultHits, resultPkgs, results, term, bold)
+	return printResult(resultHits, resultPkgs, results, term)
 }
 
-func printResult(resultHits []int, resultPkgs []string, results map[int]map[string]packageListItem, term terminal.Terminal, bold *color.Color) error {
+func printResult(resultHits []int, resultPkgs []string, results map[int]map[string]packageListItem, term terminal.Terminal) error {
 	var installedVersion, availableVersion string
 	for _, hits := range resultHits {
 		for _, pkgName := range resultPkgs {
@@ -162,7 +161,7 @@ func printResult(resultHits []int, resultPkgs []string, results map[int]map[stri
 					} else if len(cmd.Aliases) > 1 {
 						aliases = fmt.Sprintf("(aliases: %s)", strings.Join(cmd.Aliases, ", "))
 					}
-					term.Printf(bold.Sprintf("  Command:")+" %s %s\n", cmd.Name, aliases)
+					term.Printf(color.BoldString("  Command:")+" %s %s\n", cmd.Name, aliases)
 
 					url := pkg.URL
 					var err error
@@ -170,15 +169,15 @@ func printResult(resultHits []int, resultPkgs []string, results map[int]map[stri
 					if err != nil {
 						return cli.Exit(color.RedString(err.Error()), 1)
 					}
-					term.Printf(bold.Sprintf("  Available Version:")+" %s\n", availableVersion)
+					term.Printf(color.BoldString("  Available Version:")+" %s\n", availableVersion)
 					installedVersion, err = getVersionFromSystem(pkg.Name)
 					if err != nil {
 						return cli.Exit(color.RedString(err.Error()), 1)
 					}
 					if installedVersion != "" {
-						term.Printf(bold.Sprintf("  Installed Version:")+" %s\n", installedVersion)
+						term.Printf(color.BoldString("  Installed Version:")+" %s\n", installedVersion)
 					}
-					term.Printf(bold.Sprintf("  Description:")+" %s\n\n", cmd.Description)
+					term.Printf(color.BoldString("  Description:")+" %s\n\n", cmd.Description)
 				}
 			}
 		}

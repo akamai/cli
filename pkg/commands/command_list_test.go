@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
@@ -23,23 +23,22 @@ func TestCmdListWithRemote(t *testing.T) {
 	}{
 		"list all commands": {
 			init: func(m *mocked) {
-				bold := color.New(color.FgWhite, color.Bold)
 				m.term.On("Writeln", []interface{}{color.YellowString("\nInstalled Commands:\n")}).Return(0, nil).Once()
 
 				// List command
-				m.term.On("Printf", bold.Sprintf("  list"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  list"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
-				m.term.On("Printf", bold.Sprintf("ls"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("ls"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
-				m.term.On("Printf", bold.Sprintf("show"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("show"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
 				m.term.On("Printf", "    Displays available commands\n", []interface{}(nil)).Return().Once()
 
 				// Help command
-				m.term.On("Printf", bold.Sprintf("  help"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  help"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
-				m.term.On("Printf", bold.Sprintf("h"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("h"), []interface{}(nil)).Return().Once()
 				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
 
@@ -47,35 +46,35 @@ func TestCmdListWithRemote(t *testing.T) {
 
 				// List --remote command
 				m.term.On("Writeln", []interface{}{color.YellowString("\nAvailable Commands:\n\n")}).Return(0, nil).Once()
-				m.term.On("Printf", bold.Sprint("  ClI-1"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  ClI-1"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("abc-1"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for match on title\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  cli-2"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  cli-2"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("cli-2"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for match on name\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  abc-3"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  abc-3"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("abc-3"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    CLI - test for match on description\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  abc-4"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  abc-4"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("abc-4"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    abc - no match\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  cli"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  cli"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("abc-5"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for match on command name\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  abc-6"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  abc-6"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("cli-no-cmd-match"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    title and name match, but no match on command\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  sample"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  sample"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("SAMPLE"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for single match\n", []interface{}(nil)).Return().Once()
 
-				m.term.On("Printf", bold.Sprint("  echo-uninstall"), []interface{}(nil)).Return().Once()
+				m.term.On("Printf", color.BoldString("  echo-uninstall"), []interface{}(nil)).Return().Once()
 				m.term.On("Writeln", []interface{}{fmt.Sprintf(" [package: %s]", color.BlueString("echo"))}).Return(0, nil).Once()
 				m.term.On("Printf", "    test for single match\n", []interface{}(nil)).Return().Once()
 

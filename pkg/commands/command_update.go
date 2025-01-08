@@ -24,12 +24,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/urfave/cli/v2"
 )

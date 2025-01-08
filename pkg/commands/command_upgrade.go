@@ -21,10 +21,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 

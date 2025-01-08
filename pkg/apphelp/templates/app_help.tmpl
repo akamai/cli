@@ -17,7 +17,7 @@
 {{yellow "Commands:"}}
 {{- range .VisibleCategories -}}
 {{if .Name}}
-{{.Name}}:{{end}}
+{{.Name}}{{end}}
 {{- range .VisibleCommands}}
 	{{green .Name}}
 	{{- if .Aliases}} ({{if eq (len .Aliases) 1}}alias:{{else}}aliases:{{end}}

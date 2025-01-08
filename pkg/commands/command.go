@@ -27,11 +27,11 @@ import (
 
 	"github.com/akamai/cli/pkg/apphelp"
 	"github.com/akamai/cli/pkg/autocomplete"
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 

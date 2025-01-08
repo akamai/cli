@@ -26,11 +26,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/log"
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
 )
 
 // CheckUpgradeVersion ...

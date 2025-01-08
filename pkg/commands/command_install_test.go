@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/akamai/cli/pkg/config"
 	"github.com/akamai/cli/pkg/git"
 	"github.com/akamai/cli/pkg/packages"
 	"github.com/akamai/cli/pkg/terminal"
-	"github.com/fatih/color"
 	git2 "github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

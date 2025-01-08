@@ -134,7 +134,7 @@ func TestPythonCmdSubcommand(t *testing.T) {
 		// Using the system python avoids the need of shipping a python
 		// interpreter together with the test data. This wouldn't be a
 		// good option because of different OSes and CPU architectures.
-		if pythonBin, err := exec.LookPath("python"); err != nil {
+		if pythonBin, err := exec.LookPath("python3"); err != nil {
 			// If python is not available, just skip the test
 			t.Skipf("We could not find any available Python binary, thus we skip this test. Details: \n%s", err.Error())
 		} else {
