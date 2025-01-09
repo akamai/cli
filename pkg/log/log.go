@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/akamai/cli/pkg/color"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/text"
 )
@@ -81,7 +82,7 @@ func WithCommand(ctx context.Context, command string) Logger {
 	return logger.WithField("command", command)
 }
 
-// WithCommandContext returns a context withe a logger and supplied with given 'command' field
+// WithCommandContext returns a context with a logger and supplied with given 'command' field
 func WithCommandContext(ctx context.Context, command string) context.Context {
 	logger := log.FromContext(ctx)
 	return log.NewContext(ctx, logger.WithField("command", command))
@@ -95,9 +96,17 @@ func NewHandler(w io.Writer, withColors bool) *Handler {
 	}
 }
 
+var colors = [...]func(format string, a ...interface{}) string{
+	log.DebugLevel: color.FaintString,
+	log.InfoLevel:  color.BlueString,
+	log.WarnLevel:  color.YellowString,
+	log.ErrorLevel: color.RedString,
+	log.FatalLevel: color.RedString,
+}
+
 // HandleLog works the same way as text.Handler from apex/log, but additionally disables coloring output when writing to a text file
 func (h *Handler) HandleLog(e *log.Entry) error {
-	color := text.Colors[e.Level]
+	color := colors[e.Level]
 	level := text.Strings[e.Level]
 	names := e.Fields.Names()
 
@@ -107,7 +116,7 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 	ts := time.Since(start) / time.Second
 
 	if h.withColors {
-		fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m[%04d] %-25s", color, level, ts, e.Message)
+		fmt.Fprintf(h.Writer, "%s[%04d] %-25s", color("%6s", level), ts, e.Message)
 	} else {
 		t := time.Now().Format(time.RFC3339)
 		fmt.Fprintf(h.Writer, "[%s] %s %-25s", t, level, e.Message)
@@ -115,7 +124,7 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 
 	for _, name := range names {
 		if h.withColors {
-			fmt.Fprintf(h.Writer, " \033[%dm%s\033[0m=%v", color, name, e.Fields.Get(name))
+			fmt.Fprintf(h.Writer, " %s=%v", color("%s", name), e.Fields.Get(name))
 		} else {
 			fmt.Fprintf(h.Writer, " %s=%v", name, e.Fields.Get(name))
 		}

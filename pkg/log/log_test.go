@@ -80,7 +80,7 @@ func TestWithCommand(t *testing.T) {
 		expected *regexp.Regexp
 	}{
 		"output to terminal": {
-			expected: regexp.MustCompile(` ERROR\[0m\[\d{4}] abc *\[.{3}command\[.{2}=test`),
+			expected: regexp.MustCompile(` ERROR\[\d{4}] abc *command=test`),
 		},
 		"output to file": {
 			logFile:  logPath,
