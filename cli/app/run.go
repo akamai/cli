@@ -75,7 +75,9 @@ func Run() int {
 	if err := firstRun(ctx); err != nil {
 		return 5
 	}
-	checkUpgrade(ctx)
+	if err := checkUpgrade(ctx); err != nil {
+		return 1
+	}
 
 	// check command collision
 	if err := findCollisions(cliApp.Commands, os.Args); err != nil {
@@ -145,11 +147,13 @@ func cleanupUpgrade() error {
 	return os.Remove(filepath.Join(filepath.Dir(os.Args[0]), oldExe))
 }
 
-func checkUpgrade(ctx context.Context) {
+func checkUpgrade(ctx context.Context) error {
 	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
-		return
+		return nil
 	}
+
 	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" && latestVersion != version.Version {
-		commands.UpgradeCli(ctx, latestVersion)
+		return commands.UpgradeCli(ctx, latestVersion)
 	}
+	return nil
 }

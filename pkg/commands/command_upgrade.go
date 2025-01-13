@@ -44,8 +44,7 @@ func cmdUpgrade(c *cli.Context) error {
 	if latestVersion != "" && latestVersion != version.Version {
 		term.Spinner().Stop(terminal.SpinnerStatusOK)
 		os.Args = []string{os.Args[0], "--version"}
-		UpgradeCli(c.Context, latestVersion)
-		return nil
+		return UpgradeCli(c.Context, latestVersion)
 	}
 	term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 	if latestVersion == version.Version {

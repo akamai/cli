@@ -33,8 +33,17 @@ import (
 	"github.com/akamai/cli/pkg/version"
 )
 
+type versionProvider interface {
+	getLatestReleaseVersion(ctx context.Context) string
+	getCurrentVersion() string
+}
+
 // CheckUpgradeVersion ...
 func CheckUpgradeVersion(ctx context.Context, force bool) string {
+	return checkUpgradeVersion(ctx, force, defaultVersionProvider{})
+}
+
+func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvider) string {
 	term := terminal.Get(ctx)
 	cfg := config.Get(ctx)
 	logger := log.FromContext(ctx)
@@ -78,29 +87,34 @@ func CheckUpgradeVersion(ctx context.Context, force bool) string {
 			return ""
 		}
 
-		latestVersion := getLatestReleaseVersion(ctx)
-		comp := version.Compare(version.Version, latestVersion)
+		latestVersion := provider.getLatestReleaseVersion(ctx)
+		currentVersion := provider.getCurrentVersion()
+		comp := version.Compare(currentVersion, latestVersion)
 		if comp == version.Smaller {
 			term.Spinner().Stop(terminal.SpinnerStatusOK)
 			_, _ = term.Writeln("You can find more details about the new version here: https://github.com/akamai/cli/releases")
 			if answer, err := term.Confirm(fmt.Sprintf(
 				"New update found: %s. You are running: %s. Upgrade now?",
 				color.BlueString(latestVersion),
-				color.BlueString(version.Version),
+				color.BlueString(currentVersion),
 			), true); err != nil || !answer {
 				return ""
 			}
 			return latestVersion
 		}
 		if comp == version.Equals {
-			return version.Version
+			// A non-empty version is returned but the caller checks whether latest == current
+			// and does not perform an upgrade in such case.
+			return currentVersion
 		}
 	}
 
 	return ""
 }
 
-func getLatestReleaseVersion(ctx context.Context) string {
+type defaultVersionProvider struct{}
+
+func (p defaultVersionProvider) getLatestReleaseVersion(ctx context.Context) string {
 	logger := log.FromContext(ctx)
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -129,4 +143,8 @@ func getLatestReleaseVersion(ctx context.Context) string {
 	latestVersion := filepath.Base(location)
 
 	return latestVersion
+}
+
+func (p defaultVersionProvider) getCurrentVersion() string {
+	return version.Version
 }
