@@ -31,10 +31,10 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 	defer func() {
 		if e == nil {
 			term.Spinner().OK()
-			logger.Debugf("UPGRADE FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("UPGRADE FINISH: %v", time.Since(start)))
 		} else {
 			term.Spinner().Fail()
-			logger.Errorf("UPGRADE ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("UPGRADE ERROR: %v", e.Error()))
 		}
 	}()
 

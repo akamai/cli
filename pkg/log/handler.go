@@ -7,21 +7,16 @@ import (
 	"io"
 	"log/slog"
 	"time"
-)
 
-const (
-	red    = 31
-	yellow = 33
-	blue   = 34
-	gray   = 37
+	"github.com/akamai/cli/pkg/color"
 )
 
 // Colors mapping.
-var colors = map[slog.Level]int{
-	slog.LevelDebug: gray,
-	slog.LevelInfo:  blue,
-	slog.LevelWarn:  yellow,
-	slog.LevelError: red,
+var colorFns = map[slog.Level]func(format string, a ...interface{}) string{
+	slog.LevelDebug: color.FaintString,
+	slog.LevelInfo:  color.BlueString,
+	slog.LevelWarn:  color.YellowString,
+	slog.LevelError: color.RedString,
 }
 
 var start = time.Now()
@@ -48,7 +43,7 @@ func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
 // Handle handles the Record
 // It will only be called when Enabled returns true
 func (h *Handler) Handle(_ context.Context, r slog.Record) error {
-	color := colors[r.Level]
+	colorFn := colorFns[r.Level]
 	buf := make([]byte, 0, 1024)
 
 	goas := normalizeGroupsAndAttributes(h.goas, r.NumAttrs())
@@ -57,23 +52,23 @@ func (h *Handler) Handle(_ context.Context, r slog.Record) error {
 			buf = fmt.Appendf(buf, "%s:\n", goa.group)
 		} else {
 			for _, a := range goa.attrs {
-				buf = h.appendAttr(buf, a, color)
+				buf = h.appendAttr(buf, a, colorFn)
 			}
 		}
 	}
 
 	r.Attrs(func(a slog.Attr) bool {
-		buf = h.appendAttr(buf, a, color)
+		buf = h.appendAttr(buf, a, colorFn)
 		return true
 	})
 
 	ts := time.Since(start) / time.Second
 
 	if h.coloredOutput {
-		fmt.Fprintf(h.writer, "\033[%dm%6s\033[0m[%04d] %-25s%s\n", color, r.Level, ts, r.Message, buf)
+		_, _ = fmt.Fprintf(h.writer, "%s[%04d] %-25s%s\n", colorFn("%6s", r.Level), ts, r.Message, buf)
 	} else {
 		t := time.Now().Format(timeFormat)
-		fmt.Fprintf(h.writer, "[%s] %s %-25s%s\n", t, r.Level, r.Message, buf)
+		_, _ = fmt.Fprintf(h.writer, "[%s] %s %-25s%s\n", t, r.Level, r.Message, buf)
 	}
 
 	return nil
@@ -115,7 +110,7 @@ func normalizeGroupsAndAttributes(groupOfAttrs []groupOrAttrs, numAttrs int) []g
 	return goas
 }
 
-func (h *Handler) appendAttr(buf []byte, a slog.Attr, color int) []byte {
+func (h *Handler) appendAttr(buf []byte, a slog.Attr, color func(format string, a ...interface{}) string) []byte {
 	a.Value = a.Value.Resolve()
 	if a.Equal(slog.Attr{}) {
 		return buf
@@ -127,9 +122,9 @@ func (h *Handler) appendAttr(buf []byte, a slog.Attr, color int) []byte {
 	if h.coloredOutput {
 		switch a.Value.Kind() {
 		case slog.KindTime:
-			buf = fmt.Appendf(buf, " \033[%dm%s\033[0m=%s", color, a.Key, a.Value.Time().Format(timeFormat))
+			buf = fmt.Appendf(buf, " %s=%s", color("%s", a.Key), a.Value.Time().Format(timeFormat))
 		default:
-			buf = fmt.Appendf(buf, " \033[%dm%s\033[0m=%v", color, a.Key, a.Value)
+			buf = fmt.Appendf(buf, " %s=%v", color("%s", a.Key), a.Value)
 		}
 	} else {
 		switch a.Value.Kind() {
