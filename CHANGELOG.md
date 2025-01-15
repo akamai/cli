@@ -6,6 +6,8 @@
 
 * Migrated to go 1.22
 
+* Updated vulnerable dependencies
+
 ### Fixes
 
 * Fixed problem with invisible output in light background by converting all colors to monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)) 
