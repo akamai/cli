@@ -33,6 +33,8 @@ import (
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/akamai/cli/pkg/version"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type (
@@ -289,7 +291,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 	cmdNameTitle := "akamai"
 	for _, cmdPart := range strings.Split(cmd, "-") {
 		cmdName += "-" + strings.ToLower(cmdPart)
-		cmdNameTitle += strings.Title(strings.ToLower(cmdPart))
+		cmdNameTitle += cases.Title(language.Und, cases.NoLower).String(strings.ToLower(cmdPart))
 	}
 
 	systemPath := os.Getenv("PATH")

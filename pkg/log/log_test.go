@@ -3,7 +3,6 @@ package log
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"log/slog"
 	"os"
 	"regexp"
@@ -64,7 +63,7 @@ func TestSetupContext(t *testing.T) {
 			}
 			logger.Error("test!")
 			if v, ok := test.envs["AKAMAI_CLI_LOG_PATH"]; ok {
-				res, err := ioutil.ReadFile(v)
+				res, err := os.ReadFile(v)
 				require.NoError(t, err)
 				assert.Contains(t, string(res), "test!")
 				return
@@ -98,7 +97,7 @@ func TestWithCommand(t *testing.T) {
 			logger := WithCommand(ctx, "test")
 			logger.Error("abc")
 			if test.logFile != "" {
-				res, err := ioutil.ReadFile(test.logFile)
+				res, err := os.ReadFile(test.logFile)
 				require.NoError(t, err)
 				assert.Regexp(t, test.expected, string(res))
 				return

@@ -36,7 +36,7 @@ func TestCmdUpdate(t *testing.T) {
 	}{
 		"update specific package": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -63,7 +63,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"update all packages": {
 			args: []string{},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -90,7 +90,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"command is up to date": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -119,7 +119,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error checking out master, continue normally": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -153,7 +153,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error installing package": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
@@ -186,7 +186,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error fetching commit by hash": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
@@ -209,7 +209,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error getting HEAD of repository after pull": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
@@ -230,7 +230,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error pulling repository": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
@@ -250,7 +250,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error getting HEAD of repository before pull": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				worktree := &gogit.Worktree{}
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
@@ -269,7 +269,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error getting worktree": {
 			args: []string{"echo"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(_ *testing.T, m *mocked) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
@@ -288,7 +288,7 @@ func TestCmdUpdate(t *testing.T) {
 			init: func(t *testing.T, m *mocked) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 
-				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -316,7 +316,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
 				require.NoError(t, err)
-				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					output := strings.ReplaceAll(string(configJSON), "1.0.0", "9.9.9")
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
@@ -339,7 +339,7 @@ func TestCmdUpdate(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
 					"https://github.com/akamai/cli-echo.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, filepath.Join(tempTestDir, "cli.json"), cliEchoRepo)
 					})
 				m.term.On("OK").Return().Once()
@@ -366,7 +366,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				configJSON, err := os.ReadFile(filepath.Join(cliEchoRepo, "cli.json"))
 				require.NoError(t, err)
-				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					output := strings.ReplaceAll(string(configJSON), "1.0.0", "9.9.9")
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
@@ -389,7 +389,7 @@ func TestCmdUpdate(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
 					"https://github.com/akamai/cli-echo.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, filepath.Join(tempTestDir, "cli.json"), cliEchoRepo)
 					})
 				m.term.On("OK").Return().Once()
@@ -411,7 +411,7 @@ func TestCmdUpdate(t *testing.T) {
 		},
 		"error finding executable": {
 			args:      []string{"not-found"},
-			init:      func(t *testing.T, m *mocked) {},
+			init:      func(_ *testing.T, _ *mocked) {},
 			withError: fmt.Sprintf("Command \"not-found\" not found. Try \"%s help\".\n", tools.Self()),
 		},
 	}

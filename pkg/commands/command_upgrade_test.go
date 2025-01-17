@@ -264,7 +264,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 	}{
 		"no upgrade if last upgrade check is set to ignore": {
 			forceCheck: false,
-			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
+			init: func(term *terminal.Mock, cfg *config.Mock, _ *mockVersionProvider) {
 				mockIsTTY(term, true)
 				cfg.On("GetValue", "cli", "last-upgrade-check").Return("ignore", true).Once()
 			},
@@ -332,14 +332,14 @@ func Test_checkUpgradeVersion(t *testing.T) {
 		},
 		"no upgrade if not TTY": {
 			forceCheck: false,
-			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
+			init: func(term *terminal.Mock, _ *config.Mock, _ *mockVersionProvider) {
 				mockIsTTY(term, false)
 			},
 			expectedResult: "",
 		},
 		"no upgrade if not TTY, even with force": {
 			forceCheck: true,
-			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
+			init: func(term *terminal.Mock, _ *config.Mock, _ *mockVersionProvider) {
 				mockIsTTY(term, false)
 			},
 			expectedResult: "",

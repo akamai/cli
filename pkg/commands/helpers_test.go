@@ -92,7 +92,7 @@ type mocked struct {
 }
 
 func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {
-	cli.OsExiter = func(rc int) {}
+	cli.OsExiter = func(_ int) {}
 	ctx := terminal.Context(context.Background(), m.term)
 	ctx = config.Context(ctx, m.cfg)
 	app := cli.NewApp()

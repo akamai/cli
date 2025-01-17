@@ -141,12 +141,12 @@ func (t *DefaultTerminal) Write(v []byte) (n int, err error) {
 
 // WriteErrorf writes a formatted message to the error stream
 func (t *DefaultTerminal) WriteErrorf(f string, args ...interface{}) {
-	fmt.Fprintf(t.err, f, args...)
+	_, _ = fmt.Fprintf(t.err, f, args...)
 }
 
 // WriteError write a message to the error stream
 func (t *DefaultTerminal) WriteError(v interface{}) {
-	fmt.Fprintf(t.err, fmt.Sprint(v))
+	_, _ = fmt.Fprintf(t.err, v.(string))
 }
 
 // Error return the error writer
@@ -154,7 +154,7 @@ func (t *DefaultTerminal) Error() io.Writer {
 	return t.err
 }
 
-// Prompt prompts the use for an open or multiple choice anwswer
+// Prompt prompts the use for an open or multiple choice answer
 func (t *DefaultTerminal) Prompt(p string, options ...string) (string, error) {
 	q := survey.Question{
 		Name:     "q",

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,19 +31,19 @@ func TestCmdInstall(t *testing.T) {
 	cliTestInvalidJSONRepo := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-test-invalid-json")
 	tests := map[string]struct {
 		args                 []string
-		init                 func(*testing.T, *mocked, *httptest.Server)
+		init                 func(*testing.T, *mocked)
 		teardown             func(*testing.T)
 		binaryResponseStatus int
 		withError            string
 	}{
 		"install from official akamai repository, build from source": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -57,7 +56,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, cliNoBinaryJSON, cliTestCmdRepo)
 					})
 				m.term.On("OK").Return().Once()
@@ -84,11 +83,11 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"install from official akamai repository, build from source + ldflags": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -101,7 +100,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, filepath.Join(".", "testdata", "repo_ldflags", "cli.json"), cliTestCmdRepo)
 					})
 				m.term.On("OK").Return().Once()
@@ -128,17 +127,16 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"install from official akamai repository, download binary": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliJSON)
 					output := strings.ReplaceAll(string(configJSON), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
 					require.NoError(t, err)
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
-
 				}))
 				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
@@ -161,7 +159,7 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"package directory already exists": {
 			args: []string{"installed"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(_ *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-installed.git"}).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
@@ -170,16 +168,16 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"no args passed": {
 			args:      []string{},
-			init:      func(t *testing.T, m *mocked, h *httptest.Server) {},
+			init:      func(_ *testing.T, _ *mocked) {},
 			withError: "You must specify a repository URL",
 		},
 		"git clone error": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -192,7 +190,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(git.ErrPackageNotAvailable).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, cliJSON, cliTestCmdRepo)
 					})
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -202,11 +200,11 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"error reading downloaded package, invalid cli.json in repository": {
 			args: []string{"test-invalid-json"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -219,7 +217,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-invalid-json"),
 					"https://github.com/akamai/cli-test-invalid-json.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, filepath.Join(".", "testdata", "repo_invalid_json", "cli.json"), cliTestInvalidJSONRepo)
 					})
 				m.term.On("Spinner").Return(m.term).Once()
@@ -239,11 +237,11 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"error reading downloaded package, invalid cli.json": {
 			args: []string{"test-invalid-json"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliInvalidJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -263,11 +261,11 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"install from official akamai repository, unknown lang": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					require.NoError(t, err)
 					_, err = w.Write(configJSON)
@@ -280,7 +278,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, cliNoBinaryJSON, cliTestCmdRepo)
 					})
 				m.term.On("Spinner").Return(m.term).Once()
@@ -304,17 +302,16 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"install from official akamai repository, error downloading binary, invalid URL, build from source": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliJSON)
 					output := strings.ReplaceAll(string(configJSON), "${REPOSITORY_URL}", "invalid url")
 					require.NoError(t, err)
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
-
 				}))
 				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
 
@@ -328,7 +325,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, cliJSON, cliTestCmdRepo)
 					})
 
@@ -352,17 +349,16 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"install from official akamai repository, error downloading binary, invalid response status, build from source": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliJSON)
 					output := strings.ReplaceAll(string(configJSON), "${REPOSITORY_URL}", "invalid url")
 					require.NoError(t, err)
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
-
 				}))
 				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
 
@@ -376,7 +372,7 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, cliJSON, cliTestCmdRepo)
 					})
 
@@ -400,11 +396,11 @@ func TestCmdInstall(t *testing.T) {
 		},
 		"error on install from source, binary does not exist": {
 			args: []string{"test-cmd"},
-			init: func(t *testing.T, m *mocked, h *httptest.Server) {
+			init: func(t *testing.T, m *mocked) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Attempting to fetch package configuration from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 
-				h = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					configJSON, err := os.ReadFile(cliNoBinaryJSON)
 					output := strings.ReplaceAll(string(configJSON), "${REPOSITORY_URL}", "invalid url")
 					require.NoError(t, err)
@@ -420,12 +416,12 @@ func TestCmdInstall(t *testing.T) {
 
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(nil).Once().
-					Run(func(args mock.Arguments) {
+					Run(func(_ mock.Arguments) {
 						mustCopyFile(t, filepath.Join(".", "testdata", "repo_no_binary", "cli.json"), cliTestCmdRepo)
-						input, err := ioutil.ReadFile(cliTestCmdJSON)
+						input, err := os.ReadFile(cliTestCmdJSON)
 						require.NoError(t, err)
 						output := strings.ReplaceAll(string(input), "${REPOSITORY_URL}", os.Getenv("REPOSITORY_URL"))
-						err = ioutil.WriteFile(cliTestCmdJSON, []byte(output), 0755)
+						err = os.WriteFile(cliTestCmdJSON, []byte(output), 0755)
 						require.NoError(t, err)
 					})
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
@@ -468,7 +464,6 @@ func TestCmdInstall(t *testing.T) {
 			require.NoError(t, os.Setenv("REPOSITORY_URL", srv.URL))
 			require.NoError(t, os.Setenv("AKAMAI_CLI_HOME", filepath.Join(".", "testdata")))
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
-			h := &httptest.Server{}
 
 			command := &cli.Command{
 				Name:   "install",
@@ -479,7 +474,7 @@ func TestCmdInstall(t *testing.T) {
 			args = append(args, "install")
 			args = append(args, test.args...)
 
-			test.init(t, m, h)
+			test.init(t, m)
 			if test.teardown != nil {
 				defer test.teardown(t)
 			}

@@ -117,7 +117,7 @@ type defaultVersionProvider struct{}
 func (p defaultVersionProvider) getLatestReleaseVersion(ctx context.Context) string {
 	logger := log.FromContext(ctx)
 	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}

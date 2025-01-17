@@ -49,9 +49,8 @@ func TestCmdUninstall(t *testing.T) {
 			},
 		},
 		"package does not contain cli.json": {
-			args: []string{"echo-uninstall"},
-			init: func(t *testing.T, m *mocked) {
-			},
+			args:      []string{"echo-uninstall"},
+			init:      func(_ *testing.T, _ *mocked) {},
 			withError: fmt.Sprintf(`command "echo-uninstall" not found. Try "%s help"`, tools.Self()),
 		},
 		"unable to uninstall": {

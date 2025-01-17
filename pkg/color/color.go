@@ -31,7 +31,6 @@ func HiYellowString(format string, a ...interface{}) string { return ItalicStrin
 var (
 	bold      = color.New(color.Bold)
 	italic    = color.New(color.Italic)
-	concealed = color.New(color.Concealed)
 	reverse   = color.New(color.ReverseVideo)
 	underline = color.New(color.Underline)
 	faint     = color.New(color.Faint)

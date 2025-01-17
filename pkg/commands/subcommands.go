@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -51,7 +50,7 @@ func readPackage(dir string) (subcommands, error) {
 	}
 
 	var packageData subcommands
-	cliJSON, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
+	cliJSON, err := os.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
 		return subcommands{}, err
 	}

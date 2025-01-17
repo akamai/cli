@@ -44,7 +44,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 		cmd := exec.Command(bin, "-v")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
 		logger.Debug(fmt.Sprintf("%s -v: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte(""))))
-		r := regexp.MustCompile("^v(.*?)\\s*$")
+		r := regexp.MustCompile(`^v(.*?)\s*$`)
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {

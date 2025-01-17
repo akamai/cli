@@ -60,7 +60,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Templating error: %s", err)), 1)
+		return cli.Exit(color.RedString("Templating error: %s", err), 1)
 	}
 
 	resp, err := http.Get(buf.String())
@@ -71,8 +71,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 		} else {
 			reason = err.Error()
 		}
-		return cli.Exit(color.RedString(fmt.Sprintf(
-			"Unable to download release: %s. Please try again.", reason)), 1)
+		return cli.Exit(color.RedString("Unable to download release: %s. Please try again.", reason), 1)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -89,8 +88,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 		} else {
 			reason = err.Error()
 		}
-		return cli.Exit(color.RedString(fmt.Sprintf(
-			"Unable to retrieve signature for verification: %s. Please try again.", reason)), 1)
+		return cli.Exit(color.RedString("Unable to retrieve signature for verification: %s. Please try again.", reason), 1)
 	}
 	defer func() {
 		if err := shaResp.Body.Close(); err != nil {
@@ -100,14 +98,12 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 
 	shaBody, err := io.ReadAll(shaResp.Body)
 	if err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf(
-			"Unable to retrieve signature for verification: %s. Please try again.", err.Error())), 1)
+		return cli.Exit(color.RedString("Unable to retrieve signature for verification: %s. Please try again.", err.Error()), 1)
 	}
 
 	shaSum, err := hex.DecodeString(strings.TrimSpace(string(shaBody)))
 	if err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf(
-			"Unable to retrieve signature for verification: %s. Please try again.", err.Error())), 1)
+		return cli.Exit(color.RedString("Unable to retrieve signature for verification: %s. Please try again.", err.Error()), 1)
 	}
 
 	selfPath := os.Args[0]
@@ -115,14 +111,12 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 	err = update.Apply(resp.Body, update.Options{TargetPath: selfPath, Checksum: shaSum})
 	if err != nil {
 		if rerr := update.RollbackError(err); rerr != nil {
-			return cli.Exit(color.RedString(fmt.Sprintf(
-				"Unable to install or rollback: %s. Please re-install.", rerr.Error())), 1)
+			return cli.Exit(color.RedString("Unable to install or rollback: %s. Please re-install.", rerr.Error()), 1)
 		}
 		if strings.HasPrefix(err.Error(), "Updated file has wrong checksum.") {
-			return cli.Exit(color.RedString(fmt.Sprintf(
-				"Checksums do not match: %s. Please try again.", err.Error())), 1)
+			return cli.Exit(color.RedString("Checksums do not match: %s. Please try again.", err.Error()), 1)
 		}
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to upgrade: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to upgrade: %s", err), 1)
 	}
 
 	os.Args[0] = selfPath

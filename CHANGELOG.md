@@ -7,13 +7,15 @@
 * Changed logger from `apex` to `slog`
   * Log output has not been changed
 
-* Migrated to go 1.22
+* Migrated to go `1.22`
 
 * Updated vulnerable dependencies
 
 ### Fixes
 
 * Fixed problem with invisible output in light background by converting all colors to monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)) 
+
+* Improved code by resolving issues reported by linter.
 
 ## 1.6.1 (January 2, 2025)
 

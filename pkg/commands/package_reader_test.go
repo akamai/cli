@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func TestPackageReader(t *testing.T) {
-	bytes, err := ioutil.ReadFile("testdata/test_packages/sample_packages.json")
+	bytes, err := os.ReadFile("testdata/test_packages/sample_packages.json")
 	require.NoError(t, err)
 
 	pr := newPackageReader(string(bytes))

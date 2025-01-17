@@ -31,6 +31,8 @@ import (
 	"github.com/akamai/cli/pkg/terminal"
 	"github.com/akamai/cli/pkg/tools"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -186,7 +188,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		logger.Error(strings.Title(err.Error()))
+		logger.Error(cases.Title(language.Und, cases.NoLower).String(err.Error()))
 		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()

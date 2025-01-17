@@ -170,7 +170,7 @@ func TestCmdSearch(t *testing.T) {
 		},
 		"no args passed": {
 			args:      []string{},
-			init:      func(m *mocked) {},
+			init:      func(_ *mocked) {},
 			withError: "You must specify one or more keywords",
 		},
 		"search and find single package - 404": {
@@ -182,7 +182,7 @@ func TestCmdSearch(t *testing.T) {
 				m.term.On("Printf", color.BoldString("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
 					Return().Once()
 
-				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					http.Error(w, "Not Found", http.StatusNotFound)
 
 				}))
@@ -201,7 +201,7 @@ func TestCmdSearch(t *testing.T) {
 				m.term.On("Printf", color.BoldString("  Command:")+" %s %s\n", []interface{}{"sample", ""}).
 					Return().Once()
 
-				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					mockResponse := CLI{
 						CommandList: []CommandObject{},
 					}
@@ -383,7 +383,7 @@ var packagesForTest = &packageList{
 }
 
 func mockedServer(name, version string, t *testing.T) *httptest.Server {
-	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		mockResponse := CLI{
 			CommandList: []CommandObject{
 				{

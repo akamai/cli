@@ -100,7 +100,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 	if repoDir == "" {
 		term.Spinner().Fail()
 		logger.Error("unable to uninstall, was it installed using \"akamai install\"?")
-		return fmt.Errorf("unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?")
+		return errors.New("unable to uninstall, was it installed using " + color.CyanString("\"akamai install\"") + "?")
 	}
 
 	if err := os.RemoveAll(repoDir); err != nil {
@@ -114,7 +114,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 		return err
 	}
 	if _, err := os.Stat(venvPath); err == nil || !os.IsNotExist(err) {
-		logger.Debug(fmt.Sprintf("Attempting to remove package virtualenv directory"))
+		logger.Debug("Attempting to remove package virtualenv directory")
 		if err := os.RemoveAll(venvPath); err != nil {
 			term.Spinner().Fail()
 			logger.Error(fmt.Sprintf("unable to remove virtualenv directory: %s", venvPath))

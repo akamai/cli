@@ -1,3 +1,4 @@
+// Package autocomplete provides functions for shell autocomplete
 package autocomplete
 
 import (
@@ -16,7 +17,7 @@ func Default(ctx *cli.Context) {
 		args = append(args, "--"+cli.BashCompletionFlag.Names()[0])
 
 		if err := ctx.App.RunContext(ctx.Context, args); err != nil {
-			fmt.Fprintln(ctx.App.ErrWriter, err.Error())
+			_, _ = fmt.Fprintln(ctx.App.ErrWriter, err.Error())
 		}
 		return
 	}
@@ -42,7 +43,7 @@ func Default(ctx *cli.Context) {
 			continue
 		}
 
-		fmt.Fprintln(ctx.App.Writer, command.Name)
+		_, _ = fmt.Fprintln(ctx.App.Writer, command.Name)
 	}
 
 	for _, flag := range flags {
@@ -63,9 +64,9 @@ func Default(ctx *cli.Context) {
 			switch len(name) {
 			case 0:
 			case 1:
-				fmt.Fprintln(ctx.App.Writer, "-"+name)
+				_, _ = fmt.Fprintln(ctx.App.Writer, "-"+name)
 			default:
-				fmt.Fprintln(ctx.App.Writer, "--"+name)
+				_, _ = fmt.Fprintln(ctx.App.Writer, "--"+name)
 			}
 		}
 	}

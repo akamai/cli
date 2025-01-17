@@ -93,7 +93,7 @@ func TestFail(t *testing.T) {
 	}
 	s.Start("spinner %s", "test")
 	s.Fail()
-	assert.Contains(t, s.spinner.FinalMSG, fmt.Sprintf("spinner test [FAIL]"))
+	assert.Contains(t, s.spinner.FinalMSG, "spinner test [FAIL]")
 }
 
 func TestSpinnerWrite(t *testing.T) {

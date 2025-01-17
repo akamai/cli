@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -184,11 +183,17 @@ func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 		var data []byte
 		upgradeFile := filepath.Join(cliPath, ".upgrade-check")
 		if _, err := os.Stat(upgradeFile); err == nil {
-			data, _ = ioutil.ReadFile(upgradeFile)
+			data, err = os.ReadFile(upgradeFile)
+			if err != nil {
+				return err
+			}
 		} else {
 			upgradeFile = filepath.Join(cliPath, ".update-check")
 			if _, err := os.Stat(upgradeFile); err == nil {
-				data, _ = ioutil.ReadFile(upgradeFile)
+				data, err = os.ReadFile(upgradeFile)
+				if err != nil {
+					return err
+				}
 			}
 		}
 

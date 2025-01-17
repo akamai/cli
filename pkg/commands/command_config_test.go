@@ -27,7 +27,7 @@ func TestCmdConfigSet(t *testing.T) {
 		},
 		"key format error": {
 			args:      []string{"cli", "testKey", "testValue"},
-			init:      func(m *config.Mock) {},
+			init:      func(_ *config.Mock) {},
 			withError: "Unable to set config value: section key has to be provided in <section>.<key> format",
 		},
 		"error on save": {
@@ -87,7 +87,7 @@ func TestCmdConfigGet(t *testing.T) {
 		},
 		"key format error": {
 			args:      []string{"cli"},
-			init:      func(m *mocked) {},
+			init:      func(_ *mocked) {},
 			withError: "Unable to get config value: section key has to be provided in <section>.<key> format",
 		},
 	}
@@ -139,7 +139,7 @@ func TestCmdConfigUnset(t *testing.T) {
 		},
 		"key format error": {
 			args:      []string{"cli", "testKey"},
-			init:      func(m *config.Mock) {},
+			init:      func(_ *config.Mock) {},
 			withError: "Unable to unset config value: section key has to be provided in <section>.<key> format",
 		},
 		"error on save": {
