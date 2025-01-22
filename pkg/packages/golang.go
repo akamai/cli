@@ -70,11 +70,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		return err
 	}
 	if err = installGolangModules(logger, l.commandExecutor, dir); err != nil {
-		logger.Info("go.sum not found, running glide package manager[WARN: Usage of Glide is DEPRECTED]")
-
-		if err = installGolangDepsGlide(logger, l.commandExecutor, dir); err != nil {
-			return err
-		}
+		return err
 	}
 
 	if len(commands) != len(ldFlags) {
@@ -109,31 +105,6 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		}
 	}
 
-	return nil
-}
-
-func installGolangDepsGlide(logger *slog.Logger, cmdExecutor executor, dir string) error {
-	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "glide.lock")); !ok {
-		return nil
-	}
-	logger.Info("glide.lock found, running glide package manager")
-	bin, err := cmdExecutor.LookPath("glide")
-	if err == nil {
-		cmd := exec.Command(bin, "install")
-		cmd.Dir = dir
-		_, err = cmdExecutor.ExecCommand(cmd)
-		if err != nil {
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
-				logger.Debug(fmt.Sprintf("Unable execute package manager (glide install): \n %s", exitErr.Stderr))
-			}
-			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "glide")
-		}
-	} else {
-		err = fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "glide")
-		logger.Debug(err.Error())
-		return err
-	}
 	return nil
 }
 
