@@ -1,48 +1,22 @@
 # RELEASE NOTES
 
-## X.X.X (X X, X)
+## 2.0.0 (Feb 3, 2025)
 
 ### Breaking changes
 
-* Removed the deprecated `force` flag for the `install` and `update` commands.
-
-* Removed the support for `glide` package manager.
-
-
-
-
-
-
+* Removed the deprecated `force` flag from the `install` and `update` commands.
+* Removed support for the `glide` package manager.
 
 ### Enhancements
 
 * Migrated to Go `1.22`.
-* Changed logger from `apex` to `slog`
-  * Log output has not been changed
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+* Changed the logger from `apex` to `slog`. The log output has not been changed.
 * Updated vulnerable dependencies.
 
 ### Fixes
 
-* Fixed a problem with invisible output in the light background by converting all colors to a monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)). 
-
+* Fixed a problem with invisible output in the light background by converting all colors to a monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)).
 * Improved code by resolving issues reported by linter.
-
-
-
 
 ## 1.6.1 (Jan 2, 2025)
 
@@ -58,7 +32,7 @@
 * Changed package installation order.
     * CLI will first check if new binaries are available. If the package has no binaries or no valid
       binaries can be found, it will build the package locally.
-    * The `--force` flag has been deprecated for both install and update.
+    * The `--force` flag has been deprecated for both the `install` and `update` commands.
 * Migrated to Go `1.21`.
 * Updated various dependencies.
 
@@ -172,7 +146,7 @@
 
 ### Fixes
 * Fixed the `PROXY` flag not working correctly in Go `1.16`.
-* Fixed an old executable not being removed after upgrading on windows.
+* Fixed an old executable not being removed after upgrading on Windows.
 
 ### Enhancements
 * The `upgrade` command can now be executed with the auto-upgrades disabled.
@@ -190,5 +164,5 @@
 * Added code improvements: unit test coverage improvement and project structure refactoring.
 * Removed the Glide build tool in favor of the Go modules.
 * Moved Dockerfile to the [akamai-docker](https://github.com/akamai/akamai-docker/) repository.
-* Logging: all `TRACE` log messages are now written in `DEBUG` level. Besides, all commands are traced in logs with `START`, `FINISH` or eventually `ERROR`.
+* Logging: all `TRACE` log messages are now written in the `DEBUG` level. Besides, all commands are traced in logs with `START`, `FINISH`, or `ERROR`.
 * Logging: added a new `AKAMAI_CLI_LOG_PATH` environment variable to redirect logs to a file.
