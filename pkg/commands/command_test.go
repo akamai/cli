@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"

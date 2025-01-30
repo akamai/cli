@@ -9,13 +9,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/commands"
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/app"
+	"github.com/akamai/cli/v2/pkg/commands"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
 )
 

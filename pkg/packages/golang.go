@@ -26,10 +26,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/akamai/cli/pkg/color"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
 )
 

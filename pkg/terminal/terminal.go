@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/akamai/cli/pkg/color"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 )

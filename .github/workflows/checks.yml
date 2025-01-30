@@ -1,7 +1,11 @@
 name: build
 on:
+  push:
+    branches:
+      - "*"
   pull_request:
     branches:
+      - v1
       - master
 jobs:
     test:

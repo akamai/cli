@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akamai/cli/pkg/apphelp"
-	"github.com/akamai/cli/pkg/autocomplete"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/apphelp"
+	"github.com/akamai/cli/v2/pkg/autocomplete"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 
 	"github.com/kardianos/osext"
 	"github.com/mitchellh/go-homedir"

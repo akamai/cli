@@ -24,9 +24,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/fatih/color"
 	"github.com/kardianos/osext"
 )

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/akamai/cli/pkg/color"
+	"github.com/akamai/cli/v2/pkg/color"
 )
 
 // Colors mapping.

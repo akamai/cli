@@ -13,10 +13,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/akamai/cli/pkg/color"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/inconshreveable/go-update"
 	"github.com/urfave/cli/v2"
 )

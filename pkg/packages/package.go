@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 )
 
 type (

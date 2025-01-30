@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/version"
 )
 
 func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error {

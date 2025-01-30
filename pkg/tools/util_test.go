@@ -17,7 +17,7 @@ package tools
 import (
 	"testing"
 
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/stretchr/testify/assert"
 )
 
