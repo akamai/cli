@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,9 +27,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/urfave/cli/v2"
 )
 
@@ -51,7 +50,7 @@ func readPackage(dir string) (subcommands, error) {
 	}
 
 	var packageData subcommands
-	cliJSON, err := ioutil.ReadFile(filepath.Join(dir, "cli.json"))
+	cliJSON, err := os.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
 		return subcommands{}, err
 	}
@@ -160,12 +159,12 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
-		logger.Debugf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error())
+		logger.Debug(fmt.Sprintf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error()))
 		return err
 	}
 
 	url := buf.String()
-	logger.Debugf("Fetching binary from %s", url)
+	logger.Debug(fmt.Sprintf("Fetching binary from %s", url))
 
 	binName := filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix)
 	bin, err := os.Create(binName)
@@ -174,7 +173,7 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	}
 	defer func() {
 		if err := bin.Close(); err != nil {
-			logger.Errorf("Error closing file: %s", err)
+			logger.Error(fmt.Sprintf("Error closing file: %s", err))
 		}
 	}()
 
@@ -188,7 +187,7 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			logger.Errorf("Error closing request body: %s", err)
+			logger.Error(fmt.Sprintf("Error closing request body: %s", err))
 		}
 	}()
 

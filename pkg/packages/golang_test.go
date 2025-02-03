@@ -89,7 +89,7 @@ func TestInstallGolang(t *testing.T) {
 				}).Return(nil, nil)
 			},
 		},
-		"default version using go modules, go modules runtime not found": {
+		"go modules runtime not found - return an error as glide support is removed": {
 			givenDir:      "testDir",
 			givenVer:      "*",
 			givenCommands: []string{"test1", "test2"},
@@ -97,24 +97,8 @@ func TestInstallGolang(t *testing.T) {
 			init: func(m *mocked) {
 				m.On("LookPath", "go").Return("/test/go", nil).Once()
 				m.On("LookPath", "go").Return("", fmt.Errorf("not found")).Once()
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
-				m.On("LookPath", "glide").Return("/test/glide", nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/glide",
-					Args: []string{"/test/glide", "install"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test1", "./test1"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test2", "./test2"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
 			},
+			withError: ErrRuntimeNotFound,
 		},
 		"default version using go modules, go mod execution error": {
 			givenDir:      "testDir",
@@ -130,97 +114,8 @@ func TestInstallGolang(t *testing.T) {
 					Args: []string{"/test/go", "mod", "tidy"},
 					Dir:  "testDir",
 				}).Return(nil, &exec.ExitError{})
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
-				m.On("LookPath", "glide").Return("/test/glide", nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/glide",
-					Args: []string{"/test/glide", "install"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test1", "./test1"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test2", "./test2"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-			},
-		},
-		"default version using glide": {
-			givenDir:      "testDir",
-			givenVer:      "*",
-			givenCommands: []string{"test"},
-			givenLdFlags:  []string{""},
-			init: func(m *mocked) {
-				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
-				m.On("LookPath", "glide").Return("/test/glide", nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/glide",
-					Args: []string{"/test/glide", "install"},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test", "."},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-			},
-		},
-		"default version, unable to find go.sum and glide.lock": {
-			givenDir:      "testDir",
-			givenVer:      "*",
-			givenCommands: []string{"test"},
-			givenLdFlags:  []string{""},
-			init: func(m *mocked) {
-				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(false, nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/go",
-					Args: []string{"/test/go", "build", "-o", "akamai-test", "."},
-					Dir:  "testDir",
-				}).Return(nil, nil)
-			},
-		},
-		"glide runtime not found": {
-			givenDir:      "testDir",
-			givenVer:      "*",
-			givenCommands: []string{"test"},
-			givenLdFlags:  []string{""},
-			init: func(m *mocked) {
-				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
-				m.On("LookPath", "glide").Return("/test/glide", nil)
-				m.On("ExecCommand", &exec.Cmd{
-					Path: "/test/glide",
-					Args: []string{"/test/glide", "install"},
-					Dir:  "testDir",
-				}).Return(nil, &exec.ExitError{})
 			},
 			withError: ErrPackageManagerExec,
-		},
-		"glide exec error": {
-			givenDir:      "testDir",
-			givenVer:      "*",
-			givenCommands: []string{"test"},
-			givenLdFlags:  []string{""},
-			init: func(m *mocked) {
-				m.On("LookPath", "go").Return("/test/go", nil)
-				m.On("FileExists", filepath.Join("testDir", "go.sum")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "Gopkg.lock")).Return(false, nil)
-				m.On("FileExists", filepath.Join("testDir", "glide.lock")).Return(true, nil)
-				m.On("LookPath", "glide").Return("", fmt.Errorf("not found"))
-			},
-			withError: ErrPackageManagerNotFound,
 		},
 		"selected version OK": {
 			givenDir:      "testDir",

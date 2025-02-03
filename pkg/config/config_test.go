@@ -2,12 +2,11 @@ package config
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/go-ini/ini"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,7 +59,7 @@ func TestNewIni(t *testing.T) {
 }
 
 func TestSave(t *testing.T) {
-	dir, err := ioutil.TempDir(".", t.Name())
+	dir, err := os.MkdirTemp(".", t.Name())
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(dir)
@@ -295,7 +294,7 @@ func TestExportConfigEnv(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			dir, err := ioutil.TempDir(".", "test")
+			dir, err := os.MkdirTemp(".", "test")
 			require.NoError(t, err)
 			defer func() {
 				_ = os.RemoveAll(dir)

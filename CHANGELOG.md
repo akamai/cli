@@ -1,62 +1,80 @@
 # RELEASE NOTES
 
-## 1.6.1 (January 2, 2025)
+## 2.0.0 (Feb 3, 2025)
 
-* Fixed security vulnerability ([GH#198](https://github.com/akamai/cli/pull/198))
+### Breaking changes
 
-## 1.6.0 (September 5, 2024)
+* Removed the deprecated `force` flag from the `install` and `update` commands.
+* Removed support for the `glide` package manager.
 
 ### Enhancements
 
-* Added support to show the `Installed Version` of commands during `search`
-* Updated the list of packages in `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192))
-* Removed versions of the packages from `package-list.json`
-* Changed package installation order
-    * Cli will first check if new binaries are available. If the package has no binaries or no valid
-      binaries can be found, it will build the package locally
-    * --force flag has been deprecated for both install and update
-* Migrated to go 1.21
-* Updated various dependencies
+* Migrated to Go `1.22`.
+* Changed the logger from `apex` to `slog`. The log output has not been changed.
+* Updated vulnerable dependencies.
 
 ### Fixes
 
-* Fixed uninstalling of a command when binaries are not found
+* Fixed a problem with invisible output in the light background by converting all colors to a monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)).
+* Improved code by resolving issues reported by linter.
 
-## 1.5.6 (January 22, 2024)
+## 1.6.1 (Jan 2, 2025)
 
-### Enhancements
+* Fixed security vulnerability ([GH#198](https://github.com/akamai/cli/pull/198)).
 
-* Migrated to go 1.20
-* Enhanced README with information about global flags
-* Various dependencies updated
-
-## 1.5.5 (June 21, 2023)
+## 1.6.0 (Sep 5, 2024)
 
 ### Enhancements
 
-* Improve the way spinner output is displayed. NOTE: the spinner will not print output if not attached to a tty.
-* Update the versions and descriptions of the dependencies in the `packages-list.json`
-
-## 1.5.4 (March 16, 2023)
-
-### Enhancements
-
-* Various dependencies updated
-* Update cli-diagnostics version to v1.1.0
-
-## 1.5.3 (January 26, 2023)
-
-### Enhancements
-
-* Improve code quality - resolve issues reported by golangci-lint
-* Migrate to go 1.18
+* Added support to show the `Installed Version` of commands during `search`.
+* Updated the list of packages in `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192)).
+* Removed versions of the packages from `package-list.json`.
+* Changed package installation order.
+    * CLI will first check if new binaries are available. If the package has no binaries or no valid
+      binaries can be found, it will build the package locally.
+    * The `--force` flag has been deprecated for both the `install` and `update` commands.
+* Migrated to Go `1.21`.
+* Updated various dependencies.
 
 ### Fixes
 
-* Fix `akamai search` command error ([GH#166](https://github.com/akamai/cli/issues/166))
-* Fix autocompletion for commands ([GH#165](https://github.com/akamai/cli/issues/165))
+* Fixed uninstalling of a command when binaries are not found.
 
-## 1.5.2 (July 28, 2022)
+## 1.5.6 (Jan 22, 2024)
+
+### Enhancements
+
+* Migrated to Go `1.20`.
+* Enhanced `README.md` with information about global flags.
+* Updated various dependencies.
+
+## 1.5.5 (Jun 21, 2023)
+
+### Enhancements
+
+* Improved the way the spinner's output is displayed. NOTE: The spinner will not print output if not attached to a tty.
+* Updated the versions and descriptions of the dependencies in the `packages-list.json`.
+
+## 1.5.4 (Mar 16, 2023)
+
+### Enhancements
+
+* Updated various dependencies.
+* Updated the `cli-diagnostics` version to `v1.1.0`.
+
+## 1.5.3 (Jan 26, 2023)
+
+### Enhancements
+
+* Improved code quality - resolved issues reported by `golangci-lint`.
+* Migrated to Go `1.18`.
+
+### Fixes
+
+* Fixed the `akamai search` command error ([GH#166](https://github.com/akamai/cli/issues/166)).
+* Fixed the autocompletion for commands ([GH#165](https://github.com/akamai/cli/issues/165)).
+
+## 1.5.2 (Jul 28, 2022)
 
 ### Enhancements
 
@@ -64,87 +82,87 @@
 
 ### Fixes
 
-* Fix `akamai update` command failures when the directory `~/.akamai-cli/src/cli-xyz` is in a git detached state.
+* Fixed the `akamai update` command failures when the directory `~/.akamai-cli/src/cli-xyz` is in a git detached state.
 * Show the correct version for CLI modules which version is set via ldflags.
-* Fix execution of Python submodules on Windows ([GH#159](https://github.com/akamai/cli/issues/159)).
+* Fixed execution of Python submodules on Windows ([GH#159](https://github.com/akamai/cli/issues/159)).
 * Fine print update warnings for homebrew installations.
-* Fix failing unit tests on Windows.
+* Fixed failing unit tests on Windows.
 
-## 1.5.1 (June 8, 2022)
+## 1.5.1 (Jun 8, 2022)
 
 ### Fixes
 
-* `update` command does not work for some packages, ie. `cli-terraform`.
+* The `update` command does not work for some packages, including `cli-terraform`.
 
 ## 1.5.0 (May 26, 2022)
 
 ### Enhancements
 
-* Support for new Apple M1(Darwin ARM64) build ([GH#127](https://github.com/akamai/cli/issues/127)). NOTE: not all CLI packages currently support Apple M1.
+* Added support for a new Apple M1(Darwin ARM64) build ([GH#127](https://github.com/akamai/cli/issues/127)). NOTE: Not all CLI packages currently support Apple M1.
 
 ## 1.4.2 (May 11, 2022)
 
 ### Fixes
 
-* Handle recent Python versions ([GH#148](https://github.com/akamai/cli/issues/148)).
-* Handle `yes` command input ([GH#136](https://github.com/akamai/cli/issues/136)).
-* Purge directories on unit test error.
+* Handled recent Python versions ([GH#148](https://github.com/akamai/cli/issues/148)).
+* Handled the `yes` command input ([GH#136](https://github.com/akamai/cli/issues/136)).
+* Purged directories on unit test error.
 
-## 1.4.1 (March 24, 2022)
-
-### Fixes
-
-* Refactor CLI error to debug statement when virtual environment deactivation fails.
-* Refactor CLI documentation by dropping usage examples of cli-property (decommissioned).
-
-## 1.4.0 (March 14, 2022)
-
-### Enhancements
-
-* [IMPORTANT] Refactor Python support, making use of virtual environments to isolate dependencies for each Python package.
-  * Refer to README.md for new system dependencies.
-
-## 1.3.1 (December 8, 2021)
-
-### Enhancements
-
-* Improved message for updating CLI version
-
-## 1.3.0 (October 6, 2021)
+## 1.4.1 (Mar 24, 2022)
 
 ### Fixes
 
-* Remove old binary in PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
-* Document CLI exit codes.
-* Review exit code when trying to install an already installed command ([#83](https://github.com/akamai/cli/issues/83)).
+* Refactored a CLI error to debug a statement when virtual environment deactivation fails.
+* Refactored CLI documentation by removing usage examples of `cli-property` (decommissioned).
+
+## 1.4.0 (Mar 14, 2022)
 
 ### Enhancements
-* Update list of installable CLI commands.
-* Document `--version` flag ([#94](https://github.com/akamai/cli/issues/94)).
-* Add alias with package prefix to all installed commands to work around possible command name collisions ([#60](https://github.com/akamai/cli/issues/60)).
-* Make .edgerc location configurable ([#81](https://github.com/akamai/cli/issues/81))
 
-## 1.2.1 (April 28, 2021)
+* [IMPORTANT] Refactored Python support, making use of virtual environments to isolate dependencies for each Python package.
+  * Refer to `README.md` for new system dependencies.
+
+## 1.3.1 (Dec 8, 2021)
+
+### Enhancements
+
+* Improved a message for updating a CLI version.
+
+## 1.3.0 (Oct 6, 2021)
 
 ### Fixes
-* Fixed `PROXY` flag not working correctly in go 1.16
-* Fixed old executable not being removed after upgrading on windows
+
+* Removed an old binary in a PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
+* Documented CLI exit codes.
+* Reviewed the exit code when trying to install an already installed command ([#83](https://github.com/akamai/cli/issues/83)).
 
 ### Enhancements
-* `upgrade` command can now be executed with auto upgrades disabled
-* Improved error messages on several commands
-* Added upgrade command error message for homebrew installation 
+* Updated a list of installable CLI commands.
+* Documented the `--version` flag ([#94](https://github.com/akamai/cli/issues/94)).
+* Added an alias with a package prefix to all installed commands to work around possible command name collisions ([#60](https://github.com/akamai/cli/issues/60)).
+* Made the `.edgerc` file location configurable ([#81](https://github.com/akamai/cli/issues/81)).
 
-## 1.2.0 (March 16, 2021)
+## 1.2.1 (Apr 28, 2021)
+
+### Fixes
+* Fixed the `PROXY` flag not working correctly in Go `1.16`.
+* Fixed an old executable not being removed after upgrading on Windows.
+
+### Enhancements
+* The `upgrade` command can now be executed with the auto-upgrades disabled.
+* Improved error messages for several commands.
+* Added an upgrade command error message for Homebrew installation. 
+
+## 1.2.0 (Mar 16, 2021)
 
 ### Fixes
 * Synced logs with terminal output in most commands.
 * Fixed module update issue ([#113](https://github.com/akamai/cli/issues/113)).
-* Fix panic when attempting to write on an empty writer ([#116](https://github.com/akamai/cli/issues/116))
+* Fixed panic when attempting to write on an empty writer ([#116](https://github.com/akamai/cli/issues/116)).
 
 ### Enhancements
-* Code improvements: unit test coverage improvement and project structure refactoring.
-* Glide build tool was dropped in favor of go modules.
-* Dockerfile has been moved to [akamai-docker](https://github.com/akamai/akamai-docker/) repository.
-* Logging: all `TRACE` log messages are now written in `DEBUG` level. Besides, all commands are traced in logs with `START`, `FINISH` or eventually `ERROR`.
-* Logging: new `AKAMAI_CLI_LOG_PATH` environment variable to redirect logs to a file.
+* Added code improvements: unit test coverage improvement and project structure refactoring.
+* Removed the Glide build tool in favor of the Go modules.
+* Moved Dockerfile to the [akamai-docker](https://github.com/akamai/akamai-docker/) repository.
+* Logging: all `TRACE` log messages are now written in the `DEBUG` level. Besides, all commands are traced in logs with `START`, `FINISH`, or `ERROR`.
+* Logging: added a new `AKAMAI_CLI_LOG_PATH` environment variable to redirect logs to a file.

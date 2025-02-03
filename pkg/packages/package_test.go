@@ -28,7 +28,7 @@ func TestLangManager_FindExec(t *testing.T) {
 				Go: "1.14.0",
 			},
 			givenCmdExec: "test",
-			init:         func(m *mocked) {},
+			init:         func(_ *mocked) {},
 			expected:     []string{"test"},
 		},
 		"js command, node found": {
@@ -113,13 +113,13 @@ func TestLangManager_FindExec(t *testing.T) {
 				Ruby: "1.2.3",
 			},
 			givenCmdExec: "test",
-			init:         func(m *mocked) {},
+			init:         func(_ *mocked) {},
 			expected:     []string{"test"},
 		},
 		"undefined language": {
 			givenReqs:    LanguageRequirements{},
 			givenCmdExec: "test",
-			init:         func(m *mocked) {},
+			init:         func(_ *mocked) {},
 			expected:     []string{"test"},
 		},
 	}

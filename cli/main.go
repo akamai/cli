@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/akamai/cli/cli/app"
+	"github.com/akamai/cli/v2/cli/app"
 )
 
 func main() {

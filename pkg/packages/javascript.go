@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/version"
 )
 
 func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) error {
@@ -38,13 +38,13 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 		}
 	}
 
-	logger.Debugf("Node.js binary found: %s", bin)
+	logger.Debug(fmt.Sprintf("Node.js binary found: %s", bin))
 
 	if ver != "" && ver != "*" {
 		cmd := exec.Command(bin, "-v")
 		output, _ := l.commandExecutor.ExecCommand(cmd)
-		logger.Debugf("%s -v: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte("")))
-		r := regexp.MustCompile("^v(.*?)\\s*$")
+		logger.Debug(fmt.Sprintf("%s -v: %s", bin, bytes.ReplaceAll(output, []byte("\n"), []byte(""))))
+		r := regexp.MustCompile(`^v(.*?)\s*$`)
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
@@ -52,7 +52,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 		}
 
 		if version.Compare(ver, matches[1]) == version.Greater {
-			logger.Debugf("Node.js Version found: %s", matches[1])
+			logger.Debug(fmt.Sprintf("Node.js Version found: %s", matches[1]))
 			return fmt.Errorf("%w: required: %s:%s, have: %s. Please upgrade your runtime", ErrRuntimeMinimumVersionRequired, "Node.js", ver, matches[1])
 		}
 	}
@@ -79,7 +79,7 @@ func installNodeDepsYarn(ctx context.Context, cmdExecutor executor, dir string) 
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable execute package manager (%s install): \n%s", bin, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "yarn")
 		}
@@ -106,7 +106,7 @@ func installNodeDepsNpm(ctx context.Context, cmdExecutor executor, dir string) e
 		if err != nil {
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				logger.Debugf("Unable execute package manager (%s install): \n%s", bin, exitErr.Stderr)
+				logger.Debug(fmt.Sprintf("Unable execute package manager (%s install): \n%s", bin, exitErr.Stderr))
 			}
 			return fmt.Errorf("%w: %s", ErrPackageManagerExec, "npm")
 		}

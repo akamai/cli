@@ -18,18 +18,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -41,17 +44,17 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 	return func(c *cli.Context) (e error) {
 		start := time.Now()
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger := log.FromContext(c.Context)
 		logger.Debug("INSTALL START")
 		defer func() {
 			if e == nil {
-				logger.Debugf("INSTALL FINISH: %v", time.Since(start))
+				logger.Debug(fmt.Sprintf("INSTALL FINISH: %v", time.Since(start)))
 			} else {
 				var exitErr cli.ExitCoder
 				if errors.As(e, &exitErr) && exitErr.ExitCode() == 0 {
-					logger.Warnf("INSTALL WARN: %v", e.Error())
+					logger.Warn(fmt.Sprintf("INSTALL WARN: %v", e.Error()))
 				} else {
-					logger.Errorf("INSTALL ERROR: %v", e.Error())
+					logger.Error(fmt.Sprintf("INSTALL ERROR: %v", e.Error()))
 				}
 			}
 		}()
@@ -185,7 +188,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		}
 		spin.Stop(terminal.SpinnerStatusFail)
 
-		logger.Error(strings.Title(err.Error()))
+		logger.Error(cases.Title(language.Und, cases.NoLower).String(err.Error()))
 		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()
@@ -201,7 +204,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	return subCmd, nil
 }
 
-func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, logger log.Logger) (bool, *subcommands) {
+func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, logger *slog.Logger) (bool, *subcommands) {
 	cmdPackage, err := readPackage(dir)
 
 	term := terminal.Get(ctx)
@@ -250,7 +253,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 
 }
 
-func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcommands, logger log.Logger) (bool, *subcommands) {
+func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcommands, logger *slog.Logger) (bool, *subcommands) {
 
 	term := terminal.Get(ctx)
 	spin := term.Spinner()

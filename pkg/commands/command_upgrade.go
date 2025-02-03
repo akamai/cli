@@ -18,23 +18,24 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"time"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
 )
 
 func cmdUpgrade(c *cli.Context) error {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("UPGRADE START")
 	defer func() {
-		logger.Debugf("UPGRADE FINISH: %v", time.Since(start))
+		logger.Debug(fmt.Sprintf("UPGRADE FINISH: %v", time.Since(start)))
 	}()
 	term := terminal.Get(c.Context)
 
@@ -44,8 +45,7 @@ func cmdUpgrade(c *cli.Context) error {
 	if latestVersion != "" && latestVersion != version.Version {
 		term.Spinner().Stop(terminal.SpinnerStatusOK)
 		os.Args = []string{os.Args[0], "--version"}
-		UpgradeCli(c.Context, latestVersion)
-		return nil
+		return UpgradeCli(c.Context, latestVersion)
 	}
 	term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 	if latestVersion == version.Version {

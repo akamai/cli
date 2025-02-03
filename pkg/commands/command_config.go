@@ -19,54 +19,54 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/urfave/cli/v2"
 )
 
 func cmdConfigSet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG SET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG SET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG SET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG SET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG SET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
 	}
 	value := strings.Join(c.Args().Tail(), " ")
 	cfg.SetValue(section, key, value)
 	if err := cfg.Save(c.Context); err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
 	}
 	return nil
 }
 
 func cmdConfigGet(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG GET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG GET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG GET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG GET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG GET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to get config value: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to get config value: %s", err), 1)
 	}
 	val, _ := cfg.GetValue(section, key)
 	if _, err := terminal.Get(c.Context).Writeln(val); err != nil {
@@ -78,39 +78,39 @@ func cmdConfigGet(c *cli.Context) (e error) {
 
 func cmdConfigUnset(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG UNSET START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG UNSET FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG UNSET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG UNSET ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG UNSET ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to unset config value: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to unset config value: %s", err), 1)
 	}
 
 	cfg.UnsetValue(section, key)
 	if err := cfg.Save(c.Context); err != nil {
-		return cli.Exit(color.RedString(fmt.Sprintf("Unable to set config value: %s", err)), 1)
+		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
 	}
 	return nil
 }
 
 func cmdConfigList(c *cli.Context) (e error) {
 	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.WithCommand(c.Context, c.Command.Name)
+	logger := log.FromContext(c.Context)
 	start := time.Now()
 	logger.Debug("CONFIG LIST START")
 	defer func() {
 		if e == nil {
-			logger.Debugf("CONFIG LIST FINISH: %v", time.Since(start))
+			logger.Debug(fmt.Sprintf("CONFIG LIST FINISH: %v", time.Since(start)))
 		} else {
-			logger.Errorf("CONFIG LIST ERROR: %v", e.Error())
+			logger.Error(fmt.Sprintf("CONFIG LIST ERROR: %v", e.Error()))
 		}
 	}()
 	cfg := config.Get(c.Context)

@@ -369,10 +369,9 @@ venv: error: the following arguments are required: ENV_DIR
 			},
 		},
 		"with empty required version, error version not supported": {
-			givenDir: srcDir,
-			veDir:    veDir,
-			init: func(m *mocked) {
-			},
+			givenDir:  srcDir,
+			veDir:     veDir,
+			init:      func(_ *mocked) {},
 			withError: ErrPythonVersionNotSupported,
 		},
 		"version not found": {

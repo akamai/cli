@@ -20,7 +20,7 @@ package commands
 import (
 	"context"
 
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
 	"github.com/urfave/cli/v2"
 )
 

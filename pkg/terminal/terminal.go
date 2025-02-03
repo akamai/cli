@@ -26,14 +26,14 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 )
 
 type (
-	// Terminal defines a terminal abstration interface
+	// Terminal defines a terminal abstraction interface
 	Terminal interface {
 		TermWriter
 		Prompter
@@ -141,12 +141,12 @@ func (t *DefaultTerminal) Write(v []byte) (n int, err error) {
 
 // WriteErrorf writes a formatted message to the error stream
 func (t *DefaultTerminal) WriteErrorf(f string, args ...interface{}) {
-	fmt.Fprintf(t.err, f, args...)
+	_, _ = fmt.Fprintf(t.err, f, args...)
 }
 
 // WriteError write a message to the error stream
 func (t *DefaultTerminal) WriteError(v interface{}) {
-	fmt.Fprintf(t.err, fmt.Sprint(v))
+	_, _ = fmt.Fprintf(t.err, v.(string))
 }
 
 // Error return the error writer
@@ -154,7 +154,7 @@ func (t *DefaultTerminal) Error() io.Writer {
 	return t.err
 }
 
-// Prompt prompts the use for an open or multiple choice anwswer
+// Prompt prompts the use for an open or multiple choice answer
 func (t *DefaultTerminal) Prompt(p string, options ...string) (string, error) {
 	q := survey.Question{
 		Name:     "q",
@@ -266,13 +266,11 @@ func ShowBanner(ctx context.Context) {
 	if _, err := term.Writeln(); err != nil {
 		term.WriteError(err.Error())
 	}
-	bg := color.New(color.BgMagenta)
-	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
-	fg := bg.Add(color.FgWhite)
+	term.Printf(color.ReverseVideoString(strings.Repeat(" ", 60) + "\n"))
 	title := "Welcome to Akamai CLI v" + version.Version
 	ws := strings.Repeat(" ", 16)
-	term.Printf(fg.Sprintf(ws + title + ws + "\n"))
-	term.Printf(bg.Sprintf(strings.Repeat(" ", 60) + "\n"))
+	term.Printf(color.ReverseVideoString(ws + title + ws + "\n"))
+	term.Printf(color.ReverseVideoString(strings.Repeat(" ", 60) + "\n"))
 	if _, err := term.Writeln(); err != nil {
 		term.WriteError(err.Error())
 	}

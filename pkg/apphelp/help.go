@@ -6,10 +6,10 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/akamai/cli/pkg/autocomplete"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/autocomplete"
+	"github.com/akamai/cli/v2/pkg/tools"
 
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
 	"github.com/urfave/cli/v2"
 )
 

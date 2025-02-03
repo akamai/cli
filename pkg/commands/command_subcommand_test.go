@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
@@ -22,7 +22,7 @@ func TestCmdSubcommand(t *testing.T) {
 	tests := map[string]struct {
 		command        string
 		args           []string
-		init           func(*testing.T, *mocked)
+		init           func(*mocked)
 		edgercLocation string
 		section        string
 		withError      string
@@ -30,7 +30,7 @@ func TestCmdSubcommand(t *testing.T) {
 		"run installed akamai echo command as binary": {
 			command: "echo",
 			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
@@ -39,7 +39,7 @@ func TestCmdSubcommand(t *testing.T) {
 		"run installed akamai echo command as binary with edgerc location": {
 			command: "echo",
 			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
@@ -50,7 +50,7 @@ func TestCmdSubcommand(t *testing.T) {
 			args:           []string{"abc"},
 			edgercLocation: "some/location",
 			section:        "some_section",
-			init: func(t *testing.T, m *mocked) {
+			init: func(m *mocked) {
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEBin).Return([]string{akamaiEBin}, nil)
@@ -59,7 +59,7 @@ func TestCmdSubcommand(t *testing.T) {
 		"run installed akamai echo command as .cmd file": {
 			command: "echo-cmd",
 			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(m *mocked) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
 					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
@@ -69,7 +69,7 @@ func TestCmdSubcommand(t *testing.T) {
 		"run installed python akamai echo command": {
 			command: "echo-cmd",
 			args:    []string{"abc"},
-			init: func(t *testing.T, m *mocked) {
+			init: func(m *mocked) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
 					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
@@ -79,7 +79,7 @@ func TestCmdSubcommand(t *testing.T) {
 		"executable not found": {
 			command:   "invalid",
 			args:      []string{"abc"},
-			init:      func(t *testing.T, m *mocked) {},
+			init:      func(_ *mocked) {},
 			withError: `Executable "invalid" not found`,
 		},
 	}
@@ -103,7 +103,7 @@ func TestCmdSubcommand(t *testing.T) {
 			args = append(args, test.command)
 			args = append(args, test.args...)
 
-			test.init(t, m)
+			test.init(m)
 			err := app.RunContext(ctx, args)
 
 			m.cfg.AssertExpectations(t)
@@ -134,7 +134,7 @@ func TestPythonCmdSubcommand(t *testing.T) {
 		// Using the system python avoids the need of shipping a python
 		// interpreter together with the test data. This wouldn't be a
 		// good option because of different OSes and CPU architectures.
-		if pythonBin, err := exec.LookPath("python"); err != nil {
+		if pythonBin, err := exec.LookPath("python3"); err != nil {
 			// If python is not available, just skip the test
 			t.Skipf("We could not find any available Python binary, thus we skip this test. Details: \n%s", err.Error())
 		} else {

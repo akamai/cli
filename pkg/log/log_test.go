@@ -3,12 +3,11 @@ package log
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"log/slog"
 	"os"
 	"regexp"
 	"testing"
 
-	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,28 +17,28 @@ const logPath = "./testlogs.txt"
 func TestSetupContext(t *testing.T) {
 	tests := map[string]struct {
 		envs          map[string]string
-		expectedLevel log.Level
+		expectedLevel slog.Level
 		withError     *regexp.Regexp
 	}{
 		"no envs passed, defaults are used": {
-			expectedLevel: log.ErrorLevel,
+			expectedLevel: slog.LevelError,
 		},
 		"debug level set": {
 			envs:          map[string]string{"AKAMAI_LOG": "DEBUG"},
-			expectedLevel: log.DebugLevel,
+			expectedLevel: slog.LevelDebug,
 		},
 		"debug level set, write logs to a file": {
 			envs:          map[string]string{"AKAMAI_LOG": "DEBUG", "AKAMAI_CLI_LOG_PATH": logPath},
-			expectedLevel: log.DebugLevel,
+			expectedLevel: slog.LevelDebug,
 		},
 		"invalid path passed": {
 			envs:          map[string]string{"AKAMAI_CLI_LOG_PATH": ".", "AKAMAI_LOG": "INFO"},
-			expectedLevel: log.InfoLevel,
+			expectedLevel: slog.LevelInfo,
 			withError:     regexp.MustCompile(`ERROR.*Invalid value of AKAMAI_CLI_LOG_PATH`),
 		},
 		"invalid log level passed, output to terminal": {
 			envs:          map[string]string{"AKAMAI_LOG": "abc"},
-			expectedLevel: log.ErrorLevel,
+			expectedLevel: slog.LevelError,
 			withError:     regexp.MustCompile(`ERROR.*Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
 		},
 	}
@@ -56,15 +55,15 @@ func TestSetupContext(t *testing.T) {
 			}()
 			var buf bytes.Buffer
 			ctx := SetupContext(context.Background(), &buf)
-			logger := log.FromContext(ctx).(*log.Logger)
-			assert.Equal(t, test.expectedLevel, logger.Level)
+			logger := FromContext(ctx)
+			assert.True(t, logger.Enabled(ctx, test.expectedLevel))
 			if test.withError != nil {
 				assert.Regexp(t, test.withError, buf.String())
 				return
 			}
 			logger.Error("test!")
 			if v, ok := test.envs["AKAMAI_CLI_LOG_PATH"]; ok {
-				res, err := ioutil.ReadFile(v)
+				res, err := os.ReadFile(v)
 				require.NoError(t, err)
 				assert.Contains(t, string(res), "test!")
 				return
@@ -80,7 +79,7 @@ func TestWithCommand(t *testing.T) {
 		expected *regexp.Regexp
 	}{
 		"output to terminal": {
-			expected: regexp.MustCompile(` ERROR\[0m\[\d{4}] abc *\[.{3}command\[.{2}=test`),
+			expected: regexp.MustCompile(` ERROR\[\d{4}] abc *command=test`),
 		},
 		"output to file": {
 			logFile:  logPath,
@@ -98,7 +97,7 @@ func TestWithCommand(t *testing.T) {
 			logger := WithCommand(ctx, "test")
 			logger.Error("abc")
 			if test.logFile != "" {
-				res, err := ioutil.ReadFile(test.logFile)
+				res, err := os.ReadFile(test.logFile)
 				require.NoError(t, err)
 				assert.Regexp(t, test.expected, string(res))
 				return

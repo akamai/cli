@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
@@ -162,7 +162,7 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
 				Subcommands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
@@ -220,7 +220,7 @@ Global Flags:
 				Description: "test command",
 				Category:    "",
 				ArgsUsage:   "<usage>",
-				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
 				Subcommands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
@@ -278,7 +278,7 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
 				Subcommands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
@@ -326,7 +326,7 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(ctx *cli.Context) error { fmt.Println("oops!"); return nil },
+				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
 				Subcommands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",

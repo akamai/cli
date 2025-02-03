@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akamai/cli/v2/pkg/color"
 	spnr "github.com/briandowns/spinner"
-	"github.com/fatih/color"
 )
 
 type (

@@ -21,18 +21,18 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/urfave/cli/v2"
 )
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.WithCommand(c.Context, c.Command.Name)
+		logger := log.FromContext(c.Context)
 		term := terminal.Get(c.Context)
 
 		commandName := strings.ToLower(c.Command.Name)
@@ -78,7 +78,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 			if err == nil {
 				answer, err := term.Confirm("Would you like to reinstall it", true)
-				logger.Debugf("Would you like to reinstall it? %v", answer)
+				logger.Debug(fmt.Sprintf("Would you like to reinstall it? %v", answer))
 				if err != nil {
 					return err
 				}

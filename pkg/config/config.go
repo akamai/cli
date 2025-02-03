@@ -17,15 +17,14 @@ package config
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/go-ini/ini"
 )
 
@@ -184,11 +183,17 @@ func migrateConfig(ctx context.Context, cfg *IniConfig) error {
 		var data []byte
 		upgradeFile := filepath.Join(cliPath, ".upgrade-check")
 		if _, err := os.Stat(upgradeFile); err == nil {
-			data, _ = ioutil.ReadFile(upgradeFile)
+			data, err = os.ReadFile(upgradeFile)
+			if err != nil {
+				return err
+			}
 		} else {
 			upgradeFile = filepath.Join(cliPath, ".update-check")
 			if _, err := os.Stat(upgradeFile); err == nil {
-				data, _ = ioutil.ReadFile(upgradeFile)
+				data, err = os.ReadFile(upgradeFile)
+				if err != nil {
+					return err
+				}
 			}
 		}
 

@@ -7,12 +7,12 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
@@ -49,9 +49,8 @@ func TestCmdUninstall(t *testing.T) {
 			},
 		},
 		"package does not contain cli.json": {
-			args: []string{"echo-uninstall"},
-			init: func(t *testing.T, m *mocked) {
-			},
+			args:      []string{"echo-uninstall"},
+			init:      func(_ *testing.T, _ *mocked) {},
 			withError: fmt.Sprintf(`command "echo-uninstall" not found. Try "%s help"`, tools.Self()),
 		},
 		"unable to uninstall": {

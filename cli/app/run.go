@@ -9,13 +9,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/akamai/cli/pkg/app"
-	"github.com/akamai/cli/pkg/commands"
-	"github.com/akamai/cli/pkg/config"
-	"github.com/akamai/cli/pkg/log"
-	"github.com/akamai/cli/pkg/terminal"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
+	"github.com/akamai/cli/v2/pkg/app"
+	"github.com/akamai/cli/v2/pkg/commands"
+	"github.com/akamai/cli/v2/pkg/config"
+	"github.com/akamai/cli/v2/pkg/log"
+	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
 )
 
@@ -27,7 +27,7 @@ func Run() int {
 
 	var pathErr *os.PathError
 	if err := cleanupUpgrade(); err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
-		logger.Debugf("Unable to remove old executable: %s", err.Error())
+		logger.Debug(fmt.Sprintf("Unable to remove old executable: %s", err.Error()))
 	}
 
 	if err := os.Setenv("AKAMAI_CLI", "1"); err != nil {
@@ -75,7 +75,9 @@ func Run() int {
 	if err := firstRun(ctx); err != nil {
 		return 5
 	}
-	checkUpgrade(ctx)
+	if err := checkUpgrade(ctx); err != nil {
+		return 1
+	}
 
 	// check command collision
 	if err := findCollisions(cliApp.Commands, os.Args); err != nil {
@@ -145,11 +147,13 @@ func cleanupUpgrade() error {
 	return os.Remove(filepath.Join(filepath.Dir(os.Args[0]), oldExe))
 }
 
-func checkUpgrade(ctx context.Context) {
+func checkUpgrade(ctx context.Context) error {
 	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
-		return
+		return nil
 	}
+
 	if latestVersion := commands.CheckUpgradeVersion(ctx, false); latestVersion != "" && latestVersion != version.Version {
-		commands.UpgradeCli(ctx, latestVersion)
+		return commands.UpgradeCli(ctx, latestVersion)
 	}
+	return nil
 }

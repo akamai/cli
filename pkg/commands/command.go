@@ -25,14 +25,16 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/akamai/cli/pkg/apphelp"
-	"github.com/akamai/cli/pkg/autocomplete"
-	"github.com/akamai/cli/pkg/git"
-	"github.com/akamai/cli/pkg/packages"
-	"github.com/akamai/cli/pkg/tools"
-	"github.com/akamai/cli/pkg/version"
-	"github.com/fatih/color"
+	"github.com/akamai/cli/v2/pkg/apphelp"
+	"github.com/akamai/cli/v2/pkg/autocomplete"
+	"github.com/akamai/cli/v2/pkg/color"
+	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/tools"
+	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type (
@@ -168,7 +170,7 @@ func createBuiltinCommands() []*cli.Command {
 		{
 			Name:        "config",
 			ArgsUsage:   "<action> <setting> [value]",
-			Description: "Manage configuration",
+			Description: "Manages configuration.",
 			Subcommands: []*cli.Command{
 				{
 					Name:      "get",
@@ -199,30 +201,24 @@ func createBuiltinCommands() []*cli.Command {
 			Name:        "install",
 			Aliases:     []string{"get"},
 			ArgsUsage:   "<package name or repository URL>...",
-			Description: "Fetch and install packages from a Git repository",
+			Description: "Fetches and installs packages from a Git repository.",
 			Action:      cmdInstall(gitRepo, langManager),
 			UsageText: fmt.Sprintf("Examples:\n\n   %v\n,  %v\n   %v\n   %v",
 				"akamai install property purge",
 				"akamai install akamai/cli-property",
 				"akamai install git@github.com:akamai/cli-property.git",
 				"akamai install https://github.com/akamai/cli-property.git"),
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "force",
-					Usage: "[deprecated] Force binary installation if available when source installation fails",
-				},
-			},
 			HideHelp:     true,
 			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:        "list",
-			Description: "By default, displays installed commands. Optionally, can display package commands from Git repositories",
+			Description: "By default, displays installed commands. Optionally, can display package commands from Git repositories.",
 			Action:      cmdList,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "remote",
-					Usage: "Display all available packages",
+					Usage: "Displays all available packages.",
 				},
 			},
 			HideHelp:           true,
@@ -232,7 +228,7 @@ func createBuiltinCommands() []*cli.Command {
 		{
 			Name:         "search",
 			ArgsUsage:    "<keyword>...",
-			Description:  "Search for packages in the official Akamai CLI package repository",
+			Description:  "Searches for packages in the official Akamai CLI package repository.",
 			Action:       cmdSearch,
 			UsageText:    "Examples:\n\n   akamai search property",
 			HideHelp:     true,
@@ -241,28 +237,22 @@ func createBuiltinCommands() []*cli.Command {
 		{
 			Name:         "uninstall",
 			ArgsUsage:    "<command>...",
-			Description:  "Uninstall package containing <command>",
+			Description:  "Uninstalls a package containing a given <command>.",
 			Action:       cmdUninstall(langManager),
 			HideHelp:     true,
 			BashComplete: autocomplete.Default,
 		},
 		{
-			Name:        "update",
-			ArgsUsage:   "[<command>...]",
-			Description: "Update one or more commands. If no command is specified, all commands are updated",
-			Action:      cmdUpdate(gitRepo, langManager),
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "force",
-					Usage: "[deprecated] Force binary installation if available when source installation fails",
-				},
-			},
+			Name:         "update",
+			ArgsUsage:    "[<command>...]",
+			Description:  "Updates one or more commands. If no command is specified, all commands are updated.",
+			Action:       cmdUpdate(gitRepo, langManager),
 			HideHelp:     true,
 			BashComplete: autocomplete.Default,
 		},
 		{
 			Name:         "upgrade",
-			Description:  "Upgrade Akamai CLI to the latest version",
+			Description:  "Upgrades the Akamai CLI to the latest version.",
 			Action:       cmdUpgrade,
 			BashComplete: autocomplete.Default,
 		},
@@ -289,7 +279,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 	cmdNameTitle := "akamai"
 	for _, cmdPart := range strings.Split(cmd, "-") {
 		cmdName += "-" + strings.ToLower(cmdPart)
-		cmdNameTitle += strings.Title(strings.ToLower(cmdPart))
+		cmdNameTitle += cases.Title(language.Und, cases.NoLower).String(strings.ToLower(cmdPart))
 	}
 
 	systemPath := os.Getenv("PATH")
