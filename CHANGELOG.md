@@ -1,5 +1,45 @@
 # RELEASE NOTES
 
+## X.X.X (X X, X)
+
+### Breaking changes
+
+
+
+
+
+
+
+
+
+
+
+### Enhancements
+
+* Migrated to Go `1.23.6` and adopted a semver-compliant Go directive.
+
+
+
+
+
+
+
+
+
+
+
+### Fixes
+
+
+
+
+
+
+
+
+
+
+
 ## 2.0.0 (Feb 3, 2025)
 
 ### Breaking changes
