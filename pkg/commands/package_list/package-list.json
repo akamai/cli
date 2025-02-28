@@ -227,7 +227,7 @@
       "url": "https://github.com/akamai/cli-terraform",
       "issues": "https://github.com/akamai/cli-terraform/issues",
       "commands": [{"name":"terraform","description":"Administer and Manage Akamai Terraform configurations","bin":"https://github.com/akamai/cli-terraform/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}","auto-complete":true,"ldflags": "-X 'github.com/akamai/cli-terraform/cli.Version=%s'"}],
-      "requirements": {"go":"1.22.0"}
+      "requirements": {"go":"1.23.6"}
     },
     {
       "title": "Test Center",
