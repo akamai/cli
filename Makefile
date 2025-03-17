@@ -1,3 +1,9 @@
+GOIMPORTS_VERSION = v0.24.0
+GO_JUNIT_REPORT_VERSION = v2.1.0
+GOCOV_VERSION = v1.1.0
+GOCOVXML_VERSION = v1.1.0
+GOLANGCI_LINT_VERSION = v1.63.4
+
 BIN = $(CURDIR)/bin
 GOCMD = go
 GOTEST = $(GOCMD) test
@@ -10,19 +16,18 @@ $(BIN)/%: | $(BIN) ; $(info $(M) Installing $(PACKAGE)...)
 	env GOBIN=$(BIN) $(GOCMD) install $(PACKAGE)
 
 GOIMPORTS = $(BIN)/goimports
-$(BIN)/goimports: PACKAGE=golang.org/x/tools/cmd/goimports@v0.24.0
+$(BIN)/goimports: PACKAGE=golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION)
 
 GOCOV = $(BIN)/gocov
-$(BIN)/gocov: PACKAGE=github.com/axw/gocov/gocov@v1.1.0
+$(BIN)/gocov: PACKAGE=github.com/axw/gocov/gocov@$(GOCOV_VERSION)
 
 GOCOVXML = $(BIN)/gocov-xml
-$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml@v1.1.0
+$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml@$(GOCOVXML_VERSION)
 
 GOJUNITREPORT = $(BIN)/go-junit-report
-$(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report/v2@v2.1.0
+$(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report/v2@$(GO_JUNIT_REPORT_VERSION)
 
 GOLANGCILINT = $(BIN)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.63.4
 $(BIN)/golangci-lint: ; $(info $(M) Installing golangci-lint...)
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN) $(GOLANGCI_LINT_VERSION)
 
