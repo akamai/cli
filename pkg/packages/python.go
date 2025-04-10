@@ -43,16 +43,17 @@ var (
 
 func (l *langManager) installPython(ctx context.Context, venvPath, srcPath, requiredPy string) error {
 	logger := log.FromContext(ctx)
+	logger.Debug("Starting Python installation")
 
 	pythonBin, pipBin, err := l.validatePythonDeps(ctx, logger, requiredPy, filepath.Base(srcPath))
 	if err != nil {
-		logger.Error(fmt.Sprintf("%v", err))
-		return err
+		logger.Error(fmt.Sprintf("Dependency validation failed: %v", err))
+		return fmt.Errorf("unable to validate python dependency: %v", err)
 	}
 
 	if err = l.setup(ctx, venvPath, srcPath, pythonBin, pipBin, requiredPy, false); err != nil {
-		logger.Error(fmt.Sprintf("%v", err))
-		return err
+		logger.Error(fmt.Sprintf("Setup failed: %v", err))
+		return fmt.Errorf("unable to setup python virutalenv for the given module: %v", err)
 	}
 
 	return nil
@@ -60,11 +61,12 @@ func (l *langManager) installPython(ctx context.Context, venvPath, srcPath, requ
 
 // setup does the python virtualenv set up for the given module. It may return an error.
 func (l *langManager) setup(ctx context.Context, pkgVenvPath, srcPath, python3Bin, pipBin, requiredPy string, passthru bool) error {
+	logger := log.FromContext(ctx)
+	logger.Debug("Setting up Python environment")
+
 	switch version.Compare(requiredPy, "3.0.0") {
 	case version.Greater, version.Equals:
 		// Python 3.x required: build virtual environment
-		logger := log.FromContext(ctx)
-
 		defer func() {
 			if !passthru {
 				l.deactivateVirtualEnvironment(ctx, pkgVenvPath, requiredPy)
@@ -74,11 +76,12 @@ func (l *langManager) setup(ctx context.Context, pkgVenvPath, srcPath, python3Bi
 
 		veExists, err := l.commandExecutor.FileExists(pkgVenvPath)
 		if err != nil {
+			logger.Error(fmt.Sprintf("Failed to check package virtualenv existence: %v", err))
 			return err
 		}
 
 		if !passthru || !veExists {
-			logger.Debug(fmt.Sprintf("the virtual environment %s does not exist yet - installing dependencies", pkgVenvPath))
+			logger.Debug(fmt.Sprintf("The virtual environment %s does not exist yet - installing dependencies", pkgVenvPath))
 
 			// upgrade pip and setuptools
 			if err := l.upgradePipAndSetuptools(ctx, python3Bin); err != nil {
@@ -99,6 +102,7 @@ func (l *langManager) setup(ctx context.Context, pkgVenvPath, srcPath, python3Bi
 		// install packages from requirements.txt
 		vePy, err := l.getVePython(pkgVenvPath)
 		if err != nil {
+			logger.Error(fmt.Sprintf("Failed to get virtualenv python executable: %v", err))
 			return err
 		}
 		if err := l.installVeRequirements(ctx, srcPath, pkgVenvPath, vePy); err != nil {
@@ -128,13 +132,15 @@ func (l *langManager) installVeRequirements(ctx context.Context, srcPath, vePath
 
 	requirementsPath := filepath.Join(srcPath, "requirements.txt")
 	if ok, _ := l.commandExecutor.FileExists(requirementsPath); !ok {
+		logger.Error("requirements.txt not found")
 		return ErrRequirementsTxtNotFound
 	}
 	logger.Info("requirements.txt found, running pip package manager")
 
 	shell, err := l.GetShell(l.GetOS())
 	if err != nil {
-		return err
+		logger.Error("cannot determine OS shell")
+		return fmt.Errorf("unable to determine OS shell: %v", err)
 	}
 	if shell == "" {
 		// windows
@@ -148,6 +154,8 @@ func (l *langManager) installVeRequirements(ctx context.Context, srcPath, vePath
 			logger.Error("failed to run pip install --upgrade --ignore-installed -r requirements.txt")
 			return fmt.Errorf("%w: %s", ErrRequirementsInstall, string(output))
 		}
+		logger.Debug("Python virtualenv requirements successfully installed")
+
 		return nil
 	}
 
@@ -159,6 +167,8 @@ func (l *langManager) installVeRequirements(ctx context.Context, srcPath, vePath
 		logger.Error(string(output))
 		return fmt.Errorf("%w: %v", ErrRequirementsInstall, string(output))
 	}
+
+	logger.Debug("Python virtualenv requirements successfully installed")
 
 	return nil
 }
@@ -191,6 +201,7 @@ func (l *langManager) validatePythonDeps(ctx context.Context, logger *slog.Logge
 
 		pipBin, err := findPipBin(ctx, l.commandExecutor, requiredPy)
 		if err != nil {
+			logger.Error("Pip not found for python 2.x module. Please verify your setup")
 			return pythonBin, "", err
 		}
 		return pythonBin, pipBin, nil
@@ -265,7 +276,7 @@ func (l *langManager) activateVirtualEnvironment(ctx context.Context, pkgVenvPat
 	interpreter, err := l.GetShell(oS)
 	if err != nil {
 		logger.Error("cannot determine OS shell")
-		return err
+		return fmt.Errorf("unable to determine OS shell: %v", err)
 	}
 	cmd := &exec.Cmd{}
 	if oS == "windows" {
@@ -286,7 +297,6 @@ func (l *langManager) activateVirtualEnvironment(ctx context.Context, pkgVenvPat
 }
 
 func (l *langManager) deactivateVirtualEnvironment(ctx context.Context, dir, pyVersion string) {
-
 	compare := version.Compare(pyVersion, "3.0.0")
 	if compare == version.Equals || compare == version.Greater {
 		logger := log.FromContext(ctx)
@@ -313,11 +323,15 @@ func (l *langManager) deactivateVirtualEnvironment(ctx context.Context, dir, pyV
 
 func (l *langManager) resolveBinVersion(bin, cmdReq, arg string, logger *slog.Logger) error {
 	cmd := exec.Command(bin, arg)
+	logger.Debug("Resolving python version")
+
 	output, err := l.commandExecutor.ExecCommand(cmd, true)
 	if err != nil {
-		return err
+		logger.Error(fmt.Sprintf("Failed to execute %s command: %v", cmd.Path, err))
+		return fmt.Errorf("command %s execution failed: %v", cmd.Path, err)
 	}
 	logger.Debug(fmt.Sprintf("%s %s: %s", bin, arg, bytes.ReplaceAll(output, []byte("\n"), []byte(""))))
+
 	matches := pythonVersionRegex.FindStringSubmatch(string(output))
 	if len(matches) < 2 {
 		return fmt.Errorf("%w: %s: %s", ErrRuntimeNoVersionFound, "python", cmd)
@@ -338,6 +352,7 @@ func (l *langManager) resolveBinVersion(bin, cmdReq, arg string, logger *slog.Lo
 	case version.Equals:
 		return nil
 	}
+
 	return ErrPythonVersionNotSupported
 }
 
@@ -364,6 +379,7 @@ func (l *langManager) upgradePipAndSetuptools(ctx context.Context, python3Bin st
 		logger.Error(fmt.Sprintf("%v: %s", ErrPipSetuptoolsUpgrade, string(output)))
 		return fmt.Errorf("%w: %s", ErrPipSetuptoolsUpgrade, string(output))
 	}
+	logger.Debug("pip & setuptools successfully installed/upgraded")
 
 	return nil
 }
@@ -382,6 +398,7 @@ func (l *langManager) createVirtualEnvironment(ctx context.Context, python3Bin s
 		logger.Debug(fmt.Sprintf("%s directory created", venvPath))
 	} else {
 		if err != nil {
+			logger.Error(fmt.Sprintf("Failed to check package virtualenv existence: %v", err))
 			return err
 		}
 	}
@@ -399,6 +416,7 @@ func (l *langManager) createVirtualEnvironment(ctx context.Context, python3Bin s
 
 func findPythonBin(ctx context.Context, cmdExecutor executor, ver, name string) (string, error) {
 	logger := log.FromContext(ctx)
+	logger.Debug("Looking for python binaries")
 
 	var err error
 	var bin string
@@ -470,11 +488,13 @@ func installPythonDepsPip(ctx context.Context, cmdExecutor executor, bin, dir st
 	logger := log.FromContext(ctx)
 
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "requirements.txt")); !ok {
+		logger.Debug("requirements.txt not found")
 		return nil
 	}
 	logger.Info("requirements.txt found, running pip package manager")
 
 	if err := os.Setenv("PYTHONUSERBASE", dir); err != nil {
+		logger.Error(fmt.Sprintf("Failed to set environment for the key %s in %s: %v", "PYTHONUSERBASE", dir, err))
 		return err
 	}
 	args := []string{bin, "install", "--user", "--ignore-installed", "-r", filepath.Join(dir, "requirements.txt")}
@@ -487,6 +507,8 @@ func installPythonDepsPip(ctx context.Context, cmdExecutor executor, bin, dir st
 		}
 		return fmt.Errorf("%w: %s. Please verify pip system dependencies (setuptools, python3-dev, gcc, libffi-dev, openssl-dev)", ErrPackageManagerExec, "pip")
 	}
+	logger.Debug(fmt.Sprintf("Python dependencies successfully installed using pip: %s", strings.Join(args, " ")))
+
 	return nil
 }
 

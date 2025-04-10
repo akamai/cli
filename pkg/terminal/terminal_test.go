@@ -108,7 +108,23 @@ func TestWriteError(t *testing.T) {
 	data, err := io.ReadAll(out)
 	require.NoError(t, err)
 
-	assert.Equal(t, t.Name(), string(data))
+	assert.Equal(t, t.Name()+"\n", string(data))
+
+	// Error message with "\n"
+	err = out.Truncate(0)
+	require.NoError(t, err)
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+
+	term.WriteError("test error\n")
+
+	_, err = out.Seek(0, 0)
+	require.NoError(t, err)
+
+	data, err = io.ReadAll(out)
+	require.NoError(t, err)
+
+	assert.Equal(t, "test error\n", string(data))
 }
 
 func TestWriteErrorf(t *testing.T) {

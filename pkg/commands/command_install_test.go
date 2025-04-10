@@ -14,6 +14,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/git"
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
+	"github.com/akamai/cli/v2/pkg/tools"
 	git2 "github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -61,7 +62,7 @@ func TestCmdInstall(t *testing.T) {
 					})
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(nil).Once()
@@ -69,13 +70,31 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				// list all packages
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
-				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(11)
-				m.term.On("Printf", mock.Anything, []interface{}{"aliases"}).Return().Twice()
-				m.term.On("Printf", mock.Anything, []interface{}{"alias"}).Return().Once()
-				m.term.On("Printf", mock.Anything, []interface{}{"commands.test help [command]"}).Return().Once()
-				m.term.On("Printf", mock.Anything, mock.Anything).Return().Twice()
-				m.term.On("Printf", mock.Anything).Return().Twice()
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
@@ -105,7 +124,7 @@ func TestCmdInstall(t *testing.T) {
 					})
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{"-X 'github.com/akamai/cli-test-command/cli.Version=1.0.0'"}).Return(nil).Once()
@@ -113,13 +132,31 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				// list all packages
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
-				m.term.On("Printf", mock.Anything, []interface{}(nil)).Return().Times(11)
-				m.term.On("Printf", mock.Anything, []interface{}{"aliases"}).Return().Twice()
-				m.term.On("Printf", mock.Anything, []interface{}{"alias"}).Return().Once()
-				m.term.On("Printf", mock.Anything, []interface{}{"commands.test help [command]"}).Return().Once()
-				m.term.On("Printf", mock.Anything, mock.Anything).Return().Twice()
-				m.term.On("Printf", mock.Anything).Return().Twice()
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
@@ -148,9 +185,31 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			binaryResponseStatus: http.StatusOK,
 			teardown: func(t *testing.T) {
@@ -194,7 +253,8 @@ func TestCmdInstall(t *testing.T) {
 						mustCopyFile(t, cliJSON, cliTestCmdRepo)
 					})
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.gitRepo.On("Clone", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(git2.ErrRepositoryAlreadyExists)
+				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
+					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(git2.ErrRepositoryAlreadyExists)
 			},
 			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
@@ -223,12 +283,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-
-				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("WriteError", "unable to unmarshal package: invalid character 'i' looking for beginning of value").Return(0, nil).Once()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestInvalidJSONRepo))
@@ -252,7 +309,7 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("WriteError", "unable to unmarshal package: invalid character 'i' looking for beginning of value").Return(0, nil).Once()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestInvalidJSONRepo))
@@ -284,17 +341,41 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(packages.ErrUnknownLang).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("WarnOK").Return().Once()
+				m.term.On("Writeln", []interface{}{"Package installed successfully, however package type is unknown, and may or may not function correctly."}).Return(0, nil).Once()
 
 				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
@@ -331,16 +412,40 @@ func TestCmdInstall(t *testing.T) {
 
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
+				m.term.On("Writeln", []interface{}{"Unable to download binary: Get \"invalid%20url/akamai/cli-test-command/releases/download/1.0.0/akamai-app-1-cmd-1\": unsupported protocol scheme \"\""}).Return(0, nil).Once()
 
 				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			binaryResponseStatus: http.StatusOK,
 			teardown: func(t *testing.T) {
@@ -378,16 +483,40 @@ func TestCmdInstall(t *testing.T) {
 
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
+				m.term.On("Writeln", []interface{}{"Unable to download binary: Get \"invalid%20url/akamai/cli-test-command/releases/download/1.0.0/akamai-app-1-cmd-1\": unsupported protocol scheme \"\""}).Return(0, nil).Once()
 
 				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
+				m.term.On("Writeln", []interface{}{"\nInstalled Commands:\n"}).Return(0, nil).Once()
+				// first command
+				m.term.On("Printf", "  app-1-cmd-1", []interface{}(nil)).Return().Once()
+				// aliases for first command
+				m.term.On("Printf", " (%s: ", []interface{}{"aliases"}).Return().Once()
+				m.term.On("Printf", "ac1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "apcmd1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ", ", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", "test-cmd/app-1-cmd-1", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// first command description
+				m.term.On("Printf", "    First command from app 1\n", []interface{}(nil)).Return().Once()
+				// second command
+				m.term.On("Printf", "  help", []interface{}(nil)).Return().Once()
+				// alias for second command
+				m.term.On("Printf", " (%s: ", []interface{}{"alias"}).Return().Once()
+				m.term.On("Printf", "h", []interface{}(nil)).Return().Once()
+				m.term.On("Printf", ")", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				// third command
+				m.term.On("Printf", "  install", []interface{}(nil)).Return().Once()
+				m.term.On("Writeln", []interface{}(nil)).Return(0, nil).Once()
+				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			binaryResponseStatus: http.StatusNotFound,
 			teardown: func(t *testing.T) {
@@ -431,17 +560,13 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"app-1-cmd-1"}, []string{""}).Return(fmt.Errorf("oops")).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn).Return().Once()
 				m.term.On("WriteError", "oops").Return(0, nil).Once()
-
-				// list all packages
-				m.term.On("Printf", mock.AnythingOfType("string"), mock.Anything).Return()
-				m.term.On("Writeln", mock.Anything).Return(0, nil)
 			},
 			teardown: func(t *testing.T) {
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))

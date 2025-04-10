@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/akamai/cli/v2/pkg/config"
 	"github.com/akamai/cli/v2/pkg/terminal"
@@ -25,7 +26,7 @@ func mockIsTTY(term *terminal.Mock, isTTY bool) {
 
 func mockGetAndUpdateLastUpgradeCheck(cfg *config.Mock, lastUpgradeCheckValue string) {
 	cfg.On("GetValue", "cli", "last-upgrade-check").Return(lastUpgradeCheckValue, true).Once()
-	cfg.On("SetValue", "cli", "last-upgrade-check", mock.AnythingOfType("string")).Return().Once()
+	cfg.On("SetValue", "cli", "last-upgrade-check", time.Now().Format(time.RFC3339)).Return().Once()
 	cfg.On("Save").Return(nil).Once()
 }
 
@@ -251,8 +252,10 @@ func (m *mockVersionProvider) getCurrentVersion() string {
 	return args.String(0)
 }
 
-func (m *mockVersionProvider) mockVersions(latestVersion, currentVersion string) {
-	m.On("getLatestReleaseVersion", mock.Anything).Return(latestVersion).Once()
+func (m *mockVersionProvider) mockVersions(term *terminal.Mock, cfg *config.Mock, latestVersion, currentVersion string) {
+	ctx := terminal.Context(context.Background(), term)
+	ctx = config.Context(ctx, cfg)
+	m.On("getLatestReleaseVersion", ctx).Return(latestVersion).Once()
 	m.On("getCurrentVersion").Return(currentVersion).Once()
 }
 
@@ -275,7 +278,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "never")
-				vp.mockVersions("2.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "2.0.0", "1.2.3")
 				mockStopSpinner(term)
 				mockConfirmUpgrade(term, "2.0.0", "1.2.3", true)
 			},
@@ -286,7 +289,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "never")
-				vp.mockVersions("2.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "2.0.0", "1.2.3")
 				mockStopSpinner(term)
 				mockConfirmUpgrade(term, "2.0.0", "1.2.3", false)
 			},
@@ -297,7 +300,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "never")
-				vp.mockVersions("2.0.0", "2.0.0")
+				vp.mockVersions(term, cfg, "2.0.0", "2.0.0")
 			},
 			expectedResult: "2.0.0",
 		},
@@ -306,7 +309,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "never")
-				vp.mockVersions("1.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "1.0.0", "1.2.3")
 			},
 			expectedResult: "",
 		},
@@ -315,7 +318,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "never")
-				vp.mockVersions("1.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "1.0.0", "1.2.3")
 			},
 			expectedResult: "",
 		},
@@ -324,7 +327,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "2024-12-31T11:55:26+01:00")
-				vp.mockVersions("2.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "2.0.0", "1.2.3")
 				mockStopSpinner(term)
 				mockConfirmUpgrade(term, "2.0.0", "1.2.3", true)
 			},
@@ -349,7 +352,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "ignore")
-				vp.mockVersions("2.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "2.0.0", "1.2.3")
 				mockStopSpinner(term)
 				mockConfirmUpgrade(term, "2.0.0", "1.2.3", true)
 			},
@@ -360,7 +363,7 @@ func Test_checkUpgradeVersion(t *testing.T) {
 			init: func(term *terminal.Mock, cfg *config.Mock, vp *mockVersionProvider) {
 				mockIsTTY(term, true)
 				mockGetAndUpdateLastUpgradeCheck(cfg, "2099-01-27T11:55:26+01:00")
-				vp.mockVersions("2.0.0", "1.2.3")
+				vp.mockVersions(term, cfg, "2.0.0", "1.2.3")
 				mockStopSpinner(term)
 				mockConfirmUpgrade(term, "2.0.0", "1.2.3", true)
 			},

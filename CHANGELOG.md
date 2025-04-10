@@ -24,6 +24,11 @@
 
 
 
+* Increased number of log messages.
+
+
+
+
 
 
 

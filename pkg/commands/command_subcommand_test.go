@@ -31,18 +31,30 @@ func TestCmdSubcommand(t *testing.T) {
 			command: "echo",
 			args:    []string{"abc"},
 			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running echo command...", []interface{}(nil)).Return().Once()
+
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"run installed akamai echo command as binary with edgerc location": {
 			command: "echo",
 			args:    []string{"abc"},
 			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running echo command...", []interface{}(nil)).Return().Once()
+
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEchoBin).Return([]string{akamaiEchoBin}, nil)
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"run installed akamai echo command as binary with alias": {
@@ -51,35 +63,58 @@ func TestCmdSubcommand(t *testing.T) {
 			edgercLocation: "some/location",
 			section:        "some_section",
 			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running e command...", []interface{}(nil)).Return().Once()
+
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, akamaiEBin).Return([]string{akamaiEBin}, nil)
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"run installed akamai echo command as .cmd file": {
 			command: "echo-cmd",
 			args:    []string{"abc"},
 			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running echo-cmd command...", []interface{}(nil)).Return().Once()
+
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
 					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"run installed python akamai echo command": {
 			command: "echo-cmd",
 			args:    []string{"abc"},
 			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running echo-cmd command...", []interface{}(nil)).Return().Once()
+
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")).
 					Return([]string{filepath.Join("testdata", ".akamai-cli", "src", "cli-echo", "bin", "akamai-echo-cmd.cmd")}, nil)
 				m.langManager.On("PrepareExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Return(nil).Once()
 				m.langManager.On("FinishExecution", packages.LanguageRequirements{Go: "1.14.0"}, "cli-echo").Once()
+
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"executable not found": {
-			command:   "invalid",
-			args:      []string{"abc"},
-			init:      func(_ *mocked) {},
+			command: "invalid",
+			args:    []string{"abc"},
+			init: func(m *mocked) {
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Start", "Running invalid command...", []interface{}(nil)).Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Fail").Return().Once()
+			},
 			withError: `Executable "invalid" not found`,
 		},
 	}
@@ -138,6 +173,8 @@ func TestPythonCmdSubcommand(t *testing.T) {
 			// If python is not available, just skip the test
 			t.Skipf("We could not find any available Python binary, thus we skip this test. Details: \n%s", err.Error())
 		} else {
+			m.term.On("Spinner").Return(m.term).Once()
+			m.term.On("Start", "Running echo-python command...", []interface{}(nil)).Return().Once()
 			m.langManager.On("PrepareExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
 			m.langManager.On("FinishExecution", packages.LanguageRequirements{Python: "3.0.0"}, "cli-echo-python").Return(nil).Once()
 			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python", "bin", "akamai-echo-python")).
@@ -145,6 +182,8 @@ func TestPythonCmdSubcommand(t *testing.T) {
 			m.langManager.On("FindExec", packages.LanguageRequirements{Python: "3.0.0"}, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python")).
 				Return([]string{pythonBin, filepath.Join("testdata", ".akamai-cli", "src", "cli-echo-python", "bin", "akamai-echo-python")}, nil).Once()
 			m.langManager.On("FileExists", filepath.Join("testdata", ".akamai-cli", "venv", "cli-echo-python")).Return(true, nil)
+			m.term.On("Spinner").Return(m.term).Once()
+			m.term.On("OK").Return().Once()
 		}
 
 		err := app.RunContext(ctx, args)

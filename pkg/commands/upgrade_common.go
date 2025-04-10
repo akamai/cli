@@ -34,7 +34,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 			logger.Debug(fmt.Sprintf("UPGRADE FINISH: %v", time.Since(start)))
 		} else {
 			term.Spinner().Fail()
-			logger.Error(fmt.Sprintf("UPGRADE ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("UPGRADE ERROR: %v", e))
 		}
 	}()
 
@@ -65,6 +65,7 @@ func UpgradeCli(ctx context.Context, latestVersion string) (e error) {
 
 	resp, err := http.Get(buf.String())
 	if err != nil || resp.StatusCode != http.StatusOK {
+		logger.Error(fmt.Sprintf("Unable to get release: %s", err))
 		var reason string
 		if err == nil {
 			reason = fmt.Sprintf("%s: %s", buf.String(), resp.Status)

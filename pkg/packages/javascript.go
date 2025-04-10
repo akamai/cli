@@ -34,6 +34,7 @@ func (l *langManager) installJavaScript(ctx context.Context, dir, ver string) er
 	if err != nil {
 		bin, err = l.commandExecutor.LookPath("nodejs")
 		if err != nil {
+			logger.Error("Node.js executable not found")
 			return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "Node.js")
 		}
 	}
@@ -68,9 +69,12 @@ func installNodeDepsYarn(ctx context.Context, cmdExecutor executor, dir string) 
 	logger := log.FromContext(ctx)
 
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "yarn.lock")); !ok {
+		logger.Debug("yarn.lock not found")
 		return nil
 	}
+
 	logger.Info("yarn.lock found, running yarn package manager")
+
 	bin, err := cmdExecutor.LookPath("yarn")
 	if err == nil {
 		cmd := exec.Command(bin, "install")
@@ -85,6 +89,7 @@ func installNodeDepsYarn(ctx context.Context, cmdExecutor executor, dir string) 
 		}
 		return nil
 	}
+
 	err = fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "yarn")
 	logger.Debug(err.Error())
 	return err
@@ -116,5 +121,4 @@ func installNodeDepsNpm(ctx context.Context, cmdExecutor executor, dir string) e
 	err = fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "npm")
 	logger.Debug(err.Error())
 	return err
-
 }

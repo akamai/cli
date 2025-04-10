@@ -39,7 +39,7 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("LIST FINISH: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("LIST ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("LIST ERROR: %v", e))
 		}
 	}()
 	term := terminal.Get(c.Context)
@@ -49,7 +49,8 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	if c.IsSet("remote") {
 		packages, err := pr.readPackage()
 		if err != nil {
-			return cli.Exit(fmt.Sprintf("list: %s", err), 1)
+			logger.Error(fmt.Sprintf("Failed to read package: %v", err))
+			return cli.Exit(fmt.Sprintf("list: %v", err), 1)
 		}
 
 		foundCommands := true
