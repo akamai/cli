@@ -146,7 +146,11 @@ func (t *DefaultTerminal) WriteErrorf(f string, args ...interface{}) {
 
 // WriteError write a message to the error stream
 func (t *DefaultTerminal) WriteError(v interface{}) {
-	_, _ = fmt.Fprintf(t.err, v.(string))
+	message := v.(string)
+	if !strings.HasSuffix(message, "\n") {
+		message += "\n"
+	}
+	_, _ = fmt.Fprint(t.err, message)
 }
 
 // Error return the error writer

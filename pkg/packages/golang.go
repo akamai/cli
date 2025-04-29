@@ -35,8 +35,10 @@ import (
 
 func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands, ldFlags []string) error {
 	logger := log.FromContext(ctx)
+
 	goBin, err := l.commandExecutor.LookPath("go")
 	if err != nil {
+		logger.Error("Go executable not found")
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "go")
 	}
 
@@ -50,6 +52,7 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
+			logger.Error(fmt.Sprintf("Unable to determine Go version: %s", string(output)))
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "go", ver)
 		}
 
@@ -60,15 +63,19 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 	}
 
 	cliPath, err := tools.GetAkamaiCliPath()
-	if goPath := os.Getenv("GOPATH"); goPath != "" {
-		cliPath = fmt.Sprintf("%s%d%s", goPath, os.PathListSeparator, cliPath)
-	}
 	if err != nil {
 		return cli.Exit(color.RedString("Unable to determine CLI home directory"), 1)
 	}
+
+	if goPath := os.Getenv("GOPATH"); goPath != "" {
+		cliPath = fmt.Sprintf("%s%d%s", goPath, os.PathListSeparator, cliPath)
+	}
+
 	if err := os.Setenv("GOPATH", cliPath); err != nil {
+		logger.Error(fmt.Sprintf("Unable to set GOPATH: %v", err))
 		return err
 	}
+
 	if err = installGolangModules(logger, l.commandExecutor, dir); err != nil {
 		return err
 	}

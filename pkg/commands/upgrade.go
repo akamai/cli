@@ -56,8 +56,8 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 
 	data, _ := cfg.GetValue("cli", "last-upgrade-check")
 	data = strings.TrimSpace(data)
-
 	if data == "ignore" && !force {
+		logger.Error("Upgrade checks are disabled")
 		return ""
 	}
 
@@ -69,8 +69,8 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 	if !checkForUpgrade {
 		configValue := strings.TrimPrefix(strings.TrimSuffix(data, "\""), "\"")
 		lastUpgrade, err := time.Parse(time.RFC3339, configValue)
-
 		if err != nil {
+			logger.Error(fmt.Sprintf("Error parsing last upgrade check time: %v", err))
 			return ""
 		}
 
@@ -84,6 +84,7 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 		cfg.SetValue("cli", "last-upgrade-check", time.Now().Format(time.RFC3339))
 		err := cfg.Save(ctx)
 		if err != nil {
+			logger.Error(fmt.Sprintf("Error saving config: %v", err))
 			return ""
 		}
 
@@ -98,6 +99,7 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 				color.BlueString(latestVersion),
 				color.BlueString(currentVersion),
 			), true); err != nil || !answer {
+				logger.Error(fmt.Sprintf("Upgrade declined: %v", err))
 				return ""
 			}
 			return latestVersion
@@ -127,15 +129,17 @@ func (p defaultVersionProvider) getLatestReleaseVersion(ctx context.Context) str
 	}
 	resp, err := client.Head(fmt.Sprintf("%s/releases/latest", repo))
 	if err != nil {
+		logger.Error(fmt.Sprintf("Error checking for latest version: %v", err))
 		return "0"
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			logger.Error(err.Error())
+			logger.Error(fmt.Sprintf("Error closing response body: %v", err))
 		}
 	}()
 
 	if resp.StatusCode != http.StatusFound {
+		logger.Error(fmt.Sprintf("Error checking for latest version: %s", resp.Status))
 		return "0"
 	}
 

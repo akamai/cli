@@ -53,7 +53,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
@@ -80,7 +80,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
@@ -110,7 +110,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 
 				// installing update
-				m.term.On("Start", `Installing...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", `Installing Dependencies...`, []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
@@ -143,7 +143,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("OK").Return().Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
@@ -171,16 +171,16 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
-				m.term.On("Writeln", mock.Anything).Return(0, nil).Once()
 
 				m.langManager.On("Install", cliEchoRepo,
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(fmt.Errorf("oops")).Once()
-				m.term.On("WriteError", "oops")
+				m.term.On("WriteError", "oops").Return(0, nil).Once()
 
-				m.term.On("OK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("Fail").Return().Once()
 			},
 			withError: "Unable to update command",
 		},
@@ -205,7 +205,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "Unable to fetch updates (oops)",
+			withError: "Unable to fetch updates: oops",
 		},
 		"error getting HEAD of repository after pull": {
 			args: []string{"echo"},
@@ -226,7 +226,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "Unable to fetch updates (oops)",
+			withError: "Unable to fetch updates: oops",
 		},
 		"error pulling repository": {
 			args: []string{"echo"},
@@ -265,7 +265,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 			},
-			withError: "Unable to fetch updates (oops)",
+			withError: "Unable to fetch updates: oops",
 		},
 		"error getting worktree": {
 			args: []string{"echo"},
@@ -305,6 +305,8 @@ func TestCmdUpdate(t *testing.T) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("WarnOK").Return().Once()
+				m.term.On("Spinner").Return(m.term).Once()
+				m.term.On("OK").Return().Once()
 			},
 		},
 		"error opening repository, update from remote, success": {
@@ -344,7 +346,7 @@ func TestCmdUpdate(t *testing.T) {
 					})
 				m.term.On("OK").Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
@@ -397,10 +399,10 @@ func TestCmdUpdate(t *testing.T) {
 
 				m.langManager.On("Install", filepath.Join("testdata", ".akamai-cli", "src", "cli-echo"),
 					packages.LanguageRequirements{Go: "1.14.0"}, []string{"echo"}, []string{""}).Return(fmt.Errorf("oops")).Once()
-				m.term.On("Start", "Installing...", []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Installing Dependencies...", []interface{}(nil)).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
-				m.term.On("WriteError", "oops")
+				m.term.On("WriteError", "oops").Return(0, nil).Once()
 
 			},
 			teardown: func(t *testing.T) {

@@ -1,5 +1,14 @@
 # RELEASE NOTES
 
+## 2.0.1 (Apr 29, 2025)
+
+### Enhancements
+
+* Migrated to Go `1.23.6` and adopted a semver-compliant Go directive.
+* Updated the required Go version to `1.23.6` for cli-terraform compilation.
+* Increased number of log messages.
+* Updated vulnerable dependencies.
+
 ## 2.0.0 (Feb 3, 2025)
 
 ### Breaking changes

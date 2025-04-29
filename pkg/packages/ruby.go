@@ -32,6 +32,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 
 	bin, err := l.commandExecutor.LookPath("ruby")
 	if err != nil {
+		logger.Error("Ruby executable not found")
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "ruby")
 	}
 
@@ -45,6 +46,7 @@ func (l *langManager) installRuby(ctx context.Context, dir, cmdReq string) error
 		matches := r.FindStringSubmatch(string(output))
 
 		if len(matches) == 0 {
+			logger.Error(fmt.Sprintf("Unable to determine Ruby version: %s", output))
 			return fmt.Errorf("%w: %s:%s", ErrRuntimeNoVersionFound, "ruby", cmdReq)
 		}
 
@@ -61,8 +63,10 @@ func installRubyDepsBundler(ctx context.Context, cmdExecutor executor, dir strin
 	logger := log.FromContext(ctx)
 
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "Gemfile")); !ok {
+		logger.Debug("Gemfile not found")
 		return nil
 	}
+
 	logger.Debug("Gemfile found, running yarn package manager")
 	bin, err := cmdExecutor.LookPath("bundle")
 	if err == nil {

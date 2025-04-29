@@ -53,20 +53,23 @@ func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("SEARCH FINISHED: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("SEARCH ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("SEARCH ERROR: %v", e))
 		}
 	}()
 	if !c.Args().Present() {
+		logger.Error("No keywords specified")
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
 
 	packages, err := pr.readPackage()
 	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to read package: %v", err))
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
 	err = searchPackages(c.Context, c.Args().Slice(), packages)
 	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to search packages: %v", err))
 		return cli.Exit(color.RedString(err.Error()), 1)
 	}
 
@@ -199,7 +202,7 @@ func getLatestVersion(s string) (string, error) {
 
 	u, err := url.Parse(s)
 	if err != nil {
-		return "", fmt.Errorf("error parsing URL: %s", err.Error())
+		return "", fmt.Errorf("error parsing URL: %v", err)
 	}
 
 	// extract the last string of the package URL
@@ -208,7 +211,7 @@ func getLatestVersion(s string) (string, error) {
 	repoURL := fmt.Sprintf(githubURLTemplate, lastSegment)
 	resp, err := http.Get(repoURL)
 	if err != nil {
-		return "", fmt.Errorf("error fetching the URL: %s", err.Error())
+		return "", fmt.Errorf("error fetching the URL: %v", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -264,13 +267,13 @@ func getVersionFromSystem(command string) (string, error) {
 	}
 	body, err := os.ReadFile(filepath.Join(finalPath, "cli.json"))
 	if err != nil {
-		return "", fmt.Errorf("Error reading the file: %s", err.Error())
+		return "", fmt.Errorf("error reading the file: %v", err)
 
 	}
 
 	var cli CLI
 	if err := json.Unmarshal(body, &cli); err != nil {
-		return "", fmt.Errorf("Error parsing the JSON: %s", err.Error())
+		return "", fmt.Errorf("error parsing the JSON: %v", err)
 	}
 
 	return cli.CommandList[0].Version, nil

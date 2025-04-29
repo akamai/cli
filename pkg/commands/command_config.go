@@ -35,19 +35,24 @@ func cmdConfigSet(c *cli.Context) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("CONFIG SET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("CONFIG SET ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("CONFIG SET ERROR: %v", e))
 		}
 	}()
 	cfg := config.Get(c.Context)
+
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
+		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
+		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
+
 	value := strings.Join(c.Args().Tail(), " ")
 	cfg.SetValue(section, key, value)
 	if err := cfg.Save(c.Context); err != nil {
-		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
+		logger.Error(fmt.Sprintf("Error saving config: %v", err))
+		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
+
 	return nil
 }
 
@@ -60,19 +65,23 @@ func cmdConfigGet(c *cli.Context) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("CONFIG GET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("CONFIG GET ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("CONFIG GET ERROR: %v", e))
 		}
 	}()
 	cfg := config.Get(c.Context)
+
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString("Unable to get config value: %s", err), 1)
+		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
+		return cli.Exit(color.RedString("Unable to get config value: %v", err), 1)
 	}
+
 	val, _ := cfg.GetValue(section, key)
 	if _, err := terminal.Get(c.Context).Writeln(val); err != nil {
 		return err
 	}
 	logger.Debug(val)
+
 	return nil
 }
 
@@ -85,18 +94,20 @@ func cmdConfigUnset(c *cli.Context) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("CONFIG UNSET FINISH: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("CONFIG UNSET ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("CONFIG UNSET ERROR: %v", e))
 		}
 	}()
 	cfg := config.Get(c.Context)
 	section, key, err := parseConfigPath(c)
 	if err != nil {
-		return cli.Exit(color.RedString("Unable to unset config value: %s", err), 1)
+		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
+		return cli.Exit(color.RedString("Unable to unset config value: %v", err), 1)
 	}
 
 	cfg.UnsetValue(section, key)
 	if err := cfg.Save(c.Context); err != nil {
-		return cli.Exit(color.RedString("Unable to set config value: %s", err), 1)
+		logger.Error(fmt.Sprintf("Error saving config: %v", err))
+		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
 	return nil
 }
@@ -110,7 +121,7 @@ func cmdConfigList(c *cli.Context) (e error) {
 		if e == nil {
 			logger.Debug(fmt.Sprintf("CONFIG LIST FINISH: %v", time.Since(start)))
 		} else {
-			logger.Error(fmt.Sprintf("CONFIG LIST ERROR: %v", e.Error()))
+			logger.Error(fmt.Sprintf("CONFIG LIST ERROR: %v", e))
 		}
 	}()
 	cfg := config.Get(c.Context)

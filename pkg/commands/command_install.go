@@ -52,9 +52,9 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 			} else {
 				var exitErr cli.ExitCoder
 				if errors.As(e, &exitErr) && exitErr.ExitCode() == 0 {
-					logger.Warn(fmt.Sprintf("INSTALL WARN: %v", e.Error()))
+					logger.Warn(fmt.Sprintf("INSTALL WARN: %v", e))
 				} else {
-					logger.Error(fmt.Sprintf("INSTALL ERROR: %v", e.Error()))
+					logger.Error(fmt.Sprintf("INSTALL ERROR: %v", e))
 				}
 			}
 		}()
@@ -68,7 +68,7 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 			repo = tools.Githubize(repo)
 			subCmd, err := installPackage(c.Context, git, langManager, repo)
 			if err != nil {
-
+				logger.Error(fmt.Sprintf("Error installing package: %v", err))
 				return err
 			}
 			c.App.Commands = append(c.App.Commands, subcommandToCliCommands(*subCmd, git, langManager)...)
@@ -130,8 +130,11 @@ func packageListDiff(c *cli.Context, oldcmds []subcommands) {
 
 func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string) (*subcommands, error) {
 	logger := log.FromContext(ctx)
+	logger.Debug(fmt.Sprintf("Installing package from repository: %s", repo))
+
 	srcPath, err := tools.GetAkamaiCliSrcPath()
 	if err != nil {
+		logger.Error(fmt.Sprintf("Unable to get akamai cli source path: %v", err))
 		return nil, err
 	}
 
@@ -143,6 +146,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 
 	if _, err = os.Stat(packageDir); err == nil {
 		warningMsg := fmt.Sprintf("Package directory already exists (%s). To reinstall this package, first run 'akamai uninstall' command.", packageDir)
+		logger.Warn(warningMsg)
 		return nil, cli.Exit(color.YellowString(warningMsg), 0)
 	}
 
@@ -153,10 +157,9 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	cmdPackage, err := readPackageFromGithub(url, dirName)
 	if err != nil {
 		spin.Stop(terminal.SpinnerStatusFail)
-		logger.Error(err.Error())
-		if _, err := term.Writeln(err.Error()); err != nil {
-			term.WriteError(err.Error())
-		}
+		logger.Error(fmt.Sprintf("Failed to read package from github: %v", err))
+		term.WriteError(err.Error())
+
 		if strings.Contains(err.Error(), "404") {
 			return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(git.ErrPackageNotAvailable.Error())), 1)
 		}
@@ -165,57 +168,63 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	spin.OK()
 
 	if isBinary(cmdPackage) {
-
+		logger.Debug(fmt.Sprintf("Installing binaries for package in directory: %s", packageDir))
 		ok, subCmd := installPackageBinaries(ctx, packageDir, cmdPackage, logger)
 		if ok {
 			return subCmd, nil
 		}
 		// delete package directory
 		if err := os.RemoveAll(packageDir); err != nil {
+			logger.Error(fmt.Sprintf("Failed to remove package directory: %v", err))
 			return nil, err
 		}
-
+		logger.Debug(fmt.Sprintf("Unable to install binaries for package in directory: %s, cloning repository: %s", packageDir, repo))
 	}
+
 	spin.Start("Attempting to fetch command from %s...", repo)
 
 	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
 		term.Printf(color.CyanString(thirdPartyDisclaimer))
 	}
+
 	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)
 	if err != nil {
+		spin.Stop(terminal.SpinnerStatusFail)
 		if err := os.RemoveAll(packageDir); err != nil {
+			logger.Error(fmt.Sprintf("Failed to remove package directory: %v", err))
 			return nil, err
 		}
-		spin.Stop(terminal.SpinnerStatusFail)
 
 		logger.Error(cases.Title(language.Und, cases.NoLower).String(err.Error()))
 		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()
 
+	logger.Debug(fmt.Sprintf("Installing dependencies for package in directory: %s", packageDir))
+
 	ok, subCmd := installPackageDependencies(ctx, langManager, packageDir, logger)
 	if !ok {
+		logger.Error(fmt.Sprintf("Dependency installation failed, removing package directory: %s", packageDir))
 		if err := os.RemoveAll(packageDir); err != nil {
+			logger.Error(fmt.Sprintf("Failed to remove package directory: %v", err))
 			return nil, err
 		}
 		return nil, cli.Exit("Unable to install selected package", 1)
 	}
+	logger.Debug(fmt.Sprintf("Dependencies installed successfully for package in directory: %s", packageDir))
 
 	return subCmd, nil
 }
 
 func installPackageDependencies(ctx context.Context, langManager packages.LangManager, dir string, logger *slog.Logger) (bool, *subcommands) {
-	cmdPackage, err := readPackage(dir)
-
 	term := terminal.Get(ctx)
+	term.Spinner().Start("Installing Dependencies...")
 
-	term.Spinner().Start("Installing...")
+	cmdPackage, err := readPackage(dir)
 	if err != nil {
 		term.Spinner().Stop(terminal.SpinnerStatusFail)
-		logger.Error(err.Error())
-		if _, err := term.Writeln(err.Error()); err != nil {
-			term.WriteError(err.Error())
-		}
+		logger.Error(fmt.Sprintf("Failed to read package: %v", err))
+		term.WriteError(err.Error())
 		return false, nil
 	}
 
@@ -238,28 +247,31 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 			return false, nil
 		}
 		logger.Warn(warnMsg)
+
 		return true, &cmdPackage
 	}
 
 	if err != nil {
 		term.Spinner().Stop(terminal.SpinnerStatusFail)
+		logger.Error(fmt.Sprintf("Failed to install dependecies: %v", err))
 		term.WriteError(err.Error())
 		return false, nil
-
 	}
 
 	term.Spinner().OK()
-	return true, &cmdPackage
 
+	return true, &cmdPackage
 }
 
 func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcommands, logger *slog.Logger) (bool, *subcommands) {
-
 	term := terminal.Get(ctx)
 	spin := term.Spinner()
 	spin.Start("Installing Binaries...")
 
 	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0700); err != nil {
+		spin.Stop(terminal.SpinnerStatusWarn)
+		logger.Error(fmt.Sprintf("Unable to create directory %s: %v", filepath.Join(dir, "bin"), err))
+		term.WriteError(err.Error())
 		return false, nil
 	}
 
@@ -275,7 +287,6 @@ func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcomma
 			logger.Warn(warnMsg)
 
 			return false, nil
-
 		}
 	}
 
@@ -283,15 +294,16 @@ func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcomma
 	if err != nil {
 		spin.Stop(terminal.SpinnerStatusWarn)
 		warnMsg := "Unable to save configuration file " + err.Error()
+		logger.Warn(warnMsg)
 		if _, err := term.Writeln(color.YellowString(warnMsg)); err != nil {
 			term.WriteError(err.Error())
 			return false, nil
 		}
-		logger.Warn(warnMsg)
 		return false, nil
 	}
 
 	spin.OK()
-	return true, &cmdPackage
+	logger.Debug(fmt.Sprintf("Binaries installed successfully in directory: %s", dir))
 
+	return true, &cmdPackage
 }

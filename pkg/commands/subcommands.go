@@ -45,19 +45,19 @@ func readPackage(dir string) (subcommands, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-			return subcommands{}, cli.Exit("Package does not contain a cli.json file.", 1)
+			return subcommands{}, fmt.Errorf("package does not contain a cli.json file: %v", err)
 		}
 	}
 
 	var packageData subcommands
 	cliJSON, err := os.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
-		return subcommands{}, err
+		return subcommands{}, fmt.Errorf("unable to read package: %v", err)
 	}
 
 	err = json.Unmarshal(cliJSON, &packageData)
 	if err != nil {
-		return subcommands{}, err
+		return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
 	}
 
 	for key := range packageData.Commands {
@@ -72,19 +72,19 @@ func readPackage(dir string) (subcommands, error) {
 func readPackageFromGithub(url, dir string) (subcommands, error) {
 	response, err := http.Get(url)
 	if err != nil {
-		return subcommands{}, err
+		return subcommands{}, fmt.Errorf("unable to get package from github: %v", err)
 	}
 	if response.StatusCode == http.StatusOK {
 		cliJSON, err := io.ReadAll(response.Body)
 		if err != nil {
-			return subcommands{}, err
+			return subcommands{}, fmt.Errorf("unable to read package: %v", err)
 		}
 
 		var packageData subcommands
 
 		err = json.Unmarshal(cliJSON, &packageData)
 		if err != nil {
-			return subcommands{}, err
+			return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
 		}
 
 		packageData.raw = cliJSON
@@ -99,7 +99,7 @@ func readPackageFromGithub(url, dir string) (subcommands, error) {
 
 	}
 
-	return subcommands{}, fmt.Errorf("Invalid response status while fetching cli.json: %d", response.StatusCode)
+	return subcommands{}, fmt.Errorf("invalid response status while fetching cli.json: %d", response.StatusCode)
 }
 
 func getPackagePaths() []string {
@@ -148,18 +148,18 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS
-	if runtime.GOOS == "darwin" {
+	if cmd.OS == "darwin" {
 		cmd.OS = "mac"
 	}
 
-	if runtime.GOOS == "windows" {
+	if cmd.OS == "windows" {
 		cmd.BinSuffix = ".exe"
 	}
 
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
-		logger.Debug(fmt.Sprintf("Unable to create URL. Template: %s; Error: %s.", cmd.Bin, err.Error()))
+		logger.Error(fmt.Sprintf("Unable to create URL. Template: %s; Error: %v", cmd.Bin, err))
 		return err
 	}
 
@@ -169,25 +169,28 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	binName := filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix)
 	bin, err := os.Create(binName)
 	if err != nil {
+		logger.Error(fmt.Sprintf("Unable to create %s file: %v", binName, err))
 		return err
 	}
 	defer func() {
 		if err := bin.Close(); err != nil {
-			logger.Error(fmt.Sprintf("Error closing file: %s", err))
+			logger.Error(fmt.Sprintf("Error closing file: %v", err))
 		}
 	}()
 
 	if err := os.Chmod(binName, 0775); err != nil {
+		logger.Error(fmt.Sprintf("Unable to change the %s file mode: %v", binName, err))
 		return err
 	}
 
 	res, err := http.Get(url)
 	if err != nil {
+		logger.Error(fmt.Sprintf("Unable to get command binary: %v", err))
 		return err
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			logger.Error(fmt.Sprintf("Error closing request body: %s", err))
+			logger.Error(fmt.Sprintf("Error closing request body: %v", err))
 		}
 	}()
 
@@ -197,6 +200,7 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 
 	n, err := io.Copy(bin, res.Body)
 	if err != nil || n == 0 {
+		logger.Error(fmt.Sprintf("Unable to copy from %s to %s: %v", res.Body, binName, err))
 		return err
 	}
 

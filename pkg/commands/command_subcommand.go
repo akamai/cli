@@ -30,10 +30,23 @@ import (
 )
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (e error) {
 		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
 		logger := log.FromContext(c.Context)
 		term := terminal.Get(c.Context)
+
+		defer func() {
+			if e != nil {
+				term.Spinner().Fail()
+				logger.Error(fmt.Sprintf("Command execution failed: %v", e))
+			} else {
+				term.Spinner().OK()
+				logger.Info("Command execution completed")
+			}
+		}()
+
+		logger.Info(fmt.Sprintf("Executing subcommand: %s", c.Command.Name))
+		term.Spinner().Start(fmt.Sprintf("Running %s command...", c.Command.Name))
 
 		commandName := strings.ToLower(c.Command.Name)
 
@@ -51,11 +64,16 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			packageDir = findPackageDir(executable[1])
 		}
 
-		cmdPackage, _ := readPackage(packageDir)
+		cmdPackage, err := readPackage(packageDir)
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error reading package: %v", err))
+			return err
+		}
 
 		if cmdPackage.Requirements.Python != "" {
 			exec, err := langManager.FindExec(c.Context, cmdPackage.Requirements, packageDir)
 			if err != nil {
+				logger.Error(fmt.Sprintf("Error finding executable: %v", err))
 				return err
 			}
 
@@ -80,6 +98,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				answer, err := term.Confirm("Would you like to reinstall it", true)
 				logger.Debug(fmt.Sprintf("Would you like to reinstall it? %v", answer))
 				if err != nil {
+					logger.Error(fmt.Sprintf("Error confirming reinstall: %v", err))
 					return err
 				}
 				if !answer {
@@ -96,6 +115,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				}
 			}
 			if err := os.Setenv("PYTHONUSERBASE", packageDir); err != nil {
+				logger.Error(fmt.Sprintf("Error setting PYTHONUSERBASE: %v", err))
 				return err
 			}
 		}
@@ -115,14 +135,17 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		}
 
 		if err := os.Setenv("AKAMAI_CLI_COMMAND", commandName); err != nil {
+			logger.Error(fmt.Sprintf("Error setting AKAMAI_CLI_COMMAND: %v", err))
 			return err
 		}
 		if err := os.Setenv("AKAMAI_CLI_COMMAND_VERSION", currentCmd.Version); err != nil {
+			logger.Error(fmt.Sprintf("Error setting AKAMAI_CLI_COMMAND_VERSION: %v", err))
 			return err
 		}
 
 		cmdPackage, err = readPackage(packageDir)
 		if err != nil {
+			logger.Error(fmt.Sprintf("Error reading package: %v", err))
 			return err
 		}
 

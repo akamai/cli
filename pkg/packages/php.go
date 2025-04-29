@@ -27,12 +27,13 @@ import (
 )
 
 func (l *langManager) installPHP(ctx context.Context, dir, cmdReq string) error {
+	logger := log.FromContext(ctx)
+
 	bin, err := l.commandExecutor.LookPath("php")
 	if err != nil {
+		logger.Error(fmt.Sprintf("PHP binary not found: %v", err))
 		return fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "php")
 	}
-
-	logger := log.FromContext(ctx)
 
 	logger.Debug(fmt.Sprintf("PHP binary found: %s", bin))
 
@@ -60,6 +61,7 @@ func installPHPDepsComposer(ctx context.Context, cmdExecutor executor, phpBin, d
 	logger := log.FromContext(ctx)
 
 	if ok, _ := cmdExecutor.FileExists(filepath.Join(dir, "composer.json")); !ok {
+		logger.Debug("composer.json not found")
 		return nil
 	}
 	logger.Info("composer.json found, running composer package manager")
