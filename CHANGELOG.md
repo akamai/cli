@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## 2.0.2 (Aug 21, 2025)
+
+### Enhancements
+
+* Updated vulnerable dependencies.
+
 ## 2.0.1 (Apr 29, 2025)
 
 ### Enhancements
