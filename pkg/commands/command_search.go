@@ -64,13 +64,13 @@ func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	packages, err := pr.readPackage()
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to read package: %v", err))
-		return cli.Exit(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString("%s", err.Error()), 1)
 	}
 
 	err = searchPackages(c.Context, c.Args().Slice(), packages)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to search packages: %v", err))
-		return cli.Exit(color.RedString(err.Error()), 1)
+		return cli.Exit(color.RedString("%s", err.Error()), 1)
 	}
 
 	return nil
@@ -156,7 +156,7 @@ func printResult(resultHits []int, resultPkgs []string, results map[int]map[stri
 		for _, pkgName := range resultPkgs {
 			if _, ok := results[hits][pkgName]; ok {
 				pkg := results[hits][pkgName]
-				term.Printf(color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString(pkg.Name))
+				term.Printf(color.GreenString("Package: ")+"%s [%s]\n", pkg.Title, color.BlueString("%s", pkg.Name))
 				for _, cmd := range pkg.Commands {
 					var aliases string
 					if len(cmd.Aliases) == 1 {
@@ -170,12 +170,12 @@ func printResult(resultHits []int, resultPkgs []string, results map[int]map[stri
 					var err error
 					availableVersion, err = getLatestVersion(url)
 					if err != nil {
-						return cli.Exit(color.RedString(err.Error()), 1)
+						return cli.Exit(color.RedString("%s", err.Error()), 1)
 					}
 					term.Printf(color.BoldString("  Available Version:")+" %s\n", availableVersion)
 					installedVersion, err = getVersionFromSystem(pkg.Name)
 					if err != nil {
-						return cli.Exit(color.RedString(err.Error()), 1)
+						return cli.Exit(color.RedString("%s", err.Error()), 1)
 					}
 					if installedVersion != "" {
 						term.Printf(color.BoldString("  Installed Version:")+" %s\n", installedVersion)

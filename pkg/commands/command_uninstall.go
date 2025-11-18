@@ -49,7 +49,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 		for _, cmd := range c.Args().Slice() {
 			if err := uninstallPackage(c.Context, langManager, cmd, logger); err != nil {
 				logger.Error(fmt.Sprintf("Error uninstalling package: %v", err))
-				return cli.Exit(color.RedString(err.Error()), 1)
+				return cli.Exit(color.RedString("%s", err.Error()), 1)
 			}
 		}
 

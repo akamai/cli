@@ -1,5 +1,12 @@
 # RELEASE NOTES
 
+## X.Y.Z (YYYY-MM-DD)
+
+* General
+    * Migrated to Go `1.24`.
+    * Updated various dependencies.
+
+
 ## 2.0.2 (Aug 21, 2025)
 
 ### Enhancements

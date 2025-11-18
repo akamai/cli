@@ -102,7 +102,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	if repoDir == "" {
 		term.Spinner().Fail()
 		logger.Error("Unable to find package directory")
-		return cli.Exit(color.RedString("unable to update, was it installed using "+color.CyanString("\"akamai install\"")+"?"), 1)
+		return cli.Exit(color.RedString("unable to update, was it installed using %s", color.CyanString("\"akamai install\"")+"?"), 1)
 	}
 
 	logger.Debug(fmt.Sprintf("Repo found: %s", repoDir))
@@ -142,7 +142,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			term.Spinner().WarnOK()
 			debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 			logger.Warn(debugMessage)
-			if _, err := term.Writeln(color.CyanString(debugMessage)); err != nil {
+			if _, err := term.Writeln(color.CyanString("%s", debugMessage)); err != nil {
 				term.WriteError(err.Error())
 				return err
 			}
@@ -231,7 +231,7 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger *slog.Logger
 	if err != nil && !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
 		term.Spinner().Fail()
 		logger.Error(fmt.Sprintf("Fetch error: %v", err))
-		return cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
+		return cli.Exit(color.RedString("%s", tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 
 	ref, err := gitRepo.Head()
@@ -255,7 +255,7 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger *slog.Logger
 		logger.Debug(fmt.Sprintf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String()))
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
-		if _, err := term.Writeln(color.CyanString(debugMessage)); err != nil {
+		if _, err := term.Writeln(color.CyanString("%s", debugMessage)); err != nil {
 			return err
 		}
 	}

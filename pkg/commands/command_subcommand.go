@@ -103,7 +103,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				}
 				if !answer {
 					logger.Error(packages.ErrPackageNeedsReinstall.Error())
-					return cli.Exit(color.RedString(packages.ErrPackageNeedsReinstall.Error()), -1)
+					return cli.Exit(color.RedString("%s", packages.ErrPackageNeedsReinstall.Error()), -1)
 				}
 
 				if err = uninstallPackage(c.Context, langManager, commandName, logger); err != nil {

@@ -67,7 +67,7 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 			return nil
 		}
 		headerMsg := "\nAvailable Commands:\n\n"
-		if _, err := term.Writeln(color.YellowString(headerMsg)); err != nil {
+		if _, err := term.Writeln(color.YellowString("%s", headerMsg)); err != nil {
 			return err
 		}
 		logger.Debug(headerMsg)
@@ -79,7 +79,7 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 				}
 				commandName := color.BoldString("  %s", command.Name)
 				term.Printf(commandName)
-				packageName := fmt.Sprintf(" [package: %s]", color.BlueString(remotePackage.Name))
+				packageName := fmt.Sprintf(" [package: %s]", color.BlueString("%s", remotePackage.Name))
 				if _, err := term.Writeln(packageName); err != nil {
 					return err
 				}
@@ -130,7 +130,7 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 
 				term.Printf(" (%s: ", aliases)
 				for i, alias := range command.Aliases {
-					term.Printf(color.BoldString(alias))
+					term.Printf(color.BoldString("%s", alias))
 					if i < len(command.Aliases)-1 {
 						term.Printf(", ")
 					}

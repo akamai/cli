@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/net/context"
 )
 
 func mockIsTTY(term *terminal.Mock, isTTY bool) {
