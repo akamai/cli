@@ -39,7 +39,7 @@ func TestSetupContext(t *testing.T) {
 		"invalid log level passed, output to terminal": {
 			envs:          map[string]string{"AKAMAI_LOG": "abc"},
 			expectedLevel: slog.LevelError,
-			withError:     regexp.MustCompile(`ERROR.*Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
+			withError:     regexp.MustCompile(`ERROR.*unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug`),
 		},
 	}
 

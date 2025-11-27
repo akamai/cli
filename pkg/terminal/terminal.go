@@ -124,7 +124,7 @@ func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 
 // Printf writes a formatted message to the output stream
 func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
-	if _, err := t.Write([]byte(fmt.Sprintf(f, args...))); err != nil {
+	if _, err := fmt.Fprintf(t, f, args...); err != nil {
 		t.WriteError(err)
 	}
 }

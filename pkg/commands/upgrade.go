@@ -1,5 +1,4 @@
 //go:build !noautoupgrade
-// +build !noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -61,7 +60,7 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 		return ""
 	}
 
-	checkForUpgrade := false
+	var checkForUpgrade bool
 	if data == "never" || force {
 		checkForUpgrade = true
 	}

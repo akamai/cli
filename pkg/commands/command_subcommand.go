@@ -86,11 +86,12 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				}
 			}
 
-			if runtime.GOOS == "linux" {
+			switch runtime.GOOS {
+			case "linux":
 				_, err = os.Stat(filepath.Join(packageDir, ".local"))
-			} else if runtime.GOOS == "darwin" {
+			case "darwin":
 				_, err = os.Stat(filepath.Join(packageDir, "Library"))
-			} else if runtime.GOOS == "windows" {
+			case "windows":
 				_, err = os.Stat(filepath.Join(packageDir, "Lib"))
 			}
 

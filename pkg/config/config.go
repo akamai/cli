@@ -144,7 +144,7 @@ func (c *IniConfig) ExportEnv(ctx context.Context) error {
 	for _, section := range c.file.Sections() {
 		for _, key := range section.Keys() {
 			envVar := "AKAMAI_" + strings.ToUpper(section.Name()) + "_"
-			envVar += strings.ToUpper(strings.Replace(key.Name(), "-", "_", -1))
+			envVar += strings.ToUpper(strings.ReplaceAll(key.Name(), "-", "_"))
 			if err := os.Setenv(envVar, key.String()); err != nil {
 				return err
 			}

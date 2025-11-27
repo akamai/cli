@@ -80,7 +80,7 @@ func parseLevel(lvl string) (slog.Level, error) {
 	case "debug":
 		return slog.LevelDebug, nil
 	default:
-		return slog.LevelError, errors.New("Unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
+		return slog.LevelError, errors.New("unknown AKAMAI_LOG value. Allowed values: fatal, error, warn, warning, info, debug")
 	}
 
 }
