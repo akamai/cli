@@ -336,7 +336,7 @@ The package you install needs a `cli.json` file. This is where you specify the c
     - `{{.Version}}`: The command version.
     - `{{.Name}}`: The command name.
     - `{{.OS}}`: The current operating system, either `windows`, `mac`, or `linux`.
-    - `{{.Arch}}`: The current OS architecture, either `386` or `amd64`.
+    - `{{.Arch}}`: The current OS architecture, either `386`, `amd64` or `arm64`.
     - `{{.BinSuffix}}`: The binary suffix for the current OS: `.exe` for `windows`.
 
 ### Example
