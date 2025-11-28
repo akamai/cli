@@ -15,6 +15,8 @@ GOOS=linux GOARCH=amd64 go build -o build/"$ver"/akamai-v"$ver"-linuxamd64 ./cli
 shasum -a 256 build/"$ver"/akamai-v"$ver"-linuxamd64 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-linuxamd64.sig
 GOOS=linux GOARCH=386 go build -o build/"$ver"/akamai-v"$ver"-linux386 ./cli/main.go
 shasum -a 256 build/"$ver"/akamai-v"$ver"-linux386 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-linux386.sig
+GOOS=linux GOARCH=arm64 go build -o build/"$ver"/akamai-v"$ver"-linuxarm64 ./cli/main.go
+shasum -a 256 build/"$ver"/akamai-v"$ver"-linuxarm64 | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-linuxarm64.sig
 GOOS=windows GOARCH=386 go build -o build/"$ver"/akamai-v"$ver"-windows386.exe ./cli/main.go
 shasum -a 256 build/"$ver"/akamai-v"$ver"-windows386.exe | awk '{print $1}' > build/"$ver"/akamai-v"$ver"-windows386.exe.sig
 GOOS=windows GOARCH=amd64 go build -o build/"$ver"/akamai-v"$ver"-windowsamd64.exe ./cli/main.go
