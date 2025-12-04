@@ -1,18 +1,13 @@
 # RELEASE NOTES
 
-## X.Y.Z (YYYY-MM-DD)
+## 2.0.3 (Dec 10, 2025)
 
-* General
-  * Migrated to Go `1.24`.
-  * Updated various dependencies.
+### Enhancements
 
-
-
-
-* General
-  * Added support for building the CLI for the `linux/arm64` architecture, [PR#208](https://github.com/akamai/cli/pull/208), solving [I#195](https://github.com/akamai/cli/issues/195).
-
-
+* Migrated to Go `1.24.11`.
+* Updated various dependencies.
+* Updated vulnerable dependencies.
+* Added support for building the CLI for the `linux/arm64` architecture ([PR#208](https://github.com/akamai/cli/pull/208), solving [I#195](https://github.com/akamai/cli/issues/195)).
 
 ## 2.0.2 (Aug 21, 2025)
 
