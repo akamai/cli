@@ -37,16 +37,13 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 		defer func() {
 			if e != nil {
-				term.Spinner().Fail()
 				logger.Error(fmt.Sprintf("Command execution failed: %v", e))
 			} else {
-				term.Spinner().OK()
 				logger.Info("Command execution completed")
 			}
 		}()
 
 		logger.Info(fmt.Sprintf("Executing subcommand: %s", c.Command.Name))
-		term.Spinner().Start(fmt.Sprintf("Running %s command...", c.Command.Name))
 
 		commandName := strings.ToLower(c.Command.Name)
 
