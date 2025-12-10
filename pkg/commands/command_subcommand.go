@@ -37,16 +37,13 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 
 		defer func() {
 			if e != nil {
-				term.Spinner().Fail()
 				logger.Error(fmt.Sprintf("Command execution failed: %v", e))
 			} else {
-				term.Spinner().OK()
 				logger.Info("Command execution completed")
 			}
 		}()
 
 		logger.Info(fmt.Sprintf("Executing subcommand: %s", c.Command.Name))
-		term.Spinner().Start(fmt.Sprintf("Running %s command...", c.Command.Name))
 
 		commandName := strings.ToLower(c.Command.Name)
 
@@ -86,11 +83,12 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				}
 			}
 
-			if runtime.GOOS == "linux" {
+			switch runtime.GOOS {
+			case "linux":
 				_, err = os.Stat(filepath.Join(packageDir, ".local"))
-			} else if runtime.GOOS == "darwin" {
+			case "darwin":
 				_, err = os.Stat(filepath.Join(packageDir, "Library"))
-			} else if runtime.GOOS == "windows" {
+			case "windows":
 				_, err = os.Stat(filepath.Join(packageDir, "Lib"))
 			}
 
@@ -103,7 +101,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 				}
 				if !answer {
 					logger.Error(packages.ErrPackageNeedsReinstall.Error())
-					return cli.Exit(color.RedString(packages.ErrPackageNeedsReinstall.Error()), -1)
+					return cli.Exit(color.RedString("%s", packages.ErrPackageNeedsReinstall.Error()), -1)
 				}
 
 				if err = uninstallPackage(c.Context, langManager, commandName, logger); err != nil {

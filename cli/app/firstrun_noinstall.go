@@ -1,5 +1,4 @@
 //go:build nofirstrun
-// +build nofirstrun
 
 // Copyright 2018. Akamai Technologies, Inc
 //

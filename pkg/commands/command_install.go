@@ -147,7 +147,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	if _, err = os.Stat(packageDir); err == nil {
 		warningMsg := fmt.Sprintf("Package directory already exists (%s). To reinstall this package, first run 'akamai uninstall' command.", packageDir)
 		logger.Warn(warningMsg)
-		return nil, cli.Exit(color.YellowString(warningMsg), 0)
+		return nil, cli.Exit(color.YellowString("%s", warningMsg), 0)
 	}
 
 	spin.Start("Attempting to fetch package configuration from %s...", repo)
@@ -161,9 +161,9 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		term.WriteError(err.Error())
 
 		if strings.Contains(err.Error(), "404") {
-			return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(git.ErrPackageNotAvailable.Error())), 1)
+			return nil, cli.Exit(color.RedString("%s", tools.CapitalizeFirstWord(git.ErrPackageNotAvailable.Error())), 1)
 		}
-		return nil, cli.Exit(color.RedString("Unable to install selected package"), 1)
+		return nil, cli.Exit(color.RedString("%s", "Unable to install selected package"), 1)
 	}
 	spin.OK()
 
@@ -184,7 +184,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 	spin.Start("Attempting to fetch command from %s...", repo)
 
 	if !strings.HasPrefix(repo, "https://github.com/akamai/cli-") && !strings.HasPrefix(repo, "git@github.com:akamai/cli-") {
-		term.Printf(color.CyanString(thirdPartyDisclaimer))
+		term.Printf(color.CyanString("%s", thirdPartyDisclaimer))
 	}
 
 	err = gitRepo.Clone(ctx, packageDir, repo, false, spin)
@@ -196,7 +196,7 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 		}
 
 		logger.Error(cases.Title(language.Und, cases.NoLower).String(err.Error()))
-		return nil, cli.Exit(color.RedString(tools.CapitalizeFirstWord(err.Error())), 1)
+		return nil, cli.Exit(color.RedString("%s", tools.CapitalizeFirstWord(err.Error())), 1)
 	}
 	spin.OK()
 
@@ -242,7 +242,7 @@ func installPackageDependencies(ctx context.Context, langManager packages.LangMa
 	if errors.Is(err, packages.ErrUnknownLang) {
 		term.Spinner().WarnOK()
 		warnMsg := "Package installed successfully, however package type is unknown, and may or may not function correctly."
-		if _, err := term.Writeln(color.CyanString(warnMsg)); err != nil {
+		if _, err := term.Writeln(color.CyanString("%s", warnMsg)); err != nil {
 			term.WriteError(err.Error())
 			return false, nil
 		}
@@ -280,7 +280,7 @@ func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcomma
 		if err != nil {
 			warnMsg := fmt.Sprintf("Unable to download binary: %v", err.Error())
 			spin.Stop(terminal.SpinnerStatusWarn)
-			if _, err := term.Writeln(color.YellowString(warnMsg)); err != nil {
+			if _, err := term.Writeln(color.YellowString("%s", warnMsg)); err != nil {
 				term.WriteError(err.Error())
 				return false, nil
 			}
@@ -295,7 +295,7 @@ func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcomma
 		spin.Stop(terminal.SpinnerStatusWarn)
 		warnMsg := "Unable to save configuration file " + err.Error()
 		logger.Warn(warnMsg)
-		if _, err := term.Writeln(color.YellowString(warnMsg)); err != nil {
+		if _, err := term.Writeln(color.YellowString("%s", warnMsg)); err != nil {
 			term.WriteError(err.Error())
 			return false, nil
 		}

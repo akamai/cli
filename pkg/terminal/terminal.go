@@ -124,7 +124,7 @@ func New(out Writer, in Reader, err io.Writer) *DefaultTerminal {
 
 // Printf writes a formatted message to the output stream
 func (t *DefaultTerminal) Printf(f string, args ...interface{}) {
-	if _, err := t.Write([]byte(fmt.Sprintf(f, args...))); err != nil {
+	if _, err := fmt.Fprintf(t, f, args...); err != nil {
 		t.WriteError(err)
 	}
 }
@@ -270,11 +270,11 @@ func ShowBanner(ctx context.Context) {
 	if _, err := term.Writeln(); err != nil {
 		term.WriteError(err.Error())
 	}
-	term.Printf(color.ReverseVideoString(strings.Repeat(" ", 60) + "\n"))
+	term.Printf(color.ReverseVideoString("%s", strings.Repeat(" ", 60)+"\n"))
 	title := "Welcome to Akamai CLI v" + version.Version
 	ws := strings.Repeat(" ", 16)
-	term.Printf(color.ReverseVideoString(ws + title + ws + "\n"))
-	term.Printf(color.ReverseVideoString(strings.Repeat(" ", 60) + "\n"))
+	term.Printf(color.ReverseVideoString("%s", ws+title+ws+"\n"))
+	term.Printf(color.ReverseVideoString("%s", strings.Repeat(" ", 60)+"\n"))
 	if _, err := term.Writeln(); err != nil {
 		term.WriteError(err.Error())
 	}

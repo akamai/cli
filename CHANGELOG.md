@@ -1,5 +1,14 @@
 # RELEASE NOTES
 
+## 2.0.3 (Dec 10, 2025)
+
+### Enhancements
+
+* Migrated to Go `1.24.11`.
+* Updated various dependencies.
+* Updated vulnerable dependencies.
+* Added support for building the CLI for the `linux/arm64` architecture ([PR#208](https://github.com/akamai/cli/pull/208), solving [I#195](https://github.com/akamai/cli/issues/195)).
+
 ## 2.0.2 (Aug 21, 2025)
 
 ### Enhancements
@@ -30,19 +39,19 @@
 
 ### Fixes
 
-* Fixed a problem with invisible output in the light background by converting all colors to a monochromatic representation ([GH#196](https://github.com/akamai/cli/issues/196)).
+* Fixed a problem with invisible output in the light background by converting all colors to a monochromatic representation ([I#196](https://github.com/akamai/cli/issues/196)).
 * Improved code by resolving issues reported by linter.
 
 ## 1.6.1 (Jan 2, 2025)
 
-* Fixed security vulnerability ([GH#198](https://github.com/akamai/cli/pull/198)).
+* Fixed security vulnerability ([PR#198](https://github.com/akamai/cli/pull/198)).
 
 ## 1.6.0 (Sep 5, 2024)
 
 ### Enhancements
 
 * Added support to show the `Installed Version` of commands during `search`.
-* Updated the list of packages in `packages-list.json` ([GH#192](https://github.com/akamai/cli/issues/192)).
+* Updated the list of packages in `packages-list.json` ([I#192](https://github.com/akamai/cli/issues/192)).
 * Removed versions of the packages from `package-list.json`.
 * Changed package installation order.
     * CLI will first check if new binaries are available. If the package has no binaries or no valid
@@ -86,8 +95,8 @@
 
 ### Fixes
 
-* Fixed the `akamai search` command error ([GH#166](https://github.com/akamai/cli/issues/166)).
-* Fixed the autocompletion for commands ([GH#165](https://github.com/akamai/cli/issues/165)).
+* Fixed the `akamai search` command error ([I#166](https://github.com/akamai/cli/issues/166)).
+* Fixed the autocompletion for commands ([I#165](https://github.com/akamai/cli/issues/165)).
 
 ## 1.5.2 (Jul 28, 2022)
 
@@ -99,7 +108,7 @@
 
 * Fixed the `akamai update` command failures when the directory `~/.akamai-cli/src/cli-xyz` is in a git detached state.
 * Show the correct version for CLI modules which version is set via ldflags.
-* Fixed execution of Python submodules on Windows ([GH#159](https://github.com/akamai/cli/issues/159)).
+* Fixed execution of Python submodules on Windows ([I#159](https://github.com/akamai/cli/issues/159)).
 * Fine print update warnings for homebrew installations.
 * Fixed failing unit tests on Windows.
 
@@ -113,14 +122,14 @@
 
 ### Enhancements
 
-* Added support for a new Apple M1(Darwin ARM64) build ([GH#127](https://github.com/akamai/cli/issues/127)). NOTE: Not all CLI packages currently support Apple M1.
+* Added support for a new Apple M1(Darwin ARM64) build ([I#127](https://github.com/akamai/cli/issues/127)). NOTE: Not all CLI packages currently support Apple M1.
 
 ## 1.4.2 (May 11, 2022)
 
 ### Fixes
 
-* Handled recent Python versions ([GH#148](https://github.com/akamai/cli/issues/148)).
-* Handled the `yes` command input ([GH#136](https://github.com/akamai/cli/issues/136)).
+* Handled recent Python versions ([I#148](https://github.com/akamai/cli/issues/148)).
+* Handled the `yes` command input ([I#136](https://github.com/akamai/cli/issues/136)).
 * Purged directories on unit test error.
 
 ## 1.4.1 (Mar 24, 2022)
@@ -147,15 +156,15 @@
 
 ### Fixes
 
-* Removed an old binary in a PowerShell terminal ([#125](https://github.com/akamai/cli/issues/125)).
+* Removed an old binary in a PowerShell terminal ([I#125](https://github.com/akamai/cli/issues/125)).
 * Documented CLI exit codes.
-* Reviewed the exit code when trying to install an already installed command ([#83](https://github.com/akamai/cli/issues/83)).
+* Reviewed the exit code when trying to install an already installed command ([I#83](https://github.com/akamai/cli/issues/83)).
 
 ### Enhancements
 * Updated a list of installable CLI commands.
-* Documented the `--version` flag ([#94](https://github.com/akamai/cli/issues/94)).
-* Added an alias with a package prefix to all installed commands to work around possible command name collisions ([#60](https://github.com/akamai/cli/issues/60)).
-* Made the `.edgerc` file location configurable ([#81](https://github.com/akamai/cli/issues/81)).
+* Documented the `--version` flag ([I#94](https://github.com/akamai/cli/issues/94)).
+* Added an alias with a package prefix to all installed commands to work around possible command name collisions ([I#60](https://github.com/akamai/cli/issues/60)).
+* Made the `.edgerc` file location configurable ([I#81](https://github.com/akamai/cli/issues/81)).
 
 ## 1.2.1 (Apr 28, 2021)
 
@@ -172,8 +181,8 @@
 
 ### Fixes
 * Synced logs with terminal output in most commands.
-* Fixed module update issue ([#113](https://github.com/akamai/cli/issues/113)).
-* Fixed panic when attempting to write on an empty writer ([#116](https://github.com/akamai/cli/issues/116)).
+* Fixed module update issue ([I#113](https://github.com/akamai/cli/issues/113)).
+* Fixed panic when attempting to write on an empty writer ([I#116](https://github.com/akamai/cli/issues/116)).
 
 ### Enhancements
 * Added code improvements: unit test coverage improvement and project structure refactoring.

@@ -1,5 +1,4 @@
 //go:build !noautoupgrade
-// +build !noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //

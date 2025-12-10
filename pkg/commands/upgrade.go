@@ -1,5 +1,4 @@
 //go:build !noautoupgrade
-// +build !noautoupgrade
 
 // Copyright 2018. Akamai Technologies, Inc
 //
@@ -61,7 +60,7 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 		return ""
 	}
 
-	checkForUpgrade := false
+	var checkForUpgrade bool
 	if data == "never" || force {
 		checkForUpgrade = true
 	}
@@ -96,8 +95,8 @@ func checkUpgradeVersion(ctx context.Context, force bool, provider versionProvid
 			_, _ = term.Writeln("You can find more details about the new version here: https://github.com/akamai/cli/releases")
 			if answer, err := term.Confirm(fmt.Sprintf(
 				"New update found: %s. You are running: %s. Upgrade now?",
-				color.BlueString(latestVersion),
-				color.BlueString(currentVersion),
+				color.BlueString("%s", latestVersion),
+				color.BlueString("%s", currentVersion),
 			), true); err != nil || !answer {
 				logger.Error(fmt.Sprintf("Upgrade declined: %v", err))
 				return ""
