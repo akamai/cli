@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.18.0
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/go-ini/ini v1.67.0
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
