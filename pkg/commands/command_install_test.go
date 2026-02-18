@@ -50,7 +50,9 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -97,6 +99,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 		},
@@ -112,7 +117,9 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -159,6 +166,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 		},
@@ -175,7 +185,9 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -213,7 +225,52 @@ func TestCmdInstall(t *testing.T) {
 			},
 			binaryResponseStatus: http.StatusOK,
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
+			},
+		},
+		"install from third-party repository shows disclaimer": {
+			args: []string{"https://github.com/other-user/cli-other-pkg.git"},
+			init: func(t *testing.T, m *mocked) {
+				m.term.On("Spinner").Return(m.term)
+
+				h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					configJSON := `{"commands": [{"name": "other-cmd"}]}`
+					_, err := w.Write([]byte(configJSON))
+					require.NoError(t, err)
+				}))
+				buildRawGitHubURL = func(_, _ string) string {
+					return fmt.Sprintf("%s/cli.json", h.URL)
+				}
+
+				m.term.On("Start", mock.Anything, mock.Anything).Return().Maybe()
+				m.term.On("OK").Return().Maybe()
+				m.term.On("Stop", mock.Anything).Return().Maybe()
+
+				m.term.On("Printf", color.CyanString("%s", thirdPartyDisclaimer)).Return().Once()
+
+				targetDir := filepath.Join("testdata", ".akamai-cli", "src", "cli-other-pkg")
+				m.gitRepo.On("Clone", targetDir, "https://github.com/other-user/cli-other-pkg.git", false, m.term).
+					Return(nil).
+					Once().
+					Run(func(_ mock.Arguments) {
+						err := os.MkdirAll(targetDir, 0755)
+						require.NoError(t, err)
+						err = os.WriteFile(filepath.Join(targetDir, "cli.json"), []byte(`{"commands": []}`), 0644)
+						require.NoError(t, err)
+					})
+
+				m.langManager.On("Install", targetDir, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+				m.term.On("Writeln", mock.Anything).Return(0, nil).Maybe()
+				m.term.On("Printf", mock.Anything, mock.Anything).Return().Maybe()
+			},
+			teardown: func(_ *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 			},
 		},
 		"package directory already exists": {
@@ -242,7 +299,9 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -255,6 +314,14 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
 				m.gitRepo.On("Clone", filepath.Join("testdata", ".akamai-cli", "src", "cli-test-cmd"),
 					"https://github.com/akamai/cli-test-cmd.git", false, m.term).Return(git2.ErrRepositoryAlreadyExists)
+			},
+			teardown: func(t *testing.T) {
+				// Reset the global function
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
+				// Clean up the created test directory
+				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 			withError: "Package is not available. Supported packages can be found here: https://techdocs.akamai.com/home/page/products-tools-a-z",
 		},
@@ -270,7 +337,9 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -288,6 +357,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("WriteError", "unable to unmarshal package: invalid character 'i' looking for beginning of value").Return(0, nil).Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestInvalidJSONRepo))
 			},
 			withError: "Unable to install selected package",
@@ -304,7 +376,10 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				// Override the URL builder for this test
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-invalid-json.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -312,6 +387,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("WriteError", "unable to unmarshal package: invalid character 'i' looking for beginning of value").Return(0, nil).Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestInvalidJSONRepo))
 			},
 			withError: "Unable to install selected package",
@@ -328,7 +406,10 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				// Override the URL builder for this test
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusFail).Return().Once()
@@ -378,6 +459,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("Printf", "\nSee \"%s\" for details.\n", []interface{}{color.BlueString("%s help [command]", tools.Self())}).Return().Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 		},
@@ -394,7 +478,10 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				// Override the URL builder for this test
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
@@ -449,6 +536,9 @@ func TestCmdInstall(t *testing.T) {
 			},
 			binaryResponseStatus: http.StatusOK,
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 		},
@@ -465,7 +555,10 @@ func TestCmdInstall(t *testing.T) {
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
+				// Override the URL builder for this test
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 
 				m.term.On("Start", "Attempting to fetch command from %s...", []interface{}{"https://github.com/akamai/cli-test-cmd.git"}).Return().Once()
 				m.term.On("OK").Return().Once()
@@ -520,6 +613,9 @@ func TestCmdInstall(t *testing.T) {
 			},
 			binaryResponseStatus: http.StatusNotFound,
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 		},
@@ -537,8 +633,10 @@ func TestCmdInstall(t *testing.T) {
 					require.NoError(t, err)
 
 				}))
-				githubRawURLTemplate = h.URL + "/akamai/%s/master/cli.json"
-
+				// Override the URL builder for this test
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", "Installing Binaries...", []interface{}(nil)).Return().Once()
 				m.term.On("Stop", terminal.SpinnerStatusWarn)
@@ -569,6 +667,9 @@ func TestCmdInstall(t *testing.T) {
 				m.term.On("WriteError", "oops").Return(0, nil).Once()
 			},
 			teardown: func(t *testing.T) {
+				buildRawGitHubURL = func(owner, repo string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				}
 				require.NoError(t, os.RemoveAll(cliTestCmdRepo))
 			},
 			withError: "Unable to install selected package",
@@ -612,6 +713,32 @@ func TestCmdInstall(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestExtractOwnerAndRepo(t *testing.T) {
+	tests := []struct {
+		name          string
+		url           string
+		expectedOwner string
+		expectedRepo  string
+	}{
+		{"Standard HTTPS", "https://github.com/akamai/cli-terraform.git", "akamai", "cli-terraform"},
+		{"HTTPS no suffix", "https://github.com/akamai/cli-terraform", "akamai", "cli-terraform"},
+		{"SSH format", "git@github.com:akamai/cli-alerts.git", "akamai", "cli-alerts"},
+		{"SSH no suffix", "git@github.com:custom-org/my-pkg", "custom-org", "my-pkg"},
+		{"Deep path", "https://github.com/org/sub/repo.git", "sub", "repo"},
+		{"Invalid URL", "not-a-url", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			owner, repo := extractOwnerAndRepo(tt.url)
+			if owner != tt.expectedOwner || repo != tt.expectedRepo {
+				t.Errorf("extractOwnerAndRepo(%s) = (%s, %s); want (%s, %s)",
+					tt.url, owner, repo, tt.expectedOwner, tt.expectedRepo)
+			}
 		})
 	}
 }

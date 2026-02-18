@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,8 +24,11 @@ import (
 
 var (
 	thirdPartyDisclaimer = color.CyanString("Disclaimer: You are installing a third-party package, subject to its own terms and conditions. Akamai makes no warranty or representation with respect to the third-party package.")
-	githubRawURLTemplate = "https://raw.githubusercontent.com/akamai/%s/master/cli.json"
 )
+
+var buildRawGitHubURL = func(owner, repo string) string {
+	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+}
 
 func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
 	return func(c *cli.Context) (e error) {
@@ -138,8 +142,18 @@ func installPackage(ctx context.Context, gitRepo git.Repository, langManager pac
 
 	spin.Start("Attempting to fetch package configuration from %s...", repo)
 
-	base := filepath.Base(dirName)
-	url := fmt.Sprintf(githubRawURLTemplate, base)
+	owner, repoName := extractOwnerAndRepo(repo)
+	if owner == "" || repoName == "" {
+		spin.Stop(terminal.SpinnerStatusFail)
+		msg := fmt.Sprintf("Unable to parse repository URL: %s", repo)
+		logger.Error(msg)
+		term.WriteError(msg)
+		return nil, cli.Exit(color.RedString("Unable to install selected package"), 1)
+	}
+
+	// Build the raw GitHub URL for cli.json
+	url := buildRawGitHubURL(owner, repoName)
+
 	cmdPackage, err := readPackageFromGithub(url, dirName)
 	if err != nil {
 		spin.Stop(terminal.SpinnerStatusFail)
@@ -292,4 +306,36 @@ func installPackageBinaries(ctx context.Context, dir string, cmdPackage subcomma
 	logger.Debug(fmt.Sprintf("Binaries installed successfully in directory: %s", dir))
 
 	return true, &cmdPackage
+}
+
+// extractOwnerAndRepo parses a GitHub repo URL and returns the owner and repo name.
+func extractOwnerAndRepo(repoURL string) (owner, repo string) {
+	// Remove .git suffix if present
+	repoURL = strings.TrimSuffix(repoURL, ".git")
+
+	// Handle SSH URLs (git@github.com:owner/repo)
+	if strings.HasPrefix(repoURL, "git@") {
+		parts := strings.SplitN(repoURL, ":", 2)
+		if len(parts) == 2 {
+			pathParts := strings.Split(strings.Trim(parts[1], "/"), "/")
+			if len(pathParts) >= 2 {
+				return pathParts[0], pathParts[1]
+			}
+		}
+		return "", ""
+	}
+
+	// Handle HTTPS URLs
+	u, err := url.Parse(repoURL)
+	if err != nil {
+		return "", ""
+	}
+
+	// Split path and extract last two segments
+	pathParts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(pathParts) >= 2 {
+		return pathParts[len(pathParts)-2], pathParts[len(pathParts)-1]
+	}
+
+	return "", ""
 }

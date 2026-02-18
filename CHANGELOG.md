@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## X.X.X (XXX XX, XXXX)
+
+### Fixes
+
+* Fixed issue that prevented installation of third-party CLI packages.
+
 ## 2.0.3 (Dec 10, 2025)
 
 ### Enhancements

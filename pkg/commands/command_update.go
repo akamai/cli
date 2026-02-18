@@ -109,8 +109,17 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			packageVersions[command.Name] = command.Version
 		}
 
-		repo := filepath.Base(repoDir)
-		url := fmt.Sprintf(githubRawURLTemplate, repo)
+		owner, repoName := extractOwnerAndRepo(repoDir)
+		if owner == "" || repoName == "" {
+			term.Spinner().Fail()
+			msg := fmt.Sprintf("Unable to parse repository URL: %s", repoDir)
+			logger.Error(msg)
+			term.WriteError(msg)
+			return cli.Exit("Unable to install selected package", 1)
+		}
+
+		// Build the raw GitHub URL for cli.json
+		url := buildRawGitHubURL(owner, repoName)
 
 		remotePackage, err := readPackageFromGithub(url, repoDir)
 		if err != nil {
