@@ -104,6 +104,7 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("WarnOK").Return().Once()
 				m.term.On("Writeln", []interface{}{color.CyanString("command \"echo\" already up-to-date")}).Return(0, nil).Once()
+				m.term.On("OK").Return().Once()
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoBin).Return([]string{cliEchoBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
@@ -294,8 +295,8 @@ func TestCmdUpdate(t *testing.T) {
 					_, err = w.Write(configJSON)
 					require.NoError(t, err)
 				}))
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("%s/%s/%s/%s/cli.json", h.URL, owner, repo, branch)
 				}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -310,8 +311,8 @@ func TestCmdUpdate(t *testing.T) {
 				m.term.On("OK").Return().Once()
 			},
 			teardown: func(_ *testing.T) {
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/cli.json", owner, repo, branch)
 				}
 			},
 		},
@@ -329,8 +330,8 @@ func TestCmdUpdate(t *testing.T) {
 					_, err = w.Write([]byte(output))
 					require.NoError(t, err)
 				}))
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("%s/%s/%s/%s/cli.json", h.URL, owner, repo, branch)
 				}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -361,8 +362,8 @@ func TestCmdUpdate(t *testing.T) {
 
 			},
 			teardown: func(t *testing.T) {
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/cli.json", owner, repo, branch)
 				}
 				require.NoError(t, os.RemoveAll(cliEchoRepo))
 				require.NoError(t, os.Rename(tempTestDir, cliEchoRepo))
@@ -383,8 +384,8 @@ func TestCmdUpdate(t *testing.T) {
 					require.NoError(t, err)
 				}))
 
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("%s/%s/%s/master/cli.json", h.URL, owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("%s/%s/%s/%s/cli.json", h.URL, owner, repo, branch)
 				}
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Start", `Attempting to update "%s" command...`, []interface{}{"echo"}).Return().Once()
@@ -417,8 +418,8 @@ func TestCmdUpdate(t *testing.T) {
 
 			},
 			teardown: func(t *testing.T) {
-				buildRawGitHubURL = func(owner, repo string) string {
-					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/master/cli.json", owner, repo)
+				buildRawGitHubURL = func(owner, repo, branch string) string {
+					return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/cli.json", owner, repo, branch)
 				}
 				require.NoError(t, os.RemoveAll(cliEchoRepo))
 				require.NoError(t, os.Rename(tempTestDir, cliEchoRepo))

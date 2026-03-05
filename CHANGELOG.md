@@ -4,7 +4,7 @@
 
 ### Fixes
 
-* Fixed issue that prevented installation of third-party CLI packages.
+* Fixed issue that prevented installation of third-party CLI packages ([I#205](https://github.com/akamai/cli/issues/205)).
 
 ## 2.0.3 (Dec 10, 2025)
 

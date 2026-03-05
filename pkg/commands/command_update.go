@@ -109,7 +109,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			packageVersions[command.Name] = command.Version
 		}
 
-		owner, repoName := extractOwnerAndRepo(repoDir)
+		owner, repoName := extractOwnerAndRepo(tools.Githubize(cmd))
 		if owner == "" || repoName == "" {
 			term.Spinner().Fail()
 			msg := fmt.Sprintf("Unable to parse repository URL: %s", repoDir)
@@ -118,14 +118,19 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			return cli.Exit("Unable to install selected package", 1)
 		}
 
-		// Build the raw GitHub URL for cli.json
-		url := buildRawGitHubURL(owner, repoName)
-
-		remotePackage, err := readPackageFromGithub(url, repoDir)
-		if err != nil {
+		var remotePackage subcommands
+		var fetchErr error
+		for _, branch := range []string{"main", "master"} {
+			url := buildRawGitHubURL(owner, repoName, branch)
+			remotePackage, fetchErr = readPackageFromGithub(url, filepath.Base(repoDir))
+			if fetchErr == nil {
+				break
+			}
+		}
+		if fetchErr != nil {
 			term.Spinner().Fail()
-			logger.Error(fmt.Sprintf("Failed to read package from github: %v", err))
-			return cli.Exit(color.RedString("unable to update, there was an issue with fetching latest configuration file: %v", err), 1)
+			logger.Error(fmt.Sprintf("Failed to read package from github: %v", fetchErr))
+			return cli.Exit(color.RedString("unable to update, there was an issue with fetching latest configuration file: %v", fetchErr), 1)
 		}
 
 		remoteVersions := map[string]string{}
@@ -247,6 +252,7 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger *slog.Logger
 			return cli.Exit(color.RedString("Unable to fetch updates: %v", err), 1)
 		}
 	} else {
+		term.Spinner().OK()
 		logger.Debug(fmt.Sprintf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String()))
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
