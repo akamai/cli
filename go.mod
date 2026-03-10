@@ -1,6 +1,6 @@
 module github.com/akamai/cli/v2
 
-go 1.24.11
+go 1.25.7
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7

@@ -87,7 +87,7 @@ This command installs the CLI and persists the configuration and packages in `$H
 
 ### Compile from source
 
-To compile Akamai CLI from source, you need [Go](https://golang.org/) 1.24.11 or later installed.
+To compile Akamai CLI from source, you need [Go](https://golang.org/) 1.25.7 or later installed.
 
 1. Change the working directory.
 

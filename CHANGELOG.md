@@ -2,6 +2,9 @@
 
 ## X.X.X (XXX XX, XXXX)
 
+* General
+    * Migrated to Go `1.25`.
+
 ### Fixes
 
 * Fixed issue that prevented installation of third-party CLI packages ([I#205](https://github.com/akamai/cli/issues/205)).
