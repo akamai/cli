@@ -125,13 +125,22 @@ usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
             ENV_DIR [ENV_DIR ...]
 venv: error: the following arguments are required: ENV_DIR
 `
-	// Python 3.14+ changed the venv help prefix from "usage: venv" to "usage: python3 -m venv"
+	// Python 3.14+ changed the venv help prefix: when invoked as "python3" it shows
+	// "usage: python3 -m venv", and when invoked as "python3.14" it shows "usage: python3.14 -m venv".
 	py314VenvHelp := `
 usage: python3 -m venv [-h] [--system-site-packages] [--symlinks | --copies]
                        [--clear] [--upgrade] [--without-pip] [--prompt PROMPT]
                        [--upgrade-deps] [--without-scm-ignore-files]
                        ENV_DIR [ENV_DIR ...]
 python3 -m venv: error: the following arguments are required: ENV_DIR
+`
+	// actual output when running python3.14 -m venv (binary carries its own version number in usage)
+	py314VersionedVenvHelp := `
+usage: python3.14 -m venv [-h] [--system-site-packages] [--symlinks | --copies]
+                          [--clear] [--upgrade] [--without-pip] [--prompt PROMPT]
+                          [--upgrade-deps] [--without-scm-ignore-files]
+                          ENV_DIR [ENV_DIR ...]
+python3.14 -m venv: error: the following arguments are required: ENV_DIR
 `
 	py314Version := "Python 3.14.2"
 	activationScript := filepath.Join("veDir", "bin", "activate")
@@ -234,7 +243,7 @@ python3 -m venv: error: the following arguments are required: ENV_DIR
 				}, true).Return(nil, nil).Once()
 			},
 		},
-		"with python 3.14 (new venv help format) and pip, python 3 required": {
+		"with python 3.14 invoked as python3 (new venv help format) and pip, python 3 required": {
 			givenDir:   srcDir,
 			veDir:      veDir,
 			requiredPy: ver3,
@@ -254,6 +263,59 @@ python3 -m venv: error: the following arguments are required: ENV_DIR
 					Path: py3Bin,
 					Args: []string{py3Bin, "-m", "venv", "--version"},
 				}, true).Return([]byte(py314VenvHelp), nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "-m", "ensurepip", "--upgrade"},
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "-m", "pip", "install", "--no-cache", "--upgrade", "pip", "setuptools"},
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "-m", "venv", "veDir"},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("GetOS").Return("linux").Times(4)
+				m.On("FileExists", veDir).Return(true, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: bashBin,
+					Args: []string{"source", activationScript},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("FileExists", requirementsFile).Return(true, nil).Once()
+				m.On("FileExists", ".").Return(true, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3VeBin,
+					Args: []string{py3VeBin, "-m", "pip", "install", "--upgrade", "--ignore-installed", "-r", requirementsFile},
+					Dir:  "",
+				}, true).Return(nil, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: bashBin,
+					Args: []string{"deactivate"},
+				}, true).Return(nil, nil).Once()
+			},
+		},
+		"with python 3.14 invoked as python3 but showing python3.14 in venv help, python 3 required": {
+			givenDir:   srcDir,
+			veDir:      veDir,
+			requiredPy: ver3,
+			goos:       "linux",
+			init: func(m *mocked) {
+				m.On("LookPath", "python3").Return(py3Bin, nil).Once()
+				m.On("LookPath", "bash").Return(bashBin, nil).Times(3)
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "--version"},
+				}, true).Return([]byte(py314Version), nil).Twice()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "-m", "pip", "--version"},
+				}, true).Return([]byte(py3PipVersion), nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3Bin,
+					Args: []string{py3Bin, "-m", "venv", "--version"},
+				}, true).Return([]byte(py314VersionedVenvHelp), nil).Once()
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "-m", "ensurepip", "--upgrade"},

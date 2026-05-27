@@ -22,7 +22,7 @@ var (
 	pythonVersionPattern = `Python ([2,3]\.\d+\.\d+).*`
 	pythonVersionRegex   = regexp.MustCompile(pythonVersionPattern)
 	pipVersionPattern    = `^pip \d{1,2}\..+ \(python [2,3]\.\d+\)`
-	venvHelpPattern      = `usage: (python3? -m )?venv `
+	venvHelpPattern      = `usage: (python[\d.]* -m )?venv `
 	pipVersionRegex      = regexp.MustCompile(pipVersionPattern)
 	venvHelpRegex        = regexp.MustCompile(venvHelpPattern)
 )
