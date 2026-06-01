@@ -49,6 +49,19 @@ $ chmod +x ~/Downloads/akamai-<VERSION>-<PLATFORM>
 $ mv ~/Downloads/akamai-<VERSION>-<PLATFORM> /usr/local/bin/akamai
 ```
 
+**mv** may throw "Permission denied" error, please add **sudo** at the front, which will ask for admin credential.
+
+If you encounter problem running
+```sh
+$ akamai
+```
+due to Apple Gatekeeper error **"akamai" can't be opened because....**
+
+Run this from ~ directory to remove it from quarantine and try again :
+```sh
+xattr -d com.apple.quarantine /usr/local/bin/akamai
+```
+
 #### Windows
 
 Once you download the appropriate binary for your system, simply execute the binary from the command line. For example:
