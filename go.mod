@@ -2,6 +2,7 @@ module github.com/akamai/cli/v2
 
 go 1.25.0
 
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver v1.5.0

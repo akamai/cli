@@ -1,5 +1,16 @@
 # RELEASE NOTES
 
+## X.X.X (XXX XX, XXXX)
+
+* General
+    * Migrated to Go `1.25`.
+
+### Fixes
+
+* Fixed issue that prevented installation of third-party CLI packages ([I#205](https://github.com/akamai/cli/issues/205)).
+* Fixed issue that prevented installation of `cps` and `cloudlets` modules with Python `3.14+` ([I#214](https://github.com/akamai/cli/issues/214)).
+
+
 ## 2.0.3 (Dec 10, 2025)
 
 ### Enhancements
