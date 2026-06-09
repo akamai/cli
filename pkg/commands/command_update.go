@@ -1,17 +1,3 @@
-// Copyright 2018. Akamai Technologies, Inc
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package commands
 
 import (
@@ -123,14 +109,28 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 			packageVersions[command.Name] = command.Version
 		}
 
-		repo := filepath.Base(repoDir)
-		url := fmt.Sprintf(githubRawURLTemplate, repo)
-
-		remotePackage, err := readPackageFromGithub(url, repoDir)
-		if err != nil {
+		owner, repoName := extractOwnerAndRepo(tools.Githubize(cmd))
+		if owner == "" || repoName == "" {
 			term.Spinner().Fail()
-			logger.Error(fmt.Sprintf("Failed to read package from github: %v", err))
-			return cli.Exit(color.RedString("unable to update, there was an issue with fetching latest configuration file: %v", err), 1)
+			msg := fmt.Sprintf("Unable to parse repository URL: %s", repoDir)
+			logger.Error(msg)
+			term.WriteError(msg)
+			return cli.Exit("Unable to install selected package", 1)
+		}
+
+		var remotePackage subcommands
+		var fetchErr error
+		for _, branch := range []string{"main", "master"} {
+			url := buildRawGitHubURL(owner, repoName, branch)
+			remotePackage, fetchErr = readPackageFromGithub(url, filepath.Base(repoDir))
+			if fetchErr == nil {
+				break
+			}
+		}
+		if fetchErr != nil {
+			term.Spinner().Fail()
+			logger.Error(fmt.Sprintf("Failed to read package from github: %v", fetchErr))
+			return cli.Exit(color.RedString("unable to update, there was an issue with fetching latest configuration file: %v", fetchErr), 1)
 		}
 
 		remoteVersions := map[string]string{}
@@ -252,6 +252,7 @@ func updateRepo(ctx context.Context, gitRepo git.Repository, logger *slog.Logger
 			return cli.Exit(color.RedString("Unable to fetch updates: %v", err), 1)
 		}
 	} else {
+		term.Spinner().OK()
 		logger.Debug(fmt.Sprintf("HEAD is the same as the remote: %s (old) vs %s (new)", refBeforePull.Hash().String(), ref.Hash().String()))
 		debugMessage := fmt.Sprintf("command \"%s\" already up-to-date", cmd)
 		logger.Warn(debugMessage)
