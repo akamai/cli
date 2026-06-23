@@ -95,7 +95,7 @@ func (l *langManager) GetShell(goos string) (string, error) {
 	case "windows":
 		return "", nil
 	case "linux", "darwin":
-		sh, err := lookForBins(l.commandExecutor, "bash", "sh")
+		sh, err := lookForBins(l.commandExecutor, nil, "bash", "sh")
 		if err != nil && errors.As(err, &pathErr) && pathErr.Err != syscall.ENOENT {
 			return "", err
 		}
