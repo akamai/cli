@@ -1,44 +1,10 @@
 # RELEASE NOTES
 
-## X.X.X (X X, X)
-
-### Breaking changes
-
-
-
-
-
-
-
-
-
-
+## 2.0.5 (Jul 17, 2026)
 
 ### Enhancements
 
-
-
-
-
-
-
-
-
-
-
-
-### Fixes
-
-
-
-
-
-
-
-
-
-
-
+* Updated vulnerable dependencies.
 
 ## 2.0.4 (Jun 9, 2026)
 
