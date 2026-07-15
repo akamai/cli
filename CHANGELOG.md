@@ -1,6 +1,6 @@
 # RELEASE NOTES
 
-## 2.0.5 (Jul 17, 2026)
+## 2.0.5 (Jul 16, 2026)
 
 ### Breaking changes
 
