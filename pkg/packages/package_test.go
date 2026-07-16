@@ -59,6 +59,10 @@ func TestLangManager_FindExec(t *testing.T) {
 			givenCmdExec: "test",
 			init: func(m *mocked) {
 				m.On("LookPath", "python3").Return("/test/python", nil)
+				m.On("ExecCommand", &exec.Cmd{
+					Path: "/test/python",
+					Args: []string{"/test/python", "--version"},
+				}, true).Return([]byte("Python 3.9.0"), nil)
 			},
 			expected: []string{"/test/python", "test"},
 		},

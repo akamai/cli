@@ -201,7 +201,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "--version"},
-				}, true).Return([]byte(py34Version), nil).Twice()
+				}, true).Return([]byte(py34Version), nil).Times(3)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "-m", "pip", "--version"},
@@ -254,7 +254,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "--version"},
-				}, true).Return([]byte(py314Version), nil).Twice()
+				}, true).Return([]byte(py314Version), nil).Times(3)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "-m", "pip", "--version"},
@@ -307,7 +307,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "--version"},
-				}, true).Return([]byte(py314Version), nil).Twice()
+				}, true).Return([]byte(py314Version), nil).Times(3)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "-m", "pip", "--version"},
@@ -364,7 +364,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "--version"},
-				}, true).Return([]byte(py34Version), nil).Twice()
+				}, true).Return([]byte(py34Version), nil).Times(3)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "-m", "venv", "--version"},
@@ -417,7 +417,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "--version"},
-				}, true).Return([]byte(py310Version), nil).Twice()
+				}, true).Return([]byte(py310Version), nil).Times(3)
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3BinWindows,
 					Args: []string{py3BinWindows, "-m", "venv", "--version"},
@@ -507,7 +507,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "--version"},
-				}, true).Return([]byte{}, nil).Once()
+				}, true).Return([]byte{}, nil).Twice()
 			},
 			withError: fmt.Errorf("unable to validate python dependency: unable to determine installed version, minimum version required: python: /test/python3 --version"),
 		},
@@ -520,7 +520,7 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{
 					Path: py3Bin,
 					Args: []string{py3Bin, "--version"},
-				}, true).Return([]byte(py34Version), nil).Once()
+				}, true).Return([]byte(py34Version), nil).Twice()
 			},
 			withError: fmt.Errorf("unable to validate python dependency: higher version is required to install this command: required: /test/python3:3.5.5, have: 3.4.0. Please install the required Python branch"),
 		},
@@ -547,6 +547,34 @@ python3.14 -m venv: error: the following arguments are required: ENV_DIR
 				m.On("ExecCommand", &exec.Cmd{Path: py2Bin, Args: []string{"/test/python2", "--version"}}, true).Return([]byte(py34Version), nil).Once()
 			},
 			withError: fmt.Errorf("unable to validate python dependency: unable to locate runtime: Please install the following Python branch: 2.0.0"),
+		},
+		"python3.exe is Windows App Execution Alias stub, py.exe is used as fallback": {
+			givenDir:   srcDir,
+			veDir:      veDir,
+			requiredPy: ver3,
+			goos:       "windows",
+			init: func(m *mocked) {
+				windowsStubPath := filepath.Join("C:", "Users", "user", "AppData", "Local", "Microsoft", "WindowsApps", "python3.exe")
+				m.On("LookPath", "python3").Return("", errors.New("not found")).Once()
+				m.On("LookPath", "python3.exe").Return(windowsStubPath, nil).Once()
+				// The Windows App Execution Alias stub fails with exit status 9009
+				m.On("ExecCommand", &exec.Cmd{
+					Path: windowsStubPath,
+					Args: []string{windowsStubPath, "--version"},
+				}, true).Return([]byte{}, errors.New("exit status 9009")).Once()
+				// Fall back to py.exe which is the actual Python installation
+				m.On("LookPath", "py.exe").Return(py3BinWindows, nil).Once()
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "--version"},
+				}, true).Return([]byte(py310Version), nil).Twice()
+				// pip check fails to keep mock setup minimal
+				m.On("ExecCommand", &exec.Cmd{
+					Path: py3BinWindows,
+					Args: []string{py3BinWindows, "-m", "pip", "--version"},
+				}, true).Return([]byte{}, errors.New("pip not installed")).Once()
+			},
+			withError: fmt.Errorf("unable to validate python dependency: pip not found. Please verify your setup: "),
 		},
 	}
 

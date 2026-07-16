@@ -414,7 +414,7 @@ func findPythonBin(ctx context.Context, cmdExecutor executor, ver, name string) 
 	}()
 	if version.Compare("3.0.0", ver) != version.Greater {
 		// looking for python3 or py (windows)
-		bin, err = lookForBins(cmdExecutor, "python3", "python3.exe", "py.exe")
+		bin, err = lookForBins(cmdExecutor, verifyExecutable(cmdExecutor), "python3", "python3.exe", "py.exe")
 		if err != nil {
 			return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python 3")
 		}
@@ -430,14 +430,14 @@ func findPythonBin(ctx context.Context, cmdExecutor executor, ver, name string) 
 	}
 	if version.Compare("2.0.0", ver) != version.Greater {
 		// looking for python2 or py (windows) - no virtualenv
-		bin, err = lookForBins(cmdExecutor, "python2", "python2.exe", "py.exe")
+		bin, err = lookForBins(cmdExecutor, nil, "python2", "python2.exe", "py.exe")
 		if err != nil {
 			return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python 2")
 		}
 		return bin, nil
 	}
 	// looking for any version
-	bin, err = lookForBins(cmdExecutor, "python2", "python", "python3", "py.exe", "python.exe")
+	bin, err = lookForBins(cmdExecutor, nil, "python2", "python", "python3", "py.exe", "python.exe")
 	if err != nil {
 		return "", fmt.Errorf("%w: %s. Please verify if the executable is included in your PATH", ErrRuntimeNotFound, "python")
 	}
@@ -456,12 +456,12 @@ func findPipBin(ctx context.Context, cmdExecutor executor, requiredPy string) (s
 	}()
 	switch version.Compare(requiredPy, "3.0.0") {
 	case version.Greater, version.Equals:
-		bin, err = lookForBins(cmdExecutor, "pip3", "pip3.exe")
+		bin, err = lookForBins(cmdExecutor, nil, "pip3", "pip3.exe")
 		if err != nil {
 			return "", fmt.Errorf("%w: %s", ErrPackageManagerNotFound, "pip3")
 		}
 	case version.Smaller:
-		bin, err = lookForBins(cmdExecutor, "pip2")
+		bin, err = lookForBins(cmdExecutor, nil, "pip2")
 		if err != nil {
 			return "", fmt.Errorf("%w, %s", ErrPackageManagerNotFound, "pip2")
 		}
@@ -498,14 +498,37 @@ func installPythonDepsPip(ctx context.Context, cmdExecutor executor, bin, dir st
 	return nil
 }
 
-func lookForBins(cmdExecutor executor, bins ...string) (string, error) {
-	var err error
-	var bin string
+// lookForBins searches for the first available binary from the provided list using LookPath.
+// If verify is non-nil, it is called with the resolved binary path; binaries for which
+// verify returns false are skipped. Pass nil to skip verification entirely.
+func lookForBins(cmdExecutor executor, verify func(string) bool, bins ...string) (string, error) {
+	var lastErr error
 	for _, binName := range bins {
-		bin, err = cmdExecutor.LookPath(binName)
-		if err == nil {
-			return bin, nil
+		bin, err := cmdExecutor.LookPath(binName)
+		if err != nil {
+			lastErr = err
+			continue
 		}
+		if verify != nil && !verify(bin) {
+			// Binary exists in PATH but failed verification - skip silently.
+			// On Windows this catches App Execution Alias stubs that open the
+			// Microsoft Store instead of running Python (exit status 9009).
+			continue
+		}
+		return bin, nil
 	}
-	return bin, err
+	if lastErr == nil {
+		lastErr = fmt.Errorf("not found")
+	}
+	return "", lastErr
+}
+
+// verifyExecutable returns a verifier function that checks whether a binary can actually
+// be executed (exits without error).
+func verifyExecutable(cmdExecutor executor) func(string) bool {
+	return func(bin string) bool {
+		cmd := exec.Command(bin, "--version")
+		_, err := cmdExecutor.ExecCommand(cmd, true)
+		return err == nil
+	}
 }

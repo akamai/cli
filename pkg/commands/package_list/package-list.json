@@ -10,35 +10,6 @@
       "requirements": {"python":"3.0.0"}
     },
     {
-      "title": "API Gateway",
-      "name": "api-gateway",
-      "url": "https://github.com/akamai/cli-api-gateway",
-      "issues": "https://github.com/akamai/cli-api-gateway/issues",
-      "commands": [
-        {
-          "name": "api-gateway",
-          "description": "Manage API definitions and endpoints",
-          "auto-complete": true,
-          "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
-        },
-        {
-          "name": "api-keys",
-          "description": "Manage API keys",
-          "auto-complete": true,
-          "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
-        },
-        {
-          "name": "api-security",
-          "description": "Manage API protections",
-          "auto-complete": true,
-          "bin": "https://github.com/akamai/cli-api-gateway/releases/download/{{.Version}}/akamai-{{.Name}}-{{.Version}}-{{.OS}}{{.Arch}}{{.BinSuffix}}"
-        }
-      ],
-      "requirements": {
-        "go": "1.10.0"
-      }
-    },
-    {
       "title": "Application Security",
       "name": "appsec",
       "url": "https://github.com/akamai/cli-appsec",
