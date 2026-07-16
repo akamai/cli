@@ -2,12 +2,9 @@
 
 ## 2.0.5 (Jul 16, 2026)
 
-### Breaking changes
-
-* Removed the `api-gateway` from the list of installable packages as the corresponding project was archived.
-
 ### Enhancements
 
+* Removed the `api-gateway` from the list of installable packages as the corresponding project was archived.
 * Updated vulnerable dependencies.
 
 ## 2.0.4 (Jun 9, 2026)
