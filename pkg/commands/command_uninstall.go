@@ -15,7 +15,6 @@ import (
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -46,7 +45,7 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd string, logger *slog.Logger) error {
 	term := terminal.Get(ctx)
 
-	home, err := homedir.Dir()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		logger.Error(fmt.Sprintf("No home directory detected: %v", err))
 		return fmt.Errorf("no home directory detected: %v", err)

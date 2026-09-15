@@ -1,5 +1,11 @@
 # RELEASE NOTES
 
+## X.X.X (X XX, XXXX)
+
+### Enhancements
+
+* Removed an unmaintained `github.com/mitchellh/go-homedir` dependency, replacing its usage with the standard library's `os.UserHomeDir()`.
+
 ## 2.0.5 (Jul 16, 2026)
 
 ### Enhancements

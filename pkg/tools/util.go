@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,7 +24,7 @@ func GetAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
 		var err error
-		cliHome, err = homedir.Dir()
+		cliHome, err = os.UserHomeDir()
 		if err != nil {
 			return "", cli.Exit("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
 		}

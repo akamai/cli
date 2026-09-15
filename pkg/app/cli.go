@@ -15,7 +15,6 @@ import (
 	"github.com/akamai/cli/v2/pkg/version"
 
 	"github.com/kardianos/osext"
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -106,7 +105,7 @@ func createAppTemplate(ctx context.Context, commandName, usage, description, ver
 
 	var edgercpath, section string
 	if useDefaults {
-		edgercpath, _ = homedir.Dir()
+		edgercpath, _ = os.UserHomeDir()
 		edgercpath = path.Join(edgercpath, ".edgerc")
 
 		section = "default"
