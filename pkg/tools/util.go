@@ -1,13 +1,28 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
+
+var commandNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+
+// NormalizeCommandName converts a package command name to its canonical form
+// and rejects values that cannot safely be used as a command identifier.
+func NormalizeCommandName(name string) (string, error) {
+	normalized := strings.ToLower(name)
+	if !commandNamePattern.MatchString(normalized) {
+		return "", fmt.Errorf("%q must match [A-Za-z0-9][A-Za-z0-9_-]*", name)
+	}
+
+	return normalized, nil
+}
 
 // Self ...
 func Self() string {

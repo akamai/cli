@@ -1,6 +1,11 @@
 package commands
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,4 +48,35 @@ func TestReadPackage(t *testing.T) {
 			assert.Equal(t, test.pkg, subcommands.Pkg, "the package name was not resolved properly")
 		})
 	}
+}
+
+func TestReadPackageRejectsTraversalCommandName(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "cli.json"), []byte(`{"commands":[{"name":"x/../../escaped"}]}`), 0600))
+
+	_, err := readPackage(dir)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid command name in cli.json")
+}
+
+func TestReadPackageFromGithubRejectsTraversalCommandName(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, err := w.Write([]byte(`{"commands":[{"name":"x/../../escaped"}]}`))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	_, err := readPackageFromGithub(server.URL, t.TempDir())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid command name in cli.json")
+}
+
+func TestDownloadBinRejectsTraversalCommandName(t *testing.T) {
+	dir := t.TempDir()
+	escapedPath := filepath.Join(filepath.Dir(dir), "escaped")
+
+	err := downloadBin(context.Background(), dir, command{Name: "x/../../escaped"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid command name in cli.json")
+	assert.NoFileExists(t, escapedPath)
 }
