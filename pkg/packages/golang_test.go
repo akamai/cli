@@ -219,3 +219,10 @@ func TestInstallGolang(t *testing.T) {
 		})
 	}
 }
+
+func TestInstallGolangRejectsTraversalCommandName(t *testing.T) {
+	l := langManager{new(mocked)}
+	err := l.installGolang(context.Background(), t.TempDir(), "*", []string{"x/../../escaped"}, []string{""})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid command name")
+}

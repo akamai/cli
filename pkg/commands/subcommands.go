@@ -46,8 +46,8 @@ func readPackage(dir string) (subcommands, error) {
 		return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
 	}
 
-	for key := range packageData.Commands {
-		packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
+	if err := normalizeCommandNames(&packageData); err != nil {
+		return subcommands{}, err
 	}
 
 	packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
@@ -75,8 +75,8 @@ func readPackageFromGithub(url, dir string) (subcommands, error) {
 
 		packageData.raw = cliJSON
 
-		for key := range packageData.Commands {
-			packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
+		if err := normalizeCommandNames(&packageData); err != nil {
+			return subcommands{}, err
 		}
 
 		packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
@@ -142,6 +142,11 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 		cmd.BinSuffix = ".exe"
 	}
 
+	commandName, err := tools.NormalizeCommandName(cmd.Name)
+	if err != nil {
+		return fmt.Errorf("invalid command name in cli.json: %w", err)
+	}
+
 	t := template.Must(template.New("url").Parse(cmd.Bin))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, cmd); err != nil {
@@ -152,7 +157,7 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	url := buf.String()
 	logger.Debug(fmt.Sprintf("Fetching binary from %s", url))
 
-	binName := filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix)
+	binName := filepath.Join(dir, "akamai-"+commandName+cmd.BinSuffix)
 	bin, err := os.Create(binName)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Unable to create %s file: %v", binName, err))
@@ -188,6 +193,18 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	if err != nil || n == 0 {
 		logger.Error(fmt.Sprintf("Unable to copy from %s to %s: %v", res.Body, binName, err))
 		return err
+	}
+
+	return nil
+}
+
+func normalizeCommandNames(packageData *subcommands) error {
+	for i := range packageData.Commands {
+		name, err := tools.NormalizeCommandName(packageData.Commands[i].Name)
+		if err != nil {
+			return fmt.Errorf("invalid command name in cli.json: %w", err)
+		}
+		packageData.Commands[i].Name = name
 	}
 
 	return nil

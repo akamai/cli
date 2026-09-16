@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/akamai/cli/v2/pkg/color"
 	"github.com/akamai/cli/v2/pkg/log"
@@ -21,6 +20,12 @@ import (
 
 func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands, ldFlags []string) error {
 	logger := log.FromContext(ctx)
+
+	for _, command := range commands {
+		if _, err := tools.NormalizeCommandName(command); err != nil {
+			return fmt.Errorf("invalid command name: %w", err)
+		}
+	}
 
 	goBin, err := l.commandExecutor.LookPath("go")
 	if err != nil {
@@ -72,7 +77,15 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 
 	for n, command := range commands {
 		ldFlag := ldFlags[n]
-		execName := "akamai-" + strings.ToLower(command)
+		commandName, _ := tools.NormalizeCommandName(command)
+		execName := "akamai-" + commandName
+		outputPath := filepath.Join(dir, execName)
+
+		// A package repository controls its own contents. Remove a pre-existing
+		// output entry so go build cannot follow a symlink planted in that repo.
+		if err := os.Remove(outputPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("remove existing Go build output %q: %w", outputPath, err)
+		}
 
 		var cmd *exec.Cmd
 		params := []string{"build", "-o", execName}
