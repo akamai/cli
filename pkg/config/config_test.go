@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/akamai/cli/v2/pkg/terminal"
-	"github.com/go-ini/ini"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/ini.v1"
 )
 
 var (

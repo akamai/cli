@@ -5,6 +5,8 @@
 ### Enhancements
 
 * Removed an unmaintained `github.com/mitchellh/go-homedir` dependency, replacing its usage with the standard library's `os.UserHomeDir()`.
+* Migrated to Go `1.26.8`.
+* Updated dependencies and development tooling.
 
 ## 2.0.5 (Jul 16, 2026)
 

@@ -43,7 +43,7 @@ func TestCmdUninstall(t *testing.T) {
 
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{cliEchoUninstallBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 			},
@@ -73,7 +73,7 @@ func TestCmdUninstall(t *testing.T) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{}, nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 				m.term.On("OK").Return().Once()
@@ -89,7 +89,7 @@ func TestCmdUninstall(t *testing.T) {
 				m.langManager.On("GetPackageBinPaths").Return("/path/to/echo-uninstall").Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 

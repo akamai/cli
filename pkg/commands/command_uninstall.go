@@ -77,7 +77,7 @@ func uninstallPackage(ctx context.Context, langManager packages.LangManager, cmd
 		return fmt.Errorf("command \"%s\" not found. Try \"%s help\"", cmd, tools.Self())
 	}
 
-	term.Spinner().Start(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
+	term.Spinner().Start("Attempting to uninstall %q command...", cmd)
 	logger.Debug(fmt.Sprintf("Attempting to uninstall \"%s\" command...", cmd))
 
 	var repoDir string

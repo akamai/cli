@@ -136,7 +136,7 @@ func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 	}
 	answer, err := term.Prompt("Choose where you would like to install Akamai CLI:", writablePaths...)
 	if err != nil {
-		term.Spinner().Start(string(terminal.SpinnerStatusFail))
+		term.Spinner().Start("%s", terminal.SpinnerStatusFail)
 		if _, err := term.Writeln(color.RedString(err.Error())); err != nil {
 			term.WriteError(err.Error())
 		}
@@ -148,7 +148,7 @@ func choosePath(ctx context.Context, writablePaths []string, selfPath string) {
 		suffix = ".exe"
 	}
 	newPath := filepath.Join(answer, "akamai"+suffix)
-	term.Spinner().Start("Installing to " + newPath + "...")
+	term.Spinner().Start("Installing to %s...", newPath)
 
 	err = tools.MoveFile(selfPath, newPath)
 
