@@ -152,6 +152,28 @@ func TestCmdSubcommand(t *testing.T) {
 	}
 }
 
+// TestCmdSubcommandRunsValidCommandFromMixedValidityManifest verifies that a
+// manifest containing both a valid command and an invalid command name still
+// allows the valid command to run.
+func TestCmdSubcommandRunsValidCommandFromMixedValidityManifest(t *testing.T) {
+	t.Setenv("AKAMAI_CLI_HOME", "./testdata")
+	validBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-mixed-validity", "bin", "akamai-valid")
+	m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
+	command := &cli.Command{
+		Name:   "valid",
+		Action: cmdSubcommand(m.gitRepo, m.langManager),
+	}
+	app, ctx := setupTestApp(command, m)
+
+	m.langManager.On("FindExec", packages.LanguageRequirements{}, validBin).Return([]string{validBin}, nil)
+	m.langManager.On("FinishExecution", packages.LanguageRequirements{}, "cli-valid").Once()
+
+	err := app.RunContext(ctx, append(os.Args[0:1], "valid", "abc"))
+
+	require.NoError(t, err)
+	m.langManager.AssertExpectations(t)
+}
+
 func TestPythonCmdSubcommand(t *testing.T) {
 	// run installed akamai echo command with python required
 	t.Run("run installed akamai echo command with python required", func(t *testing.T) {

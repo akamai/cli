@@ -2,10 +2,12 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,10 +61,25 @@ func TestReadPackageRejectsTraversalCommandName(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid command name in cli.json")
 }
 
+func TestReadInstalledPackageOmitsInvalidCommandDiagnostics(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(
+		filepath.Join(dir, "cli.json"),
+		[]byte(`{"commands":[{"name":"valid"},{"name":"invalid.name"}]}`),
+		0600,
+	))
+
+	packageData, err := readInstalledPackage(dir)
+
+	require.NoError(t, err)
+	require.Len(t, packageData.Commands, 1)
+	assert.Equal(t, "valid", packageData.Commands[0].Name)
+}
+
 func TestReadPackageFromGithubRejectsTraversalCommandName(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, err := w.Write([]byte(`{"commands":[{"name":"x/../../escaped"}]}`))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -71,12 +88,76 @@ func TestReadPackageFromGithubRejectsTraversalCommandName(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid command name in cli.json")
 }
 
-func TestDownloadBinRejectsTraversalCommandName(t *testing.T) {
+func TestDownloadBinReplacesSymlinkedOutputWithoutFollowingIt(t *testing.T) {
 	dir := t.TempDir()
-	escapedPath := filepath.Join(filepath.Dir(dir), "escaped")
+	externalFile := filepath.Join(t.TempDir(), "external")
+	require.NoError(t, os.WriteFile(externalFile, []byte("original"), 0600))
+	binaryName := "akamai-test"
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+	binaryPath := filepath.Join(dir, binaryName)
+	if err := os.Symlink(externalFile, binaryPath); err != nil {
+		t.Skipf("symlink creation is unavailable: %v", err)
+	}
 
-	err := downloadBin(context.Background(), dir, command{Name: "x/../../escaped"})
+	err := downloadBin(context.Background(), dir, command{Name: "test"})
+
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid command name in cli.json")
-	assert.NoFileExists(t, escapedPath)
+	content, readErr := os.ReadFile(externalFile)
+	require.NoError(t, readErr)
+	assert.Equal(t, "original", string(content))
+	info, statErr := os.Lstat(binaryPath)
+	require.NoError(t, statErr)
+	assert.Zero(t, info.Mode()&os.ModeSymlink)
+}
+
+func TestDownloadBinRejectsInvalidCommandName(t *testing.T) {
+	err := downloadBin(context.Background(), t.TempDir(), command{
+		Name: "x/../../escaped",
+		Bin:  "https://example.com/akamai-test",
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must match")
+}
+
+func TestDownloadBinRejectsSymlinkedBinaryDirectory(t *testing.T) {
+	externalDir := t.TempDir()
+	externalFile := filepath.Join(externalDir, "akamai-test")
+	require.NoError(t, os.WriteFile(externalFile, []byte("original"), 0600))
+
+	dir := filepath.Join(t.TempDir(), "bin")
+	if err := os.Symlink(externalDir, dir); err != nil {
+		t.Skipf("symlink creation is unavailable: %v", err)
+	}
+
+	err := downloadBin(context.Background(), dir, command{Name: "test"})
+
+	require.EqualError(t, err, fmt.Sprintf("output directory %q must be a non-symlink directory", dir))
+	content, readErr := os.ReadFile(externalFile)
+	require.NoError(t, readErr)
+	assert.Equal(t, "original", string(content))
+}
+
+func TestDownloadBinSetsExecutablePermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not support Unix executable permissions")
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, err := w.Write([]byte("binary"))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	dir := t.TempDir()
+	require.NoError(t, downloadBin(context.Background(), dir, command{
+		Name: "test",
+		Bin:  server.URL,
+	}))
+
+	info, err := os.Stat(filepath.Join(dir, "akamai-test"))
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0775), info.Mode().Perm())
 }

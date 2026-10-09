@@ -1,0 +1,14 @@
+{
+  "commands": [
+    {
+      "name": "valid",
+      "description": "valid command",
+      "version": "1.0.0"
+    },
+    {
+      "name": "invalid.name",
+      "description": "command with an invalid name",
+      "version": "1.0.0"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,7 +16,9 @@ import (
 	"github.com/akamai/cli/v2/pkg/autocomplete"
 	"github.com/akamai/cli/v2/pkg/color"
 	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/urfave/cli/v2"
@@ -245,26 +248,43 @@ func createBuiltinCommands() []*cli.Command {
 	}
 }
 
-func createInstalledCommands(_ context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+func createInstalledCommands(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+	logger := log.FromContext(ctx)
 	commands := make([]*cli.Command, 0)
 	packagePaths := getPackagePaths()
 	for _, dir := range packagePaths {
-		pkg, err := readPackage(dir)
-		if err == nil {
-			commands = append(commands, subcommandToCliCommands(pkg, gitRepo, langManager)...)
+		pkg, invalidCommands, err := readInstalledPackageWithDiagnostics(dir)
+		if err != nil {
+			warnInstalledPackage(ctx, logger, fmt.Sprintf("Skipping installed package in %q: %v", dir, err))
+			continue
 		}
+		for _, err := range invalidCommands {
+			warnInstalledPackage(ctx, logger, fmt.Sprintf("Skipping command in installed package %q: %v", dir, err))
+		}
+		commands = append(commands, subcommandToCliCommands(pkg, gitRepo, langManager)...)
 	}
 	return commands
 }
 
+func warnInstalledPackage(ctx context.Context, logger *slog.Logger, message string) {
+	logger.Warn(message)
+	term := terminal.Get(ctx)
+	if _, err := term.Writeln(color.YellowString("%s", message)); err != nil {
+		logger.Error("Unable to display installed package warning", "error", err)
+	}
+}
+
 // findExec returns paths to language interpreter (if necessary) and package binary
 func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, *packages.LanguageRequirements, error) {
+	cmdName, err := tools.CommandBinaryName(cmd)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
-	cmdName := "akamai"
 	cmdNameTitle := "akamai"
 	for _, cmdPart := range strings.Split(cmd, "-") {
-		cmdName += "-" + strings.ToLower(cmdPart)
 		cmdNameTitle += cases.Title(language.Und, cases.NoLower).String(strings.ToLower(cmdPart))
 	}
 
@@ -276,7 +296,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 
 	// Quick look for executables on the path
 	var path string
-	path, err := exec.LookPath(cmdName)
+	path, err = exec.LookPath(cmdName)
 	if err != nil {
 		path, _ = exec.LookPath(cmdNameTitle)
 	}
@@ -322,7 +342,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 		cmdBinary := files[0]
 
 		packageDir := findPackageDir(filepath.Dir(cmdBinary))
-		cmdPackage, err := readPackage(packageDir)
+		cmdPackage, err := readInstalledPackage(packageDir)
 		if err != nil {
 			return nil, nil, err
 		}

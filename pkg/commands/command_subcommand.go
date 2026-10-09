@@ -47,7 +47,7 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			packageDir = findPackageDir(executable[1])
 		}
 
-		cmdPackage, err := readPackage(packageDir)
+		cmdPackage, err := readInstalledPackage(packageDir)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error reading package: %v", err))
 			return err
@@ -127,9 +127,15 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			return err
 		}
 
-		cmdPackage, err = readPackage(packageDir)
+		cmdPackage, err = readInstalledPackage(packageDir)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error reading package: %v", err))
+			return err
+		}
+
+		if len(cmdPackage.Commands) == 0 {
+			err := fmt.Errorf("package in %q does not contain any valid commands", packageDir)
+			logger.Error(err.Error())
 			return err
 		}
 

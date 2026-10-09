@@ -21,10 +21,17 @@ import (
 func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands, ldFlags []string) error {
 	logger := log.FromContext(ctx)
 
-	for _, command := range commands {
-		if _, err := tools.NormalizeCommandName(command); err != nil {
+	if len(commands) != len(ldFlags) {
+		return fmt.Errorf("commands and ldFlags should have the same length")
+	}
+
+	binaryNames := make([]string, len(commands))
+	for i, command := range commands {
+		name, err := tools.CommandBinaryName(command)
+		if err != nil {
 			return fmt.Errorf("invalid command name: %w", err)
 		}
+		binaryNames[i] = name
 	}
 
 	goBin, err := l.commandExecutor.LookPath("go")
@@ -71,19 +78,12 @@ func (l *langManager) installGolang(ctx context.Context, dir, ver string, comman
 		return err
 	}
 
-	if len(commands) != len(ldFlags) {
-		return fmt.Errorf("commands and ldFlags should have the same length")
-	}
-
 	for n, command := range commands {
 		ldFlag := ldFlags[n]
-		commandName, _ := tools.NormalizeCommandName(command)
-		execName := "akamai-" + commandName
+		execName := binaryNames[n]
 		outputPath := filepath.Join(dir, execName)
 
-		// A package repository controls its own contents. Remove a pre-existing
-		// output entry so go build cannot follow a symlink planted in that repo.
-		if err := os.Remove(outputPath); err != nil && !os.IsNotExist(err) {
+		if err := tools.RemoveOutput(outputPath); err != nil {
 			return fmt.Errorf("remove existing Go build output %q: %w", outputPath, err)
 		}
 

@@ -97,7 +97,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	if err != nil {
 		logger.Debug("Unable to open repo")
 
-		cmdPackage, err := readPackage(repoDir)
+		cmdPackage, err := readInstalledPackage(repoDir)
 		if err != nil {
 			term.Spinner().Fail()
 			logger.Error(fmt.Sprintf("Failed to read package: %v", err))

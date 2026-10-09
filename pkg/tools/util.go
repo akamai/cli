@@ -10,17 +10,26 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var commandNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+var commandNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]*$`)
 
 // NormalizeCommandName converts a package command name to its canonical form
 // and rejects values that cannot safely be used as a command identifier.
 func NormalizeCommandName(name string) (string, error) {
-	normalized := strings.ToLower(name)
-	if !commandNamePattern.MatchString(normalized) {
-		return "", fmt.Errorf("%q must match [A-Za-z0-9][A-Za-z0-9_-]*", name)
+	if !commandNamePattern.MatchString(name) {
+		return "", fmt.Errorf("%q must match %s", name, commandNamePattern)
 	}
 
-	return normalized, nil
+	return strings.ToLower(name), nil
+}
+
+// CommandBinaryName returns the canonical binary name for a package command.
+func CommandBinaryName(name string) (string, error) {
+	name, err := NormalizeCommandName(name)
+	if err != nil {
+		return "", err
+	}
+
+	return "akamai-" + name, nil
 }
 
 // Self ...
