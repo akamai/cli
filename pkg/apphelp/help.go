@@ -43,6 +43,7 @@ func Setup(app *cli.App) {
 	app.Commands = []*cli.Command{
 		{
 			Name:               "help",
+			HideHelpCommand:    true,
 			ArgsUsage:          "[command] [sub-command]",
 			Description:        "Displays help information",
 			Action:             cmdHelp,

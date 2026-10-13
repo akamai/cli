@@ -45,7 +45,7 @@ Commands:
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
   --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-  --help, -h                 show help (default: false)`, binarySuffix),
+  --help, -h                 show help`, binarySuffix),
 		},
 
 		"help for specific command": {
@@ -74,7 +74,7 @@ Description:
 
 Command Flags:
   --test-flag  this is a test flag (default: false)
-  --help, -h   show help (default: false)
+  --help, -h   show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -108,7 +108,7 @@ Description:
 
 Command Flags:
   --test-flag  this is a test flag (default: false)
-  --help, -h   show help (default: false)
+  --help, -h   show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -148,7 +148,7 @@ Description:
 
 Command Flags:
   --test-flag value  this is a test flag
-  --help, -h         show help (default: false)
+  --help, -h         show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -205,7 +205,7 @@ category2:
   subcommand-in-category2
 
 Command Flags:
-  --help, -h  show help (default: false)
+  --help, -h  show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -264,7 +264,7 @@ category2:
   subcommand-in-category2
 
 Command Flags:
-  --help, -h  show help (default: false)
+  --help, -h  show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -312,7 +312,7 @@ Description:
   a test subcommand without a category
 
 Command Flags:
-  --help, -h  show help (default: false)
+  --help, -h  show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -363,7 +363,7 @@ Description:
   a test subcommand in category 1
 
 Command Flags:
-  --help, -h  show help (default: false)
+  --help, -h  show help
 
 Global Flags:
   --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
@@ -398,7 +398,7 @@ Description:
 
 Command Flags:
   --test-flag  this is a test flag (default: false)
-  --help, -h   show help (default: false)
+  --help, -h   show help
 `, binarySuffix, binarySuffix),
 		},
 	}
@@ -416,22 +416,27 @@ Command Flags:
 		},
 	}
 
+	originalOSArgs := os.Args
+	defer func() { os.Args = originalOSArgs }()
+
 	for name, test := range tests {
 		appArgs := map[string][]string{
 			"command": append([]string{os.Args[0], "help"}, test.args...),
 			"flag":    append([]string{os.Args[0]}, append(test.args, "--help")...),
 		}
+		ctx := terminal.Context(context.Background(), &terminal.Mock{})
+		ctx = config.Context(ctx, &config.Mock{})
+
+		testApp := cli.NewApp()
+		testApp.Flags = globalFlags
+		Setup(testApp)
+		testApp.Commands = append(testApp.Commands, test.cmd)
+
 		for helpType, args := range appArgs {
 			t.Run(fmt.Sprintf("%s - %s", name, helpType), func(t *testing.T) {
 				wr := bytes.Buffer{}
-				ctx := terminal.Context(context.Background(), &terminal.Mock{})
-				ctx = config.Context(ctx, &config.Mock{})
-
-				testApp := cli.NewApp()
 				testApp.Writer = &wr
-				testApp.Flags = globalFlags
-				Setup(testApp)
-				testApp.Commands = append(testApp.Commands, test.cmd)
+				os.Args = originalOSArgs
 
 				err := testApp.RunContext(ctx, args)
 				require.NoError(t, err)

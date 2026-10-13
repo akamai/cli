@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v2 v2.19.3
+	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/sys v0.47.0
 	golang.org/x/text v0.40.0
 	gopkg.in/ini.v1 v1.67.3

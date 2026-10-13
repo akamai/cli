@@ -8,6 +8,10 @@
 * Migrated to Go `1.26.8`.
 * Updated dependencies and development tooling.
 
+### Fixes
+
+* Fixed `help <command>` failing to display help for commands without subcommands after upgrading `urfave/cli` to `v2.27.7`.
+
 ## 2.0.5 (Jul 16, 2026)
 
 ### Enhancements
