@@ -10,7 +10,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/tools"
 
 	"github.com/akamai/cli/v2/pkg/color"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -37,7 +37,7 @@ func init() {
 // Default help command and flag from urfave/cli have some known discrepancies (https://github.com/urfave/cli/issues/557)
 // which are removed by the custom help command that is added by this function. Help flag needs to be added
 // manually as it is not appended by the library in case of custom help command being specified.
-func Setup(app *cli.App) {
+func Setup(app *cli.Command) {
 	SetTemplates(app.Flags)
 	app.Flags = append(app.Flags, cli.HelpFlag)
 	app.Commands = []*cli.Command{
@@ -48,7 +48,7 @@ func Setup(app *cli.App) {
 			Description:        "Displays help information",
 			Action:             cmdHelp,
 			CustomHelpTemplate: SimplifiedHelpTemplate,
-			BashComplete:       autocomplete.Default,
+			ShellComplete:      autocomplete.Default,
 		},
 	}
 }
@@ -59,7 +59,7 @@ func SetTemplates(globalFlags []cli.Flag) {
 	if err != nil {
 		panic(ErrReadingTemplateFile)
 	}
-	cli.AppHelpTemplate = string(tmpl)
+	cli.RootCommandHelpTemplate = string(tmpl)
 
 	tmpl, err = files.ReadFile("templates/command_help.tmpl")
 	if err != nil {

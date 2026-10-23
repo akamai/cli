@@ -15,7 +15,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdUninstall(t *testing.T) {
@@ -116,7 +116,7 @@ func TestCmdUninstall(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(t, m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {

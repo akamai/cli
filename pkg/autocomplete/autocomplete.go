@@ -2,56 +2,60 @@
 package autocomplete
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-// Default creates the default autocomplete
-func Default(ctx *cli.Context) {
-	if ctx.Command.Name == "help" {
-		args := []string{"akamai"}
-		args = append(args, ctx.Args().Slice()...)
-		args = append(args, "--"+cli.BashCompletionFlag.Names()[0])
+// Default creates the default autocomplete.
+func Default(_ context.Context, cmd *cli.Command) {
+	root := cmd.Root()
+	target := cmd
 
-		if err := ctx.App.RunContext(ctx.Context, args); err != nil {
-			_, _ = fmt.Fprintln(ctx.App.ErrWriter, err.Error())
-		}
-		return
-	}
-
-	commands := make([]*cli.Command, 0)
-	flags := make([]cli.Flag, 0)
-
-	if ctx.Command.Name == "" {
-		commands = ctx.App.Commands
-		flags = ctx.App.VisibleFlags()
-	} else {
-		if len(ctx.Command.Subcommands) != 0 {
-			commands = ctx.Command.Subcommands
-		}
-
-		if len(ctx.Command.VisibleFlags()) != 0 {
-			flags = ctx.Command.VisibleFlags()
+	if cmd.Name == "help" {
+		target = root
+		for _, name := range cmd.Args().Slice() {
+			next := target.Command(name)
+			if next == nil {
+				break
+			}
+			target = next
 		}
 	}
 
-	for _, command := range commands {
+	for _, command := range target.Commands {
 		if command.Hidden {
 			continue
 		}
 
-		_, _ = fmt.Fprintln(ctx.App.Writer, command.Name)
+		_, _ = fmt.Fprintln(root.Writer, command.Name)
 	}
 
-	for _, flag := range flags {
+	helpFlagName := ""
+	if cli.HelpFlag != nil {
+		if names := cli.HelpFlag.Names(); len(names) > 0 {
+			helpFlagName = names[0]
+		}
+	}
+	hideHelpFlagSuggestion := target != root && target.HideHelpCommand
+
+	for _, flag := range target.VisibleFlags() {
+		flagNames := flag.Names()
+		if helpFlagName != "" && len(flagNames) > 0 && flagNames[0] == helpFlagName {
+			if hideHelpFlagSuggestion {
+				continue
+			}
+			flagNames = flagNames[:1]
+		}
+
 	nextFlag:
-		for _, name := range flag.Names() {
+		for _, name := range flagNames {
 			name = strings.TrimSpace(name)
 
-			if len(cli.BashCompletionFlag.Names()) > 0 && name == cli.BashCompletionFlag.Names()[0] {
+			if len(cli.GenerateShellCompletionFlag.Names()) > 0 && name == cli.GenerateShellCompletionFlag.Names()[0] {
 				continue
 			}
 
@@ -64,9 +68,9 @@ func Default(ctx *cli.Context) {
 			switch len(name) {
 			case 0:
 			case 1:
-				_, _ = fmt.Fprintln(ctx.App.Writer, "-"+name)
+				_, _ = fmt.Fprintln(root.Writer, "-"+name)
 			default:
-				_, _ = fmt.Fprintln(ctx.App.Writer, "--"+name)
+				_, _ = fmt.Fprintln(root.Writer, "--"+name)
 			}
 		}
 	}

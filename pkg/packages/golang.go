@@ -15,7 +15,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/akamai/cli/v2/pkg/version"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func (l *langManager) installGolang(ctx context.Context, dir, ver string, commands, ldFlags []string) error {

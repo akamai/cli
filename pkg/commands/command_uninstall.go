@@ -15,13 +15,13 @@ import (
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) (e error) {
-		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.FromContext(c.Context)
+	return func(ctx context.Context, cmd *cli.Command) (e error) {
+		ctx = log.WithCommandContext(ctx, cmd.Name)
+		logger := log.FromContext(ctx)
 		start := time.Now()
 		logger.Debug("UNINSTALL START")
 		defer func() {
@@ -31,8 +31,8 @@ func cmdUninstall(langManager packages.LangManager) cli.ActionFunc {
 				logger.Error(fmt.Sprintf("UNINSTALL ERROR: %v", e))
 			}
 		}()
-		for _, cmd := range c.Args().Slice() {
-			if err := uninstallPackage(c.Context, langManager, cmd, logger); err != nil {
+		for _, c := range cmd.Args().Slice() {
+			if err := uninstallPackage(ctx, langManager, c, logger); err != nil {
 				logger.Error(fmt.Sprintf("Error uninstalling package: %v", err))
 				return cli.Exit(color.RedString("%s", err.Error()), 1)
 			}

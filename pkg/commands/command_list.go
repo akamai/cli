@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,18 +9,18 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func cmdList(c *cli.Context) (e error) {
+func cmdList(ctx context.Context, cmd *cli.Command) (e error) {
 	pr := newPackageReader(embeddedPackages)
-	return cmdListWithPackageReader(c, pr)
+	return cmdListWithPackageReader(ctx, cmd, pr)
 }
 
-func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+func cmdListWithPackageReader(ctx context.Context, cmd *cli.Command, pr packageReader) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
 	start := time.Now()
-	logger := log.FromContext(c.Context)
+	logger := log.FromContext(ctx)
 	logger.Debug("LIST START")
 	defer func() {
 		if e == nil {
@@ -28,11 +29,11 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 			logger.Error(fmt.Sprintf("LIST ERROR: %v", e))
 		}
 	}()
-	term := terminal.Get(c.Context)
+	term := terminal.Get(ctx)
 
-	commands := listInstalledCommands(c, nil, nil)
+	commands := listInstalledCommands(ctx, cmd, nil, nil)
 
-	if c.IsSet("remote") {
+	if cmd.IsSet("remote") {
 		packages, err := pr.readPackage()
 		if err != nil {
 			logger.Error(fmt.Sprintf("Failed to read package: %v", err))
@@ -83,8 +84,8 @@ func cmdListWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 	return nil
 }
 
-func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[string]bool) map[string]bool {
-	term := terminal.Get(c.Context)
+func listInstalledCommands(ctx context.Context, cmd *cli.Command, added map[string]bool, removed map[string]bool) map[string]bool {
+	term := terminal.Get(ctx)
 
 	commands := make(map[string]bool)
 	installedCmds := color.YellowString("\nInstalled Commands:\n")
@@ -93,46 +94,47 @@ func listInstalledCommands(c *cli.Context, added map[string]bool, removed map[st
 		return nil
 	}
 
-	cmds := getCommands(c)
-	for _, cmd := range cmds {
-		for _, command := range cmd.Commands {
-			commands[command.Name] = true
-			if _, ok := added[command.Name]; ok {
-				term.Printf(color.GreenString("  %s", command.Name))
-			} else if _, ok := removed[command.Name]; ok {
-				term.Printf(color.RedString("  %s", command.Name))
+	for _, command := range cmd.Root().Commands {
+		if command.Hidden {
+			continue
+		}
+
+		commands[command.Name] = true
+		if _, ok := added[command.Name]; ok {
+			term.Printf(color.GreenString("  %s", command.Name))
+		} else if _, ok := removed[command.Name]; ok {
+			term.Printf(color.RedString("  %s", command.Name))
+		} else {
+			term.Printf(color.BoldString("  %s", command.Name))
+		}
+
+		if len(command.Aliases) > 0 {
+			var aliases string
+
+			if len(command.Aliases) == 1 {
+				aliases = "alias"
 			} else {
-				term.Printf(color.BoldString("  %s", command.Name))
+				aliases = "aliases"
 			}
 
-			if len(command.Aliases) > 0 {
-				var aliases string
-
-				if len(command.Aliases) == 1 {
-					aliases = "alias"
-				} else {
-					aliases = "aliases"
+			term.Printf(" (%s: ", aliases)
+			for i, alias := range command.Aliases {
+				term.Printf(color.BoldString("%s", alias))
+				if i < len(command.Aliases)-1 {
+					term.Printf(", ")
 				}
-
-				term.Printf(" (%s: ", aliases)
-				for i, alias := range command.Aliases {
-					term.Printf(color.BoldString("%s", alias))
-					if i < len(command.Aliases)-1 {
-						term.Printf(", ")
-					}
-				}
-				term.Printf(")")
 			}
+			term.Printf(")")
+		}
 
-			if _, err := term.Writeln(); err != nil {
-				term.WriteError(err.Error())
-				return nil
-			}
+		if _, err := term.Writeln(); err != nil {
+			term.WriteError(err.Error())
+			return nil
+		}
 
-			if len(command.Description) > 0 {
-				cmdDescription := fmt.Sprintf("    %s\n", command.Description)
-				term.Printf(cmdDescription)
-			}
+		if len(command.Description) > 0 {
+			cmdDescription := fmt.Sprintf("    %s\n", command.Description)
+			term.Printf(cmdDescription)
 		}
 	}
 	term.Printf("\nSee \"%s\" for details.\n", color.BlueString("%s help [command]", tools.Self()))

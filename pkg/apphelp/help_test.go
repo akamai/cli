@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestSetup(t *testing.T) {
-	testApp := cli.NewApp()
+	testApp := &cli.Command{}
 	testApp.Flags = []cli.Flag{
 		&cli.BoolFlag{
 			Name: "test-flag",

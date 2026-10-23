@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdInstall(t *testing.T) {
@@ -32,13 +32,15 @@ func TestCmdInstall(t *testing.T) {
 	cliTestInvalidJSONRepo := filepath.Join(".", "testdata", ".akamai-cli", "src", "cli-test-invalid-json")
 	tests := map[string]struct {
 		args                 []string
+		expectedInstalledCmd string
 		init                 func(*testing.T, *mocked)
 		teardown             func(*testing.T)
 		binaryResponseStatus int
 		withError            string
 	}{
 		"install from official akamai repository, build from source": {
-			args: []string{"test-cmd"},
+			args:                 []string{"test-cmd"},
+			expectedInstalledCmd: "app-1-cmd-1",
 			init: func(t *testing.T, m *mocked) {
 
 				m.term.On("Spinner").Return(m.term).Once()
@@ -733,7 +735,7 @@ func TestCmdInstall(t *testing.T) {
 			if test.teardown != nil {
 				defer test.teardown(t)
 			}
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {
@@ -742,6 +744,9 @@ func TestCmdInstall(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+			if test.expectedInstalledCmd != "" {
+				require.NotNil(t, app.Command(test.expectedInstalledCmd))
+			}
 		})
 	}
 }

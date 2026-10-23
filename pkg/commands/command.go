@@ -21,7 +21,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/akamai/cli/v2/pkg/version"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -57,22 +57,22 @@ type (
 	}
 )
 
-func getBuiltinCommands(c *cli.Context) []subcommands {
+func getBuiltinCommands(cmd *cli.Command) []subcommands {
 	commands := make([]subcommands, 0)
-	for _, cmd := range c.App.Commands {
+	for _, subcommand := range cmd.Root().Commands {
 		// builtin commands do not have Category set
-		if cmd.Category != "" {
+		if subcommand.Category != "" {
 			continue
 		}
-		commands = append(commands, cliCommandToSubcommand(cmd))
+		commands = append(commands, cliCommandToSubcommand(subcommand))
 	}
 	return commands
 }
 
-func getCommands(c *cli.Context) []subcommands {
+func getCommands(cmd *cli.Command) []subcommands {
 	commands := make([]subcommands, 0)
-	for _, cmd := range c.App.Commands {
-		commands = append(commands, cliCommandToSubcommand(cmd))
+	for _, subcommand := range cmd.Root().Commands {
+		commands = append(commands, cliCommandToSubcommand(subcommand))
 	}
 	return commands
 }
@@ -88,7 +88,7 @@ func cliCommandToSubcommand(from *cli.Command) subcommands {
 				Arguments:   from.ArgsUsage,
 				Flags:       from.Flags,
 				Docs:        from.UsageText,
-				Subcommands: from.Subcommands,
+				Subcommands: from.Commands,
 			},
 		},
 		Action: from.Action,
@@ -110,9 +110,10 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 			Action:          cmdSubcommand(gitRepo, langManager),
 			Category:        color.YellowString("Installed Commands:"),
 			SkipFlagParsing: true,
-			BashComplete: func(c *cli.Context) {
+			HideHelpCommand: true,
+			ShellComplete: func(ctx context.Context, completionCommand *cli.Command) {
 				if command.AutoComplete {
-					executable, packageReqs, err := findExec(c.Context, langManager, c.Command.Name)
+					executable, packageReqs, err := findExec(ctx, langManager, completionCommand.Name)
 					if err != nil {
 						return
 					}
@@ -124,7 +125,7 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 
 					executable = append(executable, os.Args[2:]...)
 					subCmd := createCommand(executable[0], executable[1:])
-					if err = passthruCommand(c.Context, subCmd, langManager, *packageReqs, packageDir); err != nil {
+					if err = passthruCommand(ctx, subCmd, langManager, *packageReqs, packageDir); err != nil {
 						return
 					}
 				}
@@ -160,7 +161,7 @@ func createBuiltinCommands() []*cli.Command {
 			Name:        "config",
 			ArgsUsage:   "<action> <setting> [value]",
 			Description: "Manages configuration.",
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:      "get",
 					ArgsUsage: "<setting>",
@@ -183,8 +184,8 @@ func createBuiltinCommands() []*cli.Command {
 					Action:    cmdConfigUnset,
 				},
 			},
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
 			Name:        "install",
@@ -197,8 +198,8 @@ func createBuiltinCommands() []*cli.Command {
 				"akamai install akamai/cli-property",
 				"akamai install git@github.com:akamai/cli-property.git",
 				"akamai install https://github.com/akamai/cli-property.git"),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
 			Name:        "list",
@@ -210,40 +211,40 @@ func createBuiltinCommands() []*cli.Command {
 					Usage: "Displays all available packages.",
 				},
 			},
-			HideHelp:           true,
-			BashComplete:       autocomplete.Default,
+			HideHelpCommand:    true,
+			ShellComplete:      autocomplete.Default,
 			CustomHelpTemplate: apphelp.SimplifiedHelpTemplate,
 		},
 		{
-			Name:         "search",
-			ArgsUsage:    "<keyword>...",
-			Description:  "Searches for packages in the official Akamai CLI package repository.",
-			Action:       cmdSearch,
-			UsageText:    "Examples:\n\n   akamai search property",
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "search",
+			ArgsUsage:       "<keyword>...",
+			Description:     "Searches for packages in the official Akamai CLI package repository.",
+			Action:          cmdSearch,
+			UsageText:       "Examples:\n\n   akamai search property",
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "uninstall",
-			ArgsUsage:    "<command>...",
-			Description:  "Uninstalls a package containing a given <command>.",
-			Action:       cmdUninstall(langManager),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "uninstall",
+			ArgsUsage:       "<command>...",
+			Description:     "Uninstalls a package containing a given <command>.",
+			Action:          cmdUninstall(langManager),
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "update",
-			ArgsUsage:    "[<command>...]",
-			Description:  "Updates one or more commands. If no command is specified, all commands are updated.",
-			Action:       cmdUpdate(gitRepo, langManager),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "update",
+			ArgsUsage:       "[<command>...]",
+			Description:     "Updates one or more commands. If no command is specified, all commands are updated.",
+			Action:          cmdUpdate(gitRepo, langManager),
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "upgrade",
-			Description:  "Upgrades the Akamai CLI to the latest version.",
-			Action:       cmdUpgrade,
-			BashComplete: autocomplete.Default,
+			Name:          "upgrade",
+			Description:   "Upgrades the Akamai CLI to the latest version.",
+			Action:        cmdUpgrade,
+			ShellComplete: autocomplete.Default,
 		},
 	}
 }

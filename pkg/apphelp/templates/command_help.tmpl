@@ -1,9 +1,9 @@
 {{with .Command -}}
 {{yellow "Name:"}}
-	{{.HelpName}}
+	{{.FullName}}
 
 {{yellow "Usage:"}}
-	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue .ArgsUsage}}
+	{{insertString .FullName "[global flags]" 1 | blue}}{{if .VisibleFlags}} {{blue "[command flags]"}}{{end}} {{blue .ArgsUsage}}
 
 {{- if .Category}}
 

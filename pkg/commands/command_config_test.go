@@ -9,7 +9,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdConfigSet(t *testing.T) {
@@ -45,7 +45,7 @@ func TestCmdConfigSet(t *testing.T) {
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:   "set",
 						Action: cmdConfigSet,
@@ -58,7 +58,7 @@ func TestCmdConfigSet(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m.cfg)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {
@@ -97,7 +97,7 @@ func TestCmdConfigGet(t *testing.T) {
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:   "get",
 						Action: cmdConfigGet,
@@ -110,7 +110,7 @@ func TestCmdConfigGet(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			m.term.AssertExpectations(t)
@@ -157,7 +157,7 @@ func TestCmdConfigUnset(t *testing.T) {
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:   "unset",
 						Action: cmdConfigUnset,
@@ -170,7 +170,7 @@ func TestCmdConfigUnset(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m.cfg)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {
@@ -227,7 +227,7 @@ func TestCmdConfigList(t *testing.T) {
 			m := &mocked{&terminal.Mock{}, &config.Mock{}, nil, nil, nil}
 			command := &cli.Command{
 				Name: "config",
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:   "list",
 						Action: cmdConfigList,
@@ -240,7 +240,7 @@ func TestCmdConfigList(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {

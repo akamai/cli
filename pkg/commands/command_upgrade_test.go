@@ -1,3 +1,5 @@
+//go:build !noautoupgrade
+
 package commands
 
 import (
@@ -17,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func mockIsTTY(term *terminal.Mock, isTTY bool) {
@@ -216,7 +218,7 @@ func TestCmdUpgrade(t *testing.T) {
 					}
 				})
 			}
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			m.term.AssertExpectations(t)

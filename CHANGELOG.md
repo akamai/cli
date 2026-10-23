@@ -7,10 +7,12 @@
 * Removed an unmaintained `github.com/mitchellh/go-homedir` dependency, replacing its usage with the standard library's `os.UserHomeDir()`.
 * Migrated to Go `1.26.8`.
 * Updated dependencies and development tooling.
+* Migrated the CLI framework from `urfave/cli` v2 to v3 to align with Akamai CLI updates.
 
 ### Fixes
 
-* Fixed `help <command>` failing to display help for commands without subcommands after upgrading `urfave/cli` to `v2.27.7`.
+* Fixed `help <command>` failing to display help for commands without subcommands after upgrading `urfave/cli` to `v3.14.0`.
+* Fixed the `list` command to omit hidden internal commands.
 * Validated package command names before creating binary output paths to prevent path traversal, and removed pre-existing Go build output entries to avoid following symlinks planted at those paths ([PR#227](https://github.com/akamai/cli/pull/227)).
 * Fixed downloaded package binaries being written through symlinks planted in a package repository: a symlinked `bin` directory is now rejected, and an existing output entry is removed and recreated exclusively instead of being followed.
 * Fixed installed package commands so the CLI uses the same binary name when installing and running them.

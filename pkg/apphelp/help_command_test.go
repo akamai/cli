@@ -14,7 +14,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdHelp(t *testing.T) {
@@ -43,9 +43,9 @@ Commands:
   test
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
-  --help, -h                 show help`, binarySuffix),
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
+  --help, -h                   show help`, binarySuffix),
 		},
 
 		"help for specific command": {
@@ -73,12 +73,12 @@ Description:
   test command
 
 Command Flags:
-  --test-flag  this is a test flag (default: false)
+  --test-flag  this is a test flag
   --help, -h   show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 		"help for specific command alias": {
@@ -107,12 +107,12 @@ Description:
   test command
 
 Command Flags:
-  --test-flag  this is a test flag (default: false)
+  --test-flag  this is a test flag
   --help, -h   show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 
@@ -123,7 +123,7 @@ Global Flags:
 				Description: "test command",
 				Category:    "",
 				Action:      nil,
-				Subcommands: []*cli.Command{
+				Commands: []*cli.Command{
 					{
 						Name:        "subcommand",
 						Description: "a test subcommand without a category",
@@ -147,12 +147,12 @@ Description:
   a test subcommand without a category
 
 Command Flags:
-  --test-flag value  this is a test flag
-  --help, -h         show help
+  --test-flag string  this is a test flag
+  --help, -h          show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 
@@ -162,8 +162,8 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
-				Subcommands: []*cli.Command{
+				Action:      func(context.Context, *cli.Command) error { fmt.Println("oops!"); return nil },
+				Commands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
 						Description: "a test subcommand without a category",
@@ -208,8 +208,8 @@ Command Flags:
   --help, -h  show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 
@@ -220,8 +220,8 @@ Global Flags:
 				Description: "test command",
 				Category:    "",
 				ArgsUsage:   "<usage>",
-				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
-				Subcommands: []*cli.Command{
+				Action:      func(context.Context, *cli.Command) error { fmt.Println("oops!"); return nil },
+				Commands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
 						Description: "a test subcommand without a category",
@@ -267,8 +267,8 @@ Command Flags:
   --help, -h  show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix, binarySuffix),
 		},
 
@@ -278,8 +278,8 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
-				Subcommands: []*cli.Command{
+				Action:      func(context.Context, *cli.Command) error { fmt.Println("oops!"); return nil },
+				Commands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
 						Description: "a test subcommand without a category",
@@ -315,8 +315,8 @@ Command Flags:
   --help, -h  show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 
@@ -326,8 +326,8 @@ Global Flags:
 				Name:        "test",
 				Description: "test command",
 				Category:    "",
-				Action:      func(_ *cli.Context) error { fmt.Println("oops!"); return nil },
-				Subcommands: []*cli.Command{
+				Action:      func(context.Context, *cli.Command) error { fmt.Println("oops!"); return nil },
+				Commands: []*cli.Command{
 					{
 						Name:        "subcommand-no-category",
 						Description: "a test subcommand without a category",
@@ -366,8 +366,8 @@ Command Flags:
   --help, -h  show help
 
 Global Flags:
-  --edgerc value, -e value   edgerc config path passed to executed commands, defaults to ~/.edgerc
-  --section value, -s value  edgerc section name passed to executed commands, defaults to 'default'
+  --edgerc string, -e string   edgerc config path passed to executed commands, defaults to ~/.edgerc
+  --section string, -s string  edgerc section name passed to executed commands, defaults to 'default'
 `, binarySuffix, binarySuffix),
 		},
 
@@ -397,7 +397,7 @@ Description:
   test command
 
 Command Flags:
-  --test-flag  this is a test flag (default: false)
+  --test-flag  this is a test flag
   --help, -h   show help
 `, binarySuffix, binarySuffix),
 		},
@@ -427,7 +427,7 @@ Command Flags:
 		ctx := terminal.Context(context.Background(), &terminal.Mock{})
 		ctx = config.Context(ctx, &config.Mock{})
 
-		testApp := cli.NewApp()
+		testApp := &cli.Command{}
 		testApp.Flags = globalFlags
 		Setup(testApp)
 		testApp.Commands = append(testApp.Commands, test.cmd)
@@ -438,10 +438,93 @@ Command Flags:
 				testApp.Writer = &wr
 				os.Args = originalOSArgs
 
-				err := testApp.RunContext(ctx, args)
+				err := testApp.Run(ctx, args)
 				require.NoError(t, err)
 				assert.Equal(t, strings.TrimPrefix(test.expectedOutput, "\n"), wr.String())
 			})
 		}
 	}
+}
+
+func TestCmdHelpRunsExternalCommand(t *testing.T) {
+	output := &bytes.Buffer{}
+	var receivedArgs []string
+
+	app := &cli.Command{
+		Name:   "akamai",
+		Writer: output,
+	}
+	Setup(app)
+	app.Commands = append(app.Commands, &cli.Command{
+		Name:            "dns",
+		Category:        "Installed Commands:",
+		SkipFlagParsing: true,
+		HideHelpCommand: true,
+		Action: func(_ context.Context, cmd *cli.Command) error {
+			receivedArgs = cmd.Args().Slice()
+			_, err := fmt.Fprintln(cmd.Root().Writer, "plugin help")
+			return err
+		},
+	})
+
+	err := app.Run(context.Background(), []string{"akamai", "help", "dns"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"help"}, receivedArgs)
+	assert.Equal(t, "plugin help\n", output.String())
+}
+
+func TestHelpFlagDoesNotRunCommand(t *testing.T) {
+	originalHelpFlag := cli.HelpFlag
+	cli.HelpFlag = &cli.BoolFlag{Name: "help", Aliases: []string{"h"}}
+	t.Cleanup(func() { cli.HelpFlag = originalHelpFlag })
+
+	for _, helpFlag := range []string{"--help", "-h"} {
+		t.Run(helpFlag, func(t *testing.T) {
+			output := &bytes.Buffer{}
+			actionRan := false
+			app := &cli.Command{Name: "akamai", Writer: output}
+			Setup(app)
+			app.Commands = append(app.Commands, &cli.Command{
+				Name:            "config",
+				HideHelpCommand: true,
+				Action: func(context.Context, *cli.Command) error {
+					actionRan = true
+					return nil
+				},
+			})
+			err := app.Run(context.Background(), []string{"akamai", "config", helpFlag})
+
+			require.NoError(t, err)
+			assert.False(t, actionRan)
+			assert.Contains(t, output.String(), "Usage:")
+		})
+	}
+}
+
+func TestHelpFlagDoesNotRunNestedCommand(t *testing.T) {
+	originalHelpFlag := cli.HelpFlag
+	cli.HelpFlag = &cli.BoolFlag{Name: "help", Aliases: []string{"h"}}
+	t.Cleanup(func() { cli.HelpFlag = originalHelpFlag })
+
+	output := &bytes.Buffer{}
+	actionRan := false
+	app := &cli.Command{Name: "akamai", Writer: output}
+	Setup(app)
+	app.Commands = append(app.Commands, &cli.Command{
+		Name:            "config",
+		HideHelpCommand: true,
+		Commands: []*cli.Command{{
+			Name: "set",
+			Action: func(context.Context, *cli.Command) error {
+				actionRan = true
+				return nil
+			},
+		}},
+	})
+	err := app.Run(context.Background(), []string{"akamai", "config", "set", "--help"})
+
+	require.NoError(t, err)
+	assert.False(t, actionRan)
+	assert.Contains(t, output.String(), "Usage:")
 }

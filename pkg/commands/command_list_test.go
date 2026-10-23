@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -11,7 +12,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdListWithRemote(t *testing.T) {
@@ -99,18 +100,24 @@ func TestCmdListWithRemote(t *testing.T) {
 				},
 				Description: "Displays available commands",
 				Aliases:     []string{"ls", "show"},
-				Action: func(context *cli.Context) error {
-					return cmdListWithPackageReader(context, pr)
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return cmdListWithPackageReader(ctx, cmd, pr)
 				},
 			}
 
 			app, ctx := setupTestApp(commandToExecute, m)
+			app.Commands = append(app.Commands, &cli.Command{
+				Name:        "internal-helper",
+				Description: "Internal helper command",
+				Hidden:      true,
+			})
 			args := os.Args[0:1]
 			args = append(args, "list", "--remote")
 
 			test.init(m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
+			m.term.AssertNotCalled(t, "Printf", color.BoldString("  internal-helper"), []interface{}(nil))
 			m.cfg.AssertExpectations(t)
 			m.term.AssertExpectations(t)
 			if test.withError != "" {

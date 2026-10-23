@@ -3,17 +3,15 @@ package app
 import (
 	"bytes"
 	"context"
-	"flag"
 	"os"
 	"regexp"
 	"testing"
 
-	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCreateApp(t *testing.T) {
@@ -25,7 +23,7 @@ func TestCreateApp(t *testing.T) {
 	assert.Equal(t, version.Version, app.Version)
 	assert.Equal(t, term, app.Writer)
 	assert.Equal(t, term.Error(), app.ErrWriter)
-	assert.True(t, app.EnableBashCompletion)
+	assert.True(t, app.EnableShellCompletion)
 	assert.True(t, hasFlag(app, "bash"))
 	assert.True(t, hasFlag(app, "zsh"))
 	assert.True(t, hasFlag(app, "proxy"))
@@ -45,7 +43,7 @@ func TestCreateAppTemplate_EmptyCommandName(t *testing.T) {
 	assert.Equal(t, term, app.Writer)
 	assert.Equal(t, term.Error(), app.ErrWriter)
 	assert.Equal(t, "Copyright (C) Akamai Technologies, Inc", app.Copyright)
-	assert.True(t, app.EnableBashCompletion)
+	assert.True(t, app.EnableShellCompletion)
 	assert.True(t, hasFlag(app, "edgerc"))
 	assert.True(t, hasFlag(app, "section"))
 	assert.True(t, hasFlag(app, "accountkey"))
@@ -73,7 +71,7 @@ func TestVersion(t *testing.T) {
 	term := terminal.Color()
 	ctx := terminal.Context(context.Background(), term)
 	_ = CreateApp(ctx)
-	assert.Regexp(t, regexp.MustCompile(`^--version\s+Output CLI version \(default: false\)$`), cli.VersionFlag.String())
+	assert.Regexp(t, regexp.MustCompile(`^--version\s+Output CLI version$`), cli.VersionFlag.String())
 	assert.Len(t, cli.VersionFlag.Names(), 1)
 	assert.Equal(t, cli.VersionFlag.Names()[0], "version")
 }
@@ -113,27 +111,27 @@ func TestCreateAppProxy(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Setenv("HTTP_PROXY", "")
+			t.Setenv("HTTPS_PROXY", "")
+
 			term := terminal.Color()
 			ctx := terminal.Context(context.Background(), term)
 			app := CreateApp(ctx)
-			set := flag.NewFlagSet("test", 0)
-			set.String("proxy", "", "")
-			cliCtx := cli.NewContext(app, set, nil)
+			app.Action = func(context.Context, *cli.Command) error { return nil }
+			args := []string{"akamai"}
 			if test.proxyValue != "" {
-				require.NoError(t, cliCtx.Set("proxy", test.proxyValue))
+				args = append(args, "--proxy", test.proxyValue)
 			}
-			err := app.Before(cliCtx)
+			err := app.Run(ctx, args)
 			require.NoError(t, err)
-			assert.NotNil(t, log.FromContext(cliCtx.Context))
 			for k, v := range test.expectedEnvs {
 				assert.Equal(t, v, os.Getenv(k))
-				require.NoError(t, os.Unsetenv(k))
 			}
 		})
 	}
 }
 
-func hasFlag(app *cli.App, name string) bool {
+func hasFlag(app *cli.Command, name string) bool {
 	for _, f := range app.Flags {
 		if f.Names()[0] == name {
 			return true
@@ -155,7 +153,7 @@ func TestAutocompletionFlag(t *testing.T) {
 	app.Writer = stdout
 	app.ErrWriter = stderr
 
-	err := app.RunContext(ctx, []string{"akamai", "--generate-bash-completion"})
+	err := app.Run(ctx, []string{"akamai", "--generate-shell-completion"})
 	assert.NoError(t, err)
 
 	assert.Empty(t, stderr.String())

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,7 +17,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdSearch(t *testing.T) {
@@ -225,8 +226,8 @@ func TestCmdSearch(t *testing.T) {
 
 			commandToExecute := &cli.Command{
 				Name: "search",
-				Action: func(context *cli.Context) error {
-					return cmdSearchWithPackageReader(context, pr)
+				Action: func(context context.Context, cmd *cli.Command) error {
+					return cmdSearchWithPackageReader(context, cmd, pr)
 				},
 			}
 
@@ -236,7 +237,7 @@ func TestCmdSearch(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			m.term.AssertExpectations(t)

@@ -18,7 +18,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/inconshreveable/go-update"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // UpgradeCli pulls from GitHub the latest released CLI binary and performs the upgrade of the current executable

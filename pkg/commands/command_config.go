@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -9,12 +10,12 @@ import (
 	"github.com/akamai/cli/v2/pkg/config"
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/terminal"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func cmdConfigSet(c *cli.Context) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.FromContext(c.Context)
+func cmdConfigSet(ctx context.Context, cmd *cli.Command) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
+	logger := log.FromContext(ctx)
 	start := time.Now()
 	logger.Debug("CONFIG SET START")
 	defer func() {
@@ -24,17 +25,17 @@ func cmdConfigSet(c *cli.Context) (e error) {
 			logger.Error(fmt.Sprintf("CONFIG SET ERROR: %v", e))
 		}
 	}()
-	cfg := config.Get(c.Context)
+	cfg := config.Get(ctx)
 
-	section, key, err := parseConfigPath(c)
+	section, key, err := parseConfigPath(cmd)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
 		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
 
-	value := strings.Join(c.Args().Tail(), " ")
+	value := strings.Join(cmd.Args().Tail(), " ")
 	cfg.SetValue(section, key, value)
-	if err := cfg.Save(c.Context); err != nil {
+	if err := cfg.Save(ctx); err != nil {
 		logger.Error(fmt.Sprintf("Error saving config: %v", err))
 		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
@@ -42,9 +43,9 @@ func cmdConfigSet(c *cli.Context) (e error) {
 	return nil
 }
 
-func cmdConfigGet(c *cli.Context) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.FromContext(c.Context)
+func cmdConfigGet(ctx context.Context, cmd *cli.Command) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
+	logger := log.FromContext(ctx)
 	start := time.Now()
 	logger.Debug("CONFIG GET START")
 	defer func() {
@@ -54,16 +55,16 @@ func cmdConfigGet(c *cli.Context) (e error) {
 			logger.Error(fmt.Sprintf("CONFIG GET ERROR: %v", e))
 		}
 	}()
-	cfg := config.Get(c.Context)
+	cfg := config.Get(ctx)
 
-	section, key, err := parseConfigPath(c)
+	section, key, err := parseConfigPath(cmd)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
 		return cli.Exit(color.RedString("Unable to get config value: %v", err), 1)
 	}
 
 	val, _ := cfg.GetValue(section, key)
-	if _, err := terminal.Get(c.Context).Writeln(val); err != nil {
+	if _, err := terminal.Get(ctx).Writeln(val); err != nil {
 		return err
 	}
 	logger.Debug(val)
@@ -71,9 +72,9 @@ func cmdConfigGet(c *cli.Context) (e error) {
 	return nil
 }
 
-func cmdConfigUnset(c *cli.Context) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.FromContext(c.Context)
+func cmdConfigUnset(ctx context.Context, cmd *cli.Command) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
+	logger := log.FromContext(ctx)
 	start := time.Now()
 	logger.Debug("CONFIG UNSET START")
 	defer func() {
@@ -83,24 +84,24 @@ func cmdConfigUnset(c *cli.Context) (e error) {
 			logger.Error(fmt.Sprintf("CONFIG UNSET ERROR: %v", e))
 		}
 	}()
-	cfg := config.Get(c.Context)
-	section, key, err := parseConfigPath(c)
+	cfg := config.Get(ctx)
+	section, key, err := parseConfigPath(cmd)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error parsing config path: %v", err))
 		return cli.Exit(color.RedString("Unable to unset config value: %v", err), 1)
 	}
 
 	cfg.UnsetValue(section, key)
-	if err := cfg.Save(c.Context); err != nil {
+	if err := cfg.Save(ctx); err != nil {
 		logger.Error(fmt.Sprintf("Error saving config: %v", err))
 		return cli.Exit(color.RedString("Unable to set config value: %v", err), 1)
 	}
 	return nil
 }
 
-func cmdConfigList(c *cli.Context) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.FromContext(c.Context)
+func cmdConfigList(ctx context.Context, cmd *cli.Command) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
+	logger := log.FromContext(ctx)
 	start := time.Now()
 	logger.Debug("CONFIG LIST START")
 	defer func() {
@@ -110,12 +111,12 @@ func cmdConfigList(c *cli.Context) (e error) {
 			logger.Error(fmt.Sprintf("CONFIG LIST ERROR: %v", e))
 		}
 	}()
-	cfg := config.Get(c.Context)
-	term := terminal.Get(c.Context)
+	cfg := config.Get(ctx)
+	term := terminal.Get(ctx)
 
 	allValues := cfg.Values()
-	if c.NArg() > 0 {
-		sectionName := c.Args().First()
+	if cmd.Args().Present() {
+		sectionName := cmd.Args().First()
 		section, ok := allValues[sectionName]
 		if !ok {
 			return nil
@@ -135,8 +136,8 @@ func cmdConfigList(c *cli.Context) (e error) {
 	return nil
 }
 
-func parseConfigPath(c *cli.Context) (string, string, error) {
-	path := strings.Split(c.Args().First(), ".")
+func parseConfigPath(cmd *cli.Command) (string, string, error) {
+	path := strings.Split(cmd.Args().First(), ".")
 	if len(path) < 2 {
 		return "", "", fmt.Errorf("section key has to be provided in <section>.<key> format")
 	}

@@ -18,22 +18,22 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
 	githubURLTemplate = "https://raw.githubusercontent.com/akamai/%s/master/cli.json"
 )
 
-func cmdSearch(c *cli.Context) (e error) {
+func cmdSearch(ctx context.Context, cmd *cli.Command) (e error) {
 	pr := newPackageReader(embeddedPackages)
-	return cmdSearchWithPackageReader(c, pr)
+	return cmdSearchWithPackageReader(ctx, cmd, pr)
 }
 
-func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
+func cmdSearchWithPackageReader(ctx context.Context, cmd *cli.Command, pr packageReader) (e error) {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
 	start := time.Now()
-	logger := log.FromContext(c.Context)
+	logger := log.FromContext(ctx)
 	logger.Debug("SEARCH START")
 	defer func() {
 		if e == nil {
@@ -42,7 +42,7 @@ func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 			logger.Error(fmt.Sprintf("SEARCH ERROR: %v", e))
 		}
 	}()
-	if !c.Args().Present() {
+	if !cmd.Args().Present() {
 		logger.Error("No keywords specified")
 		return cli.Exit(color.RedString("You must specify one or more keywords"), 1)
 	}
@@ -53,7 +53,7 @@ func cmdSearchWithPackageReader(c *cli.Context, pr packageReader) (e error) {
 		return cli.Exit(color.RedString("%s", err.Error()), 1)
 	}
 
-	err = searchPackages(c.Context, c.Args().Slice(), packages)
+	err = searchPackages(ctx, cmd.Args().Slice(), packages)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to search packages: %v", err))
 		return cli.Exit(color.RedString("%s", err.Error()), 1)

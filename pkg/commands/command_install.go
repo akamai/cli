@@ -17,7 +17,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -31,10 +31,10 @@ var buildRawGitHubURL = func(owner, repo, branch string) string {
 }
 
 func cmdInstall(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) (e error) {
+	return func(ctx context.Context, cmd *cli.Command) (e error) {
 		start := time.Now()
-		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.FromContext(c.Context)
+		ctx = log.WithCommandContext(ctx, cmd.Name)
+		logger := log.FromContext(ctx)
 		logger.Debug("INSTALL START")
 		defer func() {
 			if e == nil {
@@ -48,13 +48,14 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 				}
 			}
 		}()
-		if !c.Args().Present() {
+		if !cmd.Args().Present() {
 			return cli.Exit(color.RedString("You must specify a repository URL"), 1)
 		}
 
-		oldCmds := getCommands(c)
+		root := cmd.Root()
+		oldCmds := getCommands(root)
 
-		for _, repo := range c.Args().Slice() {
+		for _, repo := range cmd.Args().Slice() {
 			repo = strings.TrimSpace(repo)
 
 			if repo == "" {
@@ -65,26 +66,26 @@ func cmdInstall(git git.Repository, langManager packages.LangManager) cli.Action
 				repo = tools.Githubize(repo)
 			}
 
-			subCmd, err := installPackage(c.Context, git, langManager, repo)
+			subCmd, err := installPackage(ctx, git, langManager, repo)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error installing package: %v", err))
 				return err
 			}
-			c.App.Commands = append(c.App.Commands, subcommandToCliCommands(*subCmd, git, langManager)...)
-			sortCommands(c.App.Commands)
+			root.Commands = append(root.Commands, subcommandToCliCommands(*subCmd, git, langManager)...)
+			sortCommands(root.Commands)
 		}
 
-		packageListDiff(c, oldCmds)
+		packageListDiff(ctx, cmd, oldCmds)
 
 		return nil
 	}
 }
 
-func packageListDiff(c *cli.Context, oldcmds []subcommands) {
-	cmds := getCommands(c)
+func packageListDiff(ctx context.Context, cmd *cli.Command, oldCmds []subcommands) {
+	cmds := getCommands(cmd)
 
 	var old []command
-	for _, oldcmd := range oldcmds {
+	for _, oldcmd := range oldCmds {
 		old = append(old, oldcmd.Commands...)
 	}
 
@@ -124,7 +125,7 @@ func packageListDiff(c *cli.Context, oldcmds []subcommands) {
 		}
 	}
 
-	listInstalledCommands(c, added, removed)
+	listInstalledCommands(ctx, cmd, added, removed)
 }
 
 func installPackage(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager, repo string) (*subcommands, error) {

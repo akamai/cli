@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCommandsLocator(t *testing.T) {
@@ -76,6 +76,26 @@ func TestSubcommandsToCliCommands_packagePrefix(t *testing.T) {
 	for _, cmd := range cmds {
 		assert.True(t, strings.HasPrefix(cmd.Aliases[0], fmt.Sprintf("%s/", from.Pkg)), "there should be an alias with the package prefix")
 	}
+}
+
+func TestSubcommandsToCliCommandsForwardsHelpArgument(t *testing.T) {
+	commands := subcommandToCliCommands(subcommands{
+		Pkg:      "cli-dns",
+		Commands: []command{{Name: "dns"}},
+	}, &git.MockRepo{}, &packages.Mock{})
+
+	var forwardedArgs []string
+	commands[0].Action = func(_ context.Context, cmd *cli.Command) error {
+		forwardedArgs = cmd.Args().Slice()
+		return nil
+	}
+
+	app := &cli.Command{
+		Name:     "akamai",
+		Commands: commands,
+	}
+	require.NoError(t, app.Run(context.Background(), []string{"akamai", "dns", "help"}))
+	assert.Equal(t, []string{"help"}, forwardedArgs)
 }
 
 func TestPassthruCommand(t *testing.T) {
