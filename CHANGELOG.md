@@ -1,6 +1,6 @@
 # RELEASE NOTES
 
-## X.X.X (X XX, XXXX)
+## 2.0.6 (Oct 27, 2026)
 
 ### Enhancements
 
@@ -8,6 +8,10 @@
 * Migrated to Go `1.26.8`.
 * Updated dependencies and development tooling.
 * Migrated the CLI framework from `urfave/cli` v2 to v3 to align with Akamai CLI updates.
+* Migrated the public CLI integration API from `urfave/cli/v2` to `urfave/cli/v3`. Consumers must migrate their commands, actions, callbacks, and contexts to the v3 types.
+* Changed `app.CreateAppTemplate` to return `*cli.Command` instead of `*cli.App`.
+* Changed `autocomplete.Default` to accept `context.Context` and `*cli.Command`, and changed `apphelp.Setup` to accept `*cli.Command`.
+* Replaced the hidden `--generate-bash-completion` flag with `--generate-shell-completion`.
 
 ### Fixes
 
