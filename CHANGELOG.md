@@ -1,6 +1,6 @@
 # RELEASE NOTES
 
-## 2.0.6 (Oct 27, 2026)
+## 2.0.6 (Oct 28, 2026)
 
 ### Enhancements
 
