@@ -1,13 +1,36 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
+
+var commandNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]*$`)
+
+// NormalizeCommandName converts a package command name to its canonical form
+// and rejects values that cannot safely be used as a command identifier.
+func NormalizeCommandName(name string) (string, error) {
+	if !commandNamePattern.MatchString(name) {
+		return "", fmt.Errorf("%q must match %s", name, commandNamePattern)
+	}
+
+	return strings.ToLower(name), nil
+}
+
+// CommandBinaryName returns the canonical binary name for a package command.
+func CommandBinaryName(name string) (string, error) {
+	name, err := NormalizeCommandName(name)
+	if err != nil {
+		return "", err
+	}
+
+	return "akamai-" + name, nil
+}
 
 // Self ...
 func Self() string {
@@ -25,7 +48,7 @@ func GetAkamaiCliPath() (string, error) {
 	cliHome := os.Getenv("AKAMAI_CLI_HOME")
 	if cliHome == "" {
 		var err error
-		cliHome, err = homedir.Dir()
+		cliHome, err = os.UserHomeDir()
 		if err != nil {
 			return "", cli.Exit("Package install directory could not be found. Please set $AKAMAI_CLI_HOME.", -1)
 		}

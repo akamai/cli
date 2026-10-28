@@ -1,23 +1,22 @@
 module github.com/akamai/cli/v2
 
-go 1.25.0
+go 1.26.8
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver v1.5.0
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.18.0
-	github.com/go-git/go-git/v5 v5.19.1
-	github.com/go-ini/ini v1.67.0
+	github.com/go-git/go-git/v5 v5.19.2
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mitchellh/go-homedir v1.1.0
-	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v2 v2.19.3
+	github.com/stretchr/testify v1.12.1
+	github.com/urfave/cli/v3 v3.14.0
 	golang.org/x/sys v0.47.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.41.0
+	gopkg.in/ini.v1 v1.67.3
 )
 
 require (
@@ -25,9 +24,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
@@ -38,21 +35,18 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
 	github.com/yuin/goldmark v1.4.13 => github.com/yuin/goldmark v1.8.2 // Fix security vulnerability; can be removed once bumped by github.com/go-git/go-git/v5
-	golang.org/x/crypto v0.53.0 => golang.org/x/crypto v0.54.0 // Fix security vulnerability; can be removed once bumped by golang.org/x/net
+	golang.org/x/crypto v0.54.0 => golang.org/x/crypto v0.55.0 // Fix security vulnerability; can be removed once bumped by golang.org/x/net
 )

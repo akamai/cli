@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdUpdate(t *testing.T) {
@@ -449,16 +449,18 @@ func TestCmdUpdate(t *testing.T) {
 				Action: cmdUpdate(m.gitRepo, m.langManager),
 			}
 			app, ctx := setupTestApp(command, m)
-			app.Commands = append(app.Commands, &cli.Command{
-				Name:     "echo",
-				Category: "Installed",
-			})
+			app.Commands = append(app.Commands,
+				&cli.Command{
+					Name:     "echo",
+					Category: "Installed",
+				},
+			)
 			args := os.Args[0:1]
 			args = append(args, "update")
 			args = append(args, test.args...)
 
 			test.init(t, m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 			if test.teardown != nil {
 				test.teardown(t)
 			}

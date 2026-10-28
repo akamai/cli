@@ -15,7 +15,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdUninstall(t *testing.T) {
@@ -43,7 +43,7 @@ func TestCmdUninstall(t *testing.T) {
 
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{cliEchoUninstallBin}, nil).Once()
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 			},
@@ -73,7 +73,7 @@ func TestCmdUninstall(t *testing.T) {
 				m.langManager.On("FindExec", packages.LanguageRequirements{Go: "1.14.0"}, cliEchoUninstallBin).Return([]string{}, nil).Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("Fail").Return().Once()
 				m.term.On("OK").Return().Once()
@@ -89,7 +89,7 @@ func TestCmdUninstall(t *testing.T) {
 				m.langManager.On("GetPackageBinPaths").Return("/path/to/echo-uninstall").Once()
 
 				m.term.On("Spinner").Return(m.term).Once()
-				m.term.On("Start", `Attempting to uninstall "echo-uninstall" command...`, []interface{}(nil)).Return().Once()
+				m.term.On("Start", "Attempting to uninstall %q command...", []any{"echo-uninstall"}).Return().Once()
 				m.term.On("Spinner").Return(m.term).Once()
 				m.term.On("OK").Return().Once()
 
@@ -116,7 +116,7 @@ func TestCmdUninstall(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(t, m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {

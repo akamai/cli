@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -11,26 +12,26 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/version"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func cmdUpgrade(c *cli.Context) error {
-	c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-	logger := log.FromContext(c.Context)
+func cmdUpgrade(ctx context.Context, cmd *cli.Command) error {
+	ctx = log.WithCommandContext(ctx, cmd.Name)
+	logger := log.FromContext(ctx)
 	start := time.Now()
 	logger.Debug("UPGRADE START")
 	defer func() {
 		logger.Debug(fmt.Sprintf("UPGRADE FINISH: %v", time.Since(start)))
 	}()
-	term := terminal.Get(c.Context)
+	term := terminal.Get(ctx)
 
 	term.Spinner().Start("Checking for upgrades...")
 
-	latestVersion := CheckUpgradeVersion(c.Context, true)
+	latestVersion := CheckUpgradeVersion(ctx, true)
 	if latestVersion != "" && latestVersion != version.Version {
 		term.Spinner().Stop(terminal.SpinnerStatusOK)
 		os.Args = []string{os.Args[0], "--version"}
-		return UpgradeCli(c.Context, latestVersion)
+		return UpgradeCli(ctx, latestVersion)
 	}
 	term.Spinner().Stop(terminal.SpinnerStatusWarnOK)
 	if latestVersion == version.Version {

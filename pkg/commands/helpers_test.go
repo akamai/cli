@@ -17,12 +17,13 @@ import (
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var testFiles = map[string][]string{
 	"cli-echo":              {"akamai-e", "akamai-e.cmd", "akamai-echo", "akamai-echo.cmd", "akamai-echo-cmd.cmd"},
 	"cli-echo-invalid-json": {"akamai-echo-invalid-json", "akamai-echo-invalid-json.cmd"},
+	"cli-mixed-validity":    {"akamai-valid"},
 }
 
 // TestMain prepares test binary used as cli command in tests and copies it to each directory specified in 'testFiles' variable
@@ -91,23 +92,25 @@ type mocked struct {
 	cmd         *MockCmd
 }
 
-func setupTestApp(command *cli.Command, m *mocked) (*cli.App, context.Context) {
+func setupTestApp(command *cli.Command, m *mocked) (*cli.Command, context.Context) {
 	cli.OsExiter = func(_ int) {}
 	ctx := terminal.Context(context.Background(), m.term)
 	ctx = config.Context(ctx, m.cfg)
-	app := cli.NewApp()
-	app.Commands = []*cli.Command{command}
-	app.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "edgerc",
-			Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
-			Aliases: []string{"e"},
+	app := &cli.Command{
+		Name: "akamai",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "edgerc",
+				Usage:   "edgerc config path passed to executed commands, defaults to ~/.edgerc",
+				Aliases: []string{"e"},
+			},
+			&cli.StringFlag{
+				Name:    "section",
+				Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
+				Aliases: []string{"s"},
+			},
 		},
-		&cli.StringFlag{
-			Name:    "section",
-			Usage:   "edgerc section name passed to executed commands, defaults to 'default'",
-			Aliases: []string{"s"},
-		},
+		Commands: []*cli.Command{command},
 	}
 	return app, ctx
 }

@@ -3,7 +3,7 @@
 {{- if .UsageText}}
 	{{blue .UsageText}}
 {{- else}}
-	{{insertString .HelpName "[global flags]" 1 | blue}}{{if .Commands}} {{blue "command [command flags]"}}{{end}}{{if .ArgsUsage}} {{blue .ArgsUsage}}{{else}} {{blue "[arguments...]"}}{{end}}
+	{{insertString .FullName "[global flags]" 1 | blue}}{{if .Commands}} {{blue "command [command flags]"}}{{end}}{{if .ArgsUsage}} {{blue .ArgsUsage}}{{else}} {{blue "[arguments...]"}}{{end}}
 {{- end}}
 
 {{- if .Description}}

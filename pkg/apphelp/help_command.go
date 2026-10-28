@@ -1,37 +1,54 @@
 package apphelp
 
 import (
+	"context"
 	"os"
+	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-func cmdHelp(c *cli.Context) error {
-	if c.Args().Present() {
-		cmdName := c.Args().First()
-		cmd := c.App.Command(cmdName)
-		if cmd == nil {
-			return cli.ShowAppHelp(c)
-		}
-
-		if subCmd := c.Args().Get(1); subCmd != "" || len(cmd.Subcommands) > 0 {
-			os.Args = append([]string{os.Args[0], cmdName}, c.Args().Tail()...)
-			os.Args = append(os.Args, "--help")
-			return c.App.Run(os.Args)
-		}
-
-		if isBuiltinCommand(c, cmdName) {
-			if shouldAddHelpFlag(cmd) {
-				cmd.Flags = append(cmd.Flags, cli.HelpFlag)
-			}
-			return cli.ShowCommandHelp(c, cmdName)
-		}
-
-		os.Args = append([]string{os.Args[0], cmdName, "help"}, c.Args().Tail()...)
-		return c.App.RunContext(c.Context, os.Args)
+func cmdHelp(ctx context.Context, cmd *cli.Command) error {
+	root := cmd.Root()
+	args := cmd.Args()
+	if !args.Present() {
+		return cli.ShowRootCommandHelp(root)
 	}
 
-	return cli.ShowAppHelp(c)
+	cmdName := args.First()
+	target := root.Command(cmdName)
+	if target == nil {
+		return cli.ShowRootCommandHelp(root)
+	}
+
+	if isBuiltinCommand(root, cmdName) {
+		if subCmdName := args.Get(1); subCmdName != "" && !strings.HasPrefix(subCmdName, "-") {
+			if subCmd := target.Command(subCmdName); subCmd != nil && shouldAddHelpFlag(subCmd) {
+				subCmd.Flags = append(subCmd.Flags, cli.HelpFlag)
+			}
+			return cli.ShowCommandHelp(ctx, target, subCmdName)
+		}
+
+		if hasVisibleSubcommands(target) {
+			return cli.ShowSubcommandHelp(target)
+		}
+		if shouldAddHelpFlag(target) {
+			target.Flags = append(target.Flags, cli.HelpFlag)
+		}
+		return cli.ShowCommandHelp(ctx, root, cmdName)
+	}
+
+	commandArgs := []string{os.Args[0]}
+	if args.Get(1) != "" || len(target.Commands) > 0 {
+		commandArgs = append(commandArgs, args.Tail()...)
+		commandArgs = append(commandArgs, "--help")
+	} else {
+		commandArgs = append(commandArgs, "help")
+		commandArgs = append(commandArgs, args.Tail()...)
+	}
+
+	command := *target
+	return command.Run(ctx, commandArgs)
 }
 
 func hasHelpFlag(cmd *cli.Command) bool {
@@ -50,8 +67,18 @@ func shouldAddHelpFlag(cmd *cli.Command) bool {
 	return false
 }
 
-func isBuiltinCommand(c *cli.Context, cmdName string) bool {
-	for _, cmd := range c.App.Commands {
+func hasVisibleSubcommands(cmd *cli.Command) bool {
+	for _, subcommand := range cmd.VisibleCommands() {
+		if subcommand.Name == "help" && subcommand.HideHelp && contains(subcommand.Aliases, "h") {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func isBuiltinCommand(root *cli.Command, cmdName string) bool {
+	for _, cmd := range root.Commands {
 		if cmd.Category != "" {
 			continue
 		}

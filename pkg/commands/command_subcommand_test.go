@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"flag"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +12,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestCmdSubcommand(t *testing.T) {
@@ -139,7 +138,7 @@ func TestCmdSubcommand(t *testing.T) {
 			args = append(args, test.args...)
 
 			test.init(m)
-			err := app.RunContext(ctx, args)
+			err := app.Run(ctx, args)
 
 			m.cfg.AssertExpectations(t)
 			if test.withError != "" {
@@ -150,6 +149,28 @@ func TestCmdSubcommand(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+// TestCmdSubcommandRunsValidCommandFromMixedValidityManifest verifies that a
+// manifest containing both a valid command and an invalid command name still
+// allows the valid command to run.
+func TestCmdSubcommandRunsValidCommandFromMixedValidityManifest(t *testing.T) {
+	t.Setenv("AKAMAI_CLI_HOME", "./testdata")
+	validBin := filepath.Join("testdata", ".akamai-cli", "src", "cli-mixed-validity", "bin", "akamai-valid")
+	m := &mocked{&terminal.Mock{}, &config.Mock{}, &git.MockRepo{}, &packages.Mock{}, nil}
+	command := &cli.Command{
+		Name:   "valid",
+		Action: cmdSubcommand(m.gitRepo, m.langManager),
+	}
+	app, ctx := setupTestApp(command, m)
+
+	m.langManager.On("FindExec", packages.LanguageRequirements{}, validBin).Return([]string{validBin}, nil)
+	m.langManager.On("FinishExecution", packages.LanguageRequirements{}, "cli-valid").Once()
+
+	err := app.Run(ctx, append(os.Args[0:1], "valid", "abc"))
+
+	require.NoError(t, err)
+	m.langManager.AssertExpectations(t)
 }
 
 func TestPythonCmdSubcommand(t *testing.T) {
@@ -186,7 +207,7 @@ func TestPythonCmdSubcommand(t *testing.T) {
 			m.term.On("OK").Return().Once()
 		}
 
-		err := app.RunContext(ctx, args)
+		err := app.Run(ctx, args)
 
 		m.cfg.AssertExpectations(t)
 		require.NoError(t, err)
@@ -321,11 +342,13 @@ func TestPrepareCommand(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			flagSet := flag.NewFlagSet("flags", flag.ExitOnError)
-			flagSet.String("flag_1", "", "")
-			flagSet.String("flag_2", "", "")
-			flagSet.String("flag_3", "", "")
-			c := cli.NewContext(nil, flagSet, nil)
+			c := &cli.Command{
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "flag_1"},
+					&cli.StringFlag{Name: "flag_2"},
+					&cli.StringFlag{Name: "flag_3"},
+				},
+			}
 			for name, value := range test.flagsInCtx {
 				require.NoError(t, c.Set(name, value))
 			}

@@ -57,6 +57,80 @@ func TestGithubize(t *testing.T) {
 	}
 }
 
+func TestNormalizeCommandName(t *testing.T) {
+	tests := map[string]struct {
+		name       string
+		normalized string
+		wantErr    bool
+	}{
+		"lowercases valid ASCII names": {
+			name:       "Command_123",
+			normalized: "command_123",
+		},
+		"rejects Unicode characters that lowercase to ASCII": {
+			name:    "\u212Aommand",
+			wantErr: true,
+		},
+		"rejects Windows traversal": {
+			name:    `x\..\..\escaped`,
+			wantErr: true,
+		},
+		"rejects empty names": {
+			name:    "",
+			wantErr: true,
+		},
+		"rejects leading hyphens": {
+			name:    "-command",
+			wantErr: true,
+		},
+		"rejects leading underscores": {
+			name:    "_command",
+			wantErr: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			normalized, err := NormalizeCommandName(test.name)
+			if test.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, test.normalized, normalized)
+		})
+	}
+}
+
+func TestCommandBinaryName(t *testing.T) {
+	tests := map[string]struct {
+		name       string
+		binaryName string
+		wantErr    bool
+	}{
+		"prefixes and lowercases valid names": {
+			name:       "Command_123",
+			binaryName: "akamai-command_123",
+		},
+		"rejects invalid names": {
+			name:    "x/../../escaped",
+			wantErr: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			binaryName, err := CommandBinaryName(test.name)
+			if test.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, test.binaryName, binaryName)
+		})
+	}
+}
+
 func TestCapitalizeFirstWord(t *testing.T) {
 	capitalizeTests := []struct {
 		input    string

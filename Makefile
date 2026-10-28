@@ -1,11 +1,12 @@
-GOIMPORTS_VERSION = v0.24.0
+GOIMPORTS_VERSION = v0.50.0
 GO_JUNIT_REPORT_VERSION = v2.1.0
 GOCOV_VERSION = v1.1.0
 GOCOVXML_VERSION = v1.1.0
-GOLANGCI_LINT_VERSION = v2.6.1
+GOLANGCI_LINT_VERSION = v2.13.2
 
 BIN = $(CURDIR)/bin
-GOCMD = go
+GOWORK ?= off
+GOCMD = GOWORK=$(GOWORK) go
 GOTEST = $(GOCMD) test
 GOBUILD = $(GOCMD) build
 M = $(shell echo ">")
@@ -29,7 +30,7 @@ $(BIN)/go-junit-report: PACKAGE=github.com/jstemmer/go-junit-report/v2@$(GO_JUNI
 
 GOLANGCILINT = $(BIN)/golangci-lint
 $(BIN)/golangci-lint: ; $(info $(M) Installing golangci-lint...)
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BIN) $(GOLANGCI_LINT_VERSION)
+	@curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(BIN) $(GOLANGCI_LINT_VERSION)
 
 COVERAGE_MODE = atomic
 COVERAGE_DIR = $(CURDIR)/test/coverage
@@ -66,7 +67,7 @@ create-coverage-files: | $(GOCOV) $(GOCOVXML); $(info $(M) Creating coverage fil
 
 .PHONY: lint
 lint: | $(GOLANGCILINT); $(info $(M) Running linter...) @ ## Run golangci-lint on all source files
-	@$(BIN)/golangci-lint run
+	@GOWORK=$(GOWORK) $(BIN)/golangci-lint run
 
 .PHONY: fmt
 fmt: | $(GOIMPORTS); $(info $(M) Running goimports...) @ ## Run goimports on all source files

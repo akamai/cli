@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,10 +16,12 @@ import (
 	"github.com/akamai/cli/v2/pkg/autocomplete"
 	"github.com/akamai/cli/v2/pkg/color"
 	"github.com/akamai/cli/v2/pkg/git"
+	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/packages"
+	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/akamai/cli/v2/pkg/version"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -54,22 +57,22 @@ type (
 	}
 )
 
-func getBuiltinCommands(c *cli.Context) []subcommands {
+func getBuiltinCommands(cmd *cli.Command) []subcommands {
 	commands := make([]subcommands, 0)
-	for _, cmd := range c.App.Commands {
+	for _, subcommand := range cmd.Root().Commands {
 		// builtin commands do not have Category set
-		if cmd.Category != "" {
+		if subcommand.Category != "" {
 			continue
 		}
-		commands = append(commands, cliCommandToSubcommand(cmd))
+		commands = append(commands, cliCommandToSubcommand(subcommand))
 	}
 	return commands
 }
 
-func getCommands(c *cli.Context) []subcommands {
+func getCommands(cmd *cli.Command) []subcommands {
 	commands := make([]subcommands, 0)
-	for _, cmd := range c.App.Commands {
-		commands = append(commands, cliCommandToSubcommand(cmd))
+	for _, subcommand := range cmd.Root().Commands {
+		commands = append(commands, cliCommandToSubcommand(subcommand))
 	}
 	return commands
 }
@@ -85,7 +88,7 @@ func cliCommandToSubcommand(from *cli.Command) subcommands {
 				Arguments:   from.ArgsUsage,
 				Flags:       from.Flags,
 				Docs:        from.UsageText,
-				Subcommands: from.Subcommands,
+				Subcommands: from.Commands,
 			},
 		},
 		Action: from.Action,
@@ -107,9 +110,10 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 			Action:          cmdSubcommand(gitRepo, langManager),
 			Category:        color.YellowString("Installed Commands:"),
 			SkipFlagParsing: true,
-			BashComplete: func(c *cli.Context) {
+			HideHelpCommand: true,
+			ShellComplete: func(ctx context.Context, completionCommand *cli.Command) {
 				if command.AutoComplete {
-					executable, packageReqs, err := findExec(c.Context, langManager, c.Command.Name)
+					executable, packageReqs, err := findExec(ctx, langManager, completionCommand.Name)
 					if err != nil {
 						return
 					}
@@ -121,7 +125,7 @@ func subcommandToCliCommands(from subcommands, gitRepo git.Repository, langManag
 
 					executable = append(executable, os.Args[2:]...)
 					subCmd := createCommand(executable[0], executable[1:])
-					if err = passthruCommand(c.Context, subCmd, langManager, *packageReqs, packageDir); err != nil {
+					if err = passthruCommand(ctx, subCmd, langManager, *packageReqs, packageDir); err != nil {
 						return
 					}
 				}
@@ -157,7 +161,7 @@ func createBuiltinCommands() []*cli.Command {
 			Name:        "config",
 			ArgsUsage:   "<action> <setting> [value]",
 			Description: "Manages configuration.",
-			Subcommands: []*cli.Command{
+			Commands: []*cli.Command{
 				{
 					Name:      "get",
 					ArgsUsage: "<setting>",
@@ -180,8 +184,8 @@ func createBuiltinCommands() []*cli.Command {
 					Action:    cmdConfigUnset,
 				},
 			},
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
 			Name:        "install",
@@ -194,8 +198,8 @@ func createBuiltinCommands() []*cli.Command {
 				"akamai install akamai/cli-property",
 				"akamai install git@github.com:akamai/cli-property.git",
 				"akamai install https://github.com/akamai/cli-property.git"),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
 			Name:        "list",
@@ -207,64 +211,81 @@ func createBuiltinCommands() []*cli.Command {
 					Usage: "Displays all available packages.",
 				},
 			},
-			HideHelp:           true,
-			BashComplete:       autocomplete.Default,
+			HideHelpCommand:    true,
+			ShellComplete:      autocomplete.Default,
 			CustomHelpTemplate: apphelp.SimplifiedHelpTemplate,
 		},
 		{
-			Name:         "search",
-			ArgsUsage:    "<keyword>...",
-			Description:  "Searches for packages in the official Akamai CLI package repository.",
-			Action:       cmdSearch,
-			UsageText:    "Examples:\n\n   akamai search property",
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "search",
+			ArgsUsage:       "<keyword>...",
+			Description:     "Searches for packages in the official Akamai CLI package repository.",
+			Action:          cmdSearch,
+			UsageText:       "Examples:\n\n   akamai search property",
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "uninstall",
-			ArgsUsage:    "<command>...",
-			Description:  "Uninstalls a package containing a given <command>.",
-			Action:       cmdUninstall(langManager),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "uninstall",
+			ArgsUsage:       "<command>...",
+			Description:     "Uninstalls a package containing a given <command>.",
+			Action:          cmdUninstall(langManager),
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "update",
-			ArgsUsage:    "[<command>...]",
-			Description:  "Updates one or more commands. If no command is specified, all commands are updated.",
-			Action:       cmdUpdate(gitRepo, langManager),
-			HideHelp:     true,
-			BashComplete: autocomplete.Default,
+			Name:            "update",
+			ArgsUsage:       "[<command>...]",
+			Description:     "Updates one or more commands. If no command is specified, all commands are updated.",
+			Action:          cmdUpdate(gitRepo, langManager),
+			HideHelpCommand: true,
+			ShellComplete:   autocomplete.Default,
 		},
 		{
-			Name:         "upgrade",
-			Description:  "Upgrades the Akamai CLI to the latest version.",
-			Action:       cmdUpgrade,
-			BashComplete: autocomplete.Default,
+			Name:          "upgrade",
+			Description:   "Upgrades the Akamai CLI to the latest version.",
+			Action:        cmdUpgrade,
+			ShellComplete: autocomplete.Default,
 		},
 	}
 }
 
-func createInstalledCommands(_ context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+func createInstalledCommands(ctx context.Context, gitRepo git.Repository, langManager packages.LangManager) []*cli.Command {
+	logger := log.FromContext(ctx)
 	commands := make([]*cli.Command, 0)
 	packagePaths := getPackagePaths()
 	for _, dir := range packagePaths {
-		pkg, err := readPackage(dir)
-		if err == nil {
-			commands = append(commands, subcommandToCliCommands(pkg, gitRepo, langManager)...)
+		pkg, invalidCommands, err := readInstalledPackageWithDiagnostics(dir)
+		if err != nil {
+			warnInstalledPackage(ctx, logger, fmt.Sprintf("Skipping installed package in %q: %v", dir, err))
+			continue
 		}
+		for _, err := range invalidCommands {
+			warnInstalledPackage(ctx, logger, fmt.Sprintf("Skipping command in installed package %q: %v", dir, err))
+		}
+		commands = append(commands, subcommandToCliCommands(pkg, gitRepo, langManager)...)
 	}
 	return commands
 }
 
+func warnInstalledPackage(ctx context.Context, logger *slog.Logger, message string) {
+	logger.Warn(message)
+	term := terminal.Get(ctx)
+	if _, err := term.Writeln(color.YellowString("%s", message)); err != nil {
+		logger.Error("Unable to display installed package warning", "error", err)
+	}
+}
+
 // findExec returns paths to language interpreter (if necessary) and package binary
 func findExec(ctx context.Context, langManager packages.LangManager, cmd string) ([]string, *packages.LanguageRequirements, error) {
+	cmdName, err := tools.CommandBinaryName(cmd)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// "command" becomes: akamai-command, and akamaiCommand
 	// "command-name" becomes: akamai-command-name, and akamaiCommandName
-	cmdName := "akamai"
 	cmdNameTitle := "akamai"
 	for _, cmdPart := range strings.Split(cmd, "-") {
-		cmdName += "-" + strings.ToLower(cmdPart)
 		cmdNameTitle += cases.Title(language.Und, cases.NoLower).String(strings.ToLower(cmdPart))
 	}
 
@@ -276,7 +297,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 
 	// Quick look for executables on the path
 	var path string
-	path, err := exec.LookPath(cmdName)
+	path, err = exec.LookPath(cmdName)
 	if err != nil {
 		path, _ = exec.LookPath(cmdNameTitle)
 	}
@@ -322,7 +343,7 @@ func findExec(ctx context.Context, langManager packages.LangManager, cmd string)
 		cmdBinary := files[0]
 
 		packageDir := findPackageDir(filepath.Dir(cmdBinary))
-		cmdPackage, err := readPackage(packageDir)
+		cmdPackage, err := readInstalledPackage(packageDir)
 		if err != nil {
 			return nil, nil, err
 		}

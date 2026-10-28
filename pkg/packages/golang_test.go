@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -218,4 +220,48 @@ func TestInstallGolang(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestInstallGolangRejectsTraversalCommandName(t *testing.T) {
+	l := langManager{new(mocked)}
+	err := l.installGolang(context.Background(), t.TempDir(), "*", []string{"x/../../escaped"}, []string{""})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid command name")
+}
+
+func TestInstallGolangRejectsMismatchedArgumentsBeforeSideEffects(t *testing.T) {
+	m := new(mocked)
+	l := langManager{m}
+
+	err := l.installGolang(context.Background(), t.TempDir(), "*", []string{"test"}, nil)
+
+	require.EqualError(t, err, "commands and ldFlags should have the same length")
+	assert.Empty(t, m.Calls)
+}
+
+func TestInstallGolangRemovesExistingOutputSymlinkBeforeBuild(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("AKAMAI_CLI_HOME", dir)
+	t.Setenv("GOPATH", "")
+	outputPath := filepath.Join(dir, "akamai-test")
+	if err := os.Symlink(t.TempDir(), outputPath); err != nil {
+		t.Skipf("symlink creation is unavailable: %v", err)
+	}
+
+	m := new(mocked)
+	m.On("LookPath", "go").Return("/test/go", nil)
+	m.On("FileExists", filepath.Join(dir, "go.sum")).Return(true, nil)
+	m.On("ExecCommand", mock.MatchedBy(func(cmd *exec.Cmd) bool {
+		return cmd.Args[1] == "mod"
+	})).Return(nil, nil)
+	m.On("ExecCommand", mock.MatchedBy(func(cmd *exec.Cmd) bool {
+		return cmd.Args[1] == "build"
+	})).Run(func(_ mock.Arguments) {
+		_, err := os.Lstat(outputPath)
+		require.True(t, os.IsNotExist(err), "build output symlink still exists")
+	}).Return(nil, nil)
+
+	l := langManager{m}
+	require.NoError(t, l.installGolang(context.Background(), dir, "*", []string{"test"}, []string{""}))
+	m.AssertExpectations(t)
 }

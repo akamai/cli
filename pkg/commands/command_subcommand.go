@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,14 +13,14 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/terminal"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) (e error) {
-		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.FromContext(c.Context)
-		term := terminal.Get(c.Context)
+	return func(ctx context.Context, cmd *cli.Command) (e error) {
+		ctx = log.WithCommandContext(ctx, cmd.Name)
+		logger := log.FromContext(ctx)
+		term := terminal.Get(ctx)
 
 		defer func() {
 			if e != nil {
@@ -29,11 +30,11 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			}
 		}()
 
-		logger.Info(fmt.Sprintf("Executing subcommand: %s", c.Command.Name))
+		logger.Info(fmt.Sprintf("Executing subcommand: %s", cmd.Name))
 
-		commandName := strings.ToLower(c.Command.Name)
+		commandName := strings.ToLower(cmd.Name)
 
-		executable, _, err := findExec(c.Context, langManager, commandName)
+		executable, _, err := findExec(ctx, langManager, commandName)
 		if err != nil {
 			errMsg := color.RedString("Executable \"%s\" not found.", commandName)
 			logger.Error(errMsg)
@@ -47,14 +48,14 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			packageDir = findPackageDir(executable[1])
 		}
 
-		cmdPackage, err := readPackage(packageDir)
+		cmdPackage, err := readInstalledPackage(packageDir)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error reading package: %v", err))
 			return err
 		}
 
 		if cmdPackage.Requirements.Python != "" {
-			exec, err := langManager.FindExec(c.Context, cmdPackage.Requirements, packageDir)
+			exec, err := langManager.FindExec(ctx, cmdPackage.Requirements, packageDir)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error finding executable: %v", err))
 				return err
@@ -90,11 +91,11 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 					return cli.Exit(color.RedString("%s", packages.ErrPackageNeedsReinstall.Error()), -1)
 				}
 
-				if err = uninstallPackage(c.Context, langManager, commandName, logger); err != nil {
+				if err = uninstallPackage(ctx, langManager, commandName, logger); err != nil {
 					return err
 				}
 
-				if _, err = installPackage(c.Context, git, langManager, commandName); err != nil {
+				if _, err = installPackage(ctx, git, langManager, commandName); err != nil {
 					return err
 				}
 			}
@@ -105,15 +106,15 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 		}
 
 		var currentCmd command
-		for _, cmd := range cmdPackage.Commands {
-			if strings.EqualFold(cmd.Name, commandName) {
-				currentCmd = cmd
+		for _, c := range cmdPackage.Commands {
+			if strings.EqualFold(c.Name, commandName) {
+				currentCmd = c
 				break
 			}
 
-			for _, alias := range cmd.Aliases {
+			for _, alias := range c.Aliases {
 				if strings.EqualFold(alias, commandName) {
-					currentCmd = cmd
+					currentCmd = c
 				}
 			}
 		}
@@ -127,20 +128,26 @@ func cmdSubcommand(git git.Repository, langManager packages.LangManager) cli.Act
 			return err
 		}
 
-		cmdPackage, err = readPackage(packageDir)
+		cmdPackage, err = readInstalledPackage(packageDir)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error reading package: %v", err))
 			return err
 		}
 
-		executable = prepareCommand(c, executable, c.Args().Slice(), "edgerc", "section", "accountkey")
+		if len(cmdPackage.Commands) == 0 {
+			err := fmt.Errorf("package in %q does not contain any valid commands", packageDir)
+			logger.Error(err.Error())
+			return err
+		}
+
+		executable = prepareCommand(cmd, executable, cmd.Args().Slice(), "edgerc", "section", "accountkey")
 
 		subCmd := createCommand(executable[0], executable[1:])
-		return passthruCommand(c.Context, subCmd, langManager, cmdPackage.Requirements, fmt.Sprintf("cli-%s", cmdPackage.Commands[0].Name))
+		return passthruCommand(ctx, subCmd, langManager, cmdPackage.Requirements, fmt.Sprintf("cli-%s", cmdPackage.Commands[0].Name))
 	}
 }
 
-func prepareCommand(c *cli.Context, command, args []string, flags ...string) []string {
+func prepareCommand(c *cli.Command, command, args []string, flags ...string) []string {
 	// dont search for flags is there are no args
 	if len(args) == 0 {
 		return command
@@ -159,7 +166,7 @@ func prepareCommand(c *cli.Context, command, args []string, flags ...string) []s
 	return command
 }
 
-func findFlags(c *cli.Context, target []string, flags ...string) []string {
+func findFlags(c *cli.Command, target []string, flags ...string) []string {
 	var ret []string
 	for _, flagName := range flags {
 		if flagVal := c.String(flagName); flagVal != "" && !containsString(target, fmt.Sprintf("--%s", flagName)) {

@@ -18,13 +18,13 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
 	gogit "github.com/go-git/go-git/v5"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.ActionFunc {
-	return func(c *cli.Context) (e error) {
-		c.Context = log.WithCommandContext(c.Context, c.Command.Name)
-		logger := log.FromContext(c.Context)
+	return func(ctx context.Context, cmd *cli.Command) (e error) {
+		ctx = log.WithCommandContext(ctx, cmd.Name)
+		logger := log.FromContext(ctx)
 		start := time.Now()
 		logger.Debug("UPDATE START")
 		defer func() {
@@ -34,16 +34,16 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 				logger.Error(fmt.Sprintf("UPDATE ERROR: %v", e))
 			}
 		}()
-		if !c.Args().Present() {
+		if !cmd.Args().Present() {
 			var builtinCmds = make(map[string]bool)
-			for _, cmd := range getBuiltinCommands(c) {
-				builtinCmds[strings.ToLower(cmd.Commands[0].Name)] = true
+			for _, c := range getBuiltinCommands(cmd) {
+				builtinCmds[strings.ToLower(c.Commands[0].Name)] = true
 			}
 
-			for _, cmd := range getCommands(c) {
-				for _, command := range cmd.Commands {
+			for _, c := range getCommands(cmd) {
+				for _, command := range c.Commands {
 					if _, ok := builtinCmds[command.Name]; !ok {
-						if err := updatePackage(c.Context, gitRepo, langManager, logger, command.Name); err != nil {
+						if err := updatePackage(ctx, gitRepo, langManager, logger, command.Name); err != nil {
 							logger.Error(fmt.Sprintf("Error updating package: %v", err))
 							return err
 						}
@@ -54,8 +54,8 @@ func cmdUpdate(gitRepo git.Repository, langManager packages.LangManager) cli.Act
 			return nil
 		}
 
-		for _, cmd := range c.Args().Slice() {
-			if err := updatePackage(c.Context, gitRepo, langManager, logger, cmd); err != nil {
+		for _, c := range cmd.Args().Slice() {
+			if err := updatePackage(ctx, gitRepo, langManager, logger, c); err != nil {
 				logger.Error(fmt.Sprintf("Error updating package: %v", err))
 				return err
 			}
@@ -97,7 +97,7 @@ func updatePackage(ctx context.Context, gitRepo git.Repository, langManager pack
 	if err != nil {
 		logger.Debug("Unable to open repo")
 
-		cmdPackage, err := readPackage(repoDir)
+		cmdPackage, err := readInstalledPackage(repoDir)
 		if err != nil {
 			term.Spinner().Fail()
 			logger.Error(fmt.Sprintf("Failed to read package: %v", err))

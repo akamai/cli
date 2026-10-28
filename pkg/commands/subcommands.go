@@ -16,7 +16,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/log"
 	"github.com/akamai/cli/v2/pkg/packages"
 	"github.com/akamai/cli/v2/pkg/tools"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type subcommands struct {
@@ -28,31 +28,28 @@ type subcommands struct {
 }
 
 func readPackage(dir string) (subcommands, error) {
+	cliJSON, err := readPackageJSON(dir)
+	if err != nil {
+		return subcommands{}, err
+	}
+
+	return parsePackage(cliJSON, dir)
+}
+
+func readPackageJSON(dir string) ([]byte, error) {
 	if _, err := os.Stat(filepath.Join(dir, "cli.json")); err != nil {
 		dir = filepath.Dir(dir)
 		if _, err = os.Stat(filepath.Join(dir, "cli.json")); err != nil {
-			return subcommands{}, fmt.Errorf("package does not contain a cli.json file: %v", err)
+			return nil, fmt.Errorf("package does not contain a cli.json file: %v", err)
 		}
 	}
 
-	var packageData subcommands
 	cliJSON, err := os.ReadFile(filepath.Join(dir, "cli.json"))
 	if err != nil {
-		return subcommands{}, fmt.Errorf("unable to read package: %v", err)
+		return nil, fmt.Errorf("unable to read package: %v", err)
 	}
 
-	err = json.Unmarshal(cliJSON, &packageData)
-	if err != nil {
-		return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
-	}
-
-	for key := range packageData.Commands {
-		packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
-	}
-
-	packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
-
-	return packageData, nil
+	return cliJSON, nil
 }
 
 func readPackageFromGithub(url, dir string) (subcommands, error) {
@@ -60,32 +57,83 @@ func readPackageFromGithub(url, dir string) (subcommands, error) {
 	if err != nil {
 		return subcommands{}, fmt.Errorf("unable to get package from github: %v", err)
 	}
-	if response.StatusCode == http.StatusOK {
-		cliJSON, err := io.ReadAll(response.Body)
-		if err != nil {
-			return subcommands{}, fmt.Errorf("unable to read package: %v", err)
-		}
-
-		var packageData subcommands
-
-		err = json.Unmarshal(cliJSON, &packageData)
-		if err != nil {
-			return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
-		}
-
-		packageData.raw = cliJSON
-
-		for key := range packageData.Commands {
-			packageData.Commands[key].Name = strings.ToLower(packageData.Commands[key].Name)
-		}
-
-		packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
-
-		return packageData, nil
-
+	if response.StatusCode != http.StatusOK {
+		return subcommands{}, fmt.Errorf("invalid response status while fetching cli.json: %d", response.StatusCode)
 	}
 
-	return subcommands{}, fmt.Errorf("invalid response status while fetching cli.json: %d", response.StatusCode)
+	cliJSON, err := io.ReadAll(response.Body)
+	if err != nil {
+		return subcommands{}, fmt.Errorf("unable to read package: %v", err)
+	}
+
+	packageData, err := parsePackage(cliJSON, dir)
+	if err != nil {
+		return subcommands{}, err
+	}
+	packageData.raw = cliJSON
+
+	return packageData, nil
+}
+
+func parsePackage(cliJSON []byte, dir string) (subcommands, error) {
+	packageData, err := unmarshalPackage(cliJSON, dir)
+	if err != nil {
+		return subcommands{}, err
+	}
+
+	for i := range packageData.Commands {
+		name, err := tools.NormalizeCommandName(packageData.Commands[i].Name)
+		if err != nil {
+			return subcommands{}, fmt.Errorf("invalid command name in cli.json: %w", err)
+		}
+		packageData.Commands[i].Name = name
+	}
+
+	return packageData, nil
+}
+
+func readInstalledPackage(dir string) (subcommands, error) {
+	packageData, _, err := readInstalledPackageWithDiagnostics(dir)
+	return packageData, err
+}
+
+// readInstalledPackageWithDiagnostics tolerates invalid command names so that valid commands of an installed package stay usable.
+// The skipped commands are reported as invalidCommands.
+func readInstalledPackageWithDiagnostics(dir string) (subcommands, []error, error) {
+	cliJSON, err := readPackageJSON(dir)
+	if err != nil {
+		return subcommands{}, nil, err
+	}
+
+	packageData, err := unmarshalPackage(cliJSON, dir)
+	if err != nil {
+		return subcommands{}, nil, err
+	}
+
+	var invalidCommands []error
+	validCommands := make([]command, 0, len(packageData.Commands))
+	for _, cmd := range packageData.Commands {
+		name, err := tools.NormalizeCommandName(cmd.Name)
+		if err != nil {
+			invalidCommands = append(invalidCommands, fmt.Errorf("invalid command name %q in cli.json: %w", cmd.Name, err))
+			continue
+		}
+		cmd.Name = name
+		validCommands = append(validCommands, cmd)
+	}
+
+	packageData.Commands = validCommands
+	return packageData, invalidCommands, nil
+}
+
+func unmarshalPackage(cliJSON []byte, dir string) (subcommands, error) {
+	var packageData subcommands
+	if err := json.Unmarshal(cliJSON, &packageData); err != nil {
+		return subcommands{}, fmt.Errorf("unable to unmarshal package: %v", err)
+	}
+
+	packageData.Pkg = filepath.Base(strings.Replace(dir, "cli-", "", 1))
+	return packageData, nil
 }
 
 func getPackagePaths() []string {
@@ -131,6 +179,12 @@ func findPackageDir(dir string) string {
 
 func downloadBin(ctx context.Context, dir string, cmd command) error {
 	logger := log.FromContext(ctx)
+	binaryName, err := tools.CommandBinaryName(cmd.Name)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Invalid command name: %v", err))
+		return err
+	}
+
 	cmd.Arch = runtime.GOARCH
 
 	cmd.OS = runtime.GOOS
@@ -152,8 +206,9 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 	url := buf.String()
 	logger.Debug(fmt.Sprintf("Fetching binary from %s", url))
 
-	binName := filepath.Join(dir, "akamai-"+strings.ToLower(cmd.Name)+cmd.BinSuffix)
-	bin, err := os.Create(binName)
+	binaryName += cmd.BinSuffix
+	binName := filepath.Join(dir, binaryName)
+	bin, err := tools.CreateExclusive(dir, binaryName, 0775)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Unable to create %s file: %v", binName, err))
 		return err
@@ -163,11 +218,6 @@ func downloadBin(ctx context.Context, dir string, cmd command) error {
 			logger.Error(fmt.Sprintf("Error closing file: %v", err))
 		}
 	}()
-
-	if err := os.Chmod(binName, 0775); err != nil {
-		logger.Error(fmt.Sprintf("Unable to change the %s file mode: %v", binName, err))
-		return err
-	}
 
 	res, err := http.Get(url)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 	"github.com/akamai/cli/v2/pkg/terminal"
 	"github.com/akamai/cli/v2/pkg/tools"
 	"github.com/akamai/cli/v2/pkg/version"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Run is the entry point to the CLI
@@ -85,7 +85,7 @@ func Run() int {
 		return 7
 	}
 
-	if err := cliApp.RunContext(ctx, os.Args); err != nil {
+	if err := cliApp.Run(ctx, os.Args); err != nil {
 		return 6
 	}
 
